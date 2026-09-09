@@ -8,6 +8,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, Tooltip
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { child, parentSummary, spendingCategories, weeklySpending, scoreHistory, notifications, PARENT_IMAGE, parent, LOGO_IMAGE, familyMembers, parentAiInsights } from "@/lib/finData";
 import { fmtEGP } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
 import { Image } from "@/components/ui/image";
 
 const iconEmoji = { utensils: "🍽️", "piggy-bank": "🐷", "trending-down": "📉", "shield-alert": "🚨", wallet: "👛", sparkles: "✨", "trending-up": "📈" };
@@ -15,6 +16,7 @@ const sevColor = { alert: "#ef4444", warn: "#FFC857", good: "#00B894", info: "#3
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // اليوزر الحقيقي بتاع الأب الداخل دلوقتي
 
   return (
     <div className="px-4 pt-12">
@@ -24,7 +26,7 @@ export default function ParentDashboard() {
         </button>
         <div className="flex-1 min-w-0">
           <div className="text-sm text-muted-foreground">Welcome back</div>
-          <h1 className="text-lg font-extrabold font-heading truncate">Ahmed Hassan</h1>
+          <h1 className="text-lg font-extrabold font-heading truncate">{user?.full_name}</h1>
         </div>
         <button onClick={() => navigate("/child")} className="glass rounded-full px-3 h-10 flex items-center gap-1.5 shadow-premium active:scale-95 transition-all">
           <Repeat2 className="w-4 h-4 text-emerald-600" />
@@ -44,7 +46,7 @@ export default function ParentDashboard() {
             <Image src={PARENT_IMAGE} alt="Ahmed" className="w-full h-full object-cover" fittingType="fill" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold">{parent.name}</div>
+            <div className="font-bold">{user?.full_name}</div>
             <div className="text-xs text-white/70">{parent.role}</div>
             <div className="text-xs text-white/50 truncate">{parent.phone}</div>
           </div>

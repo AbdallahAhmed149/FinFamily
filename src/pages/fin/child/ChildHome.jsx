@@ -8,11 +8,13 @@ import { GlassCard, ProgressBar, Pill, SectionTitle, FadeIn } from "@/components
 import GameLauncher from "@/components/fin/GameLauncher";
 import MissionComplete from "@/components/fin/MissionComplete";
 import { child, todayMissions, playLearnCards, levels, fmtEGP } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
 
 const diffColor = { Easy: "#00B894", Medium: "#FFC857", Hard: "#ef4444" };
 
 export default function ChildHome() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // اليوزر الحقيقي بتاع الطفل الداخل دلوقتي
   const [greet, setGreet] = useState("Good Morning");
   const [activeGame, setActiveGame] = useState(null);
   const [missionDone, setMissionDone] = useState(null);
@@ -46,7 +48,7 @@ export default function ChildHome() {
       <FadeIn className="flex items-center justify-between mb-4">
         <div>
           <div className="text-sm text-muted-foreground">{greet},</div>
-          <h1 className="text-2xl font-extrabold font-heading">{child.name} 👋</h1>
+          <h1 className="text-2xl font-extrabold font-heading">{user?.full_name || child.name} 👋</h1>
         </div>
         <Lotfy size={64} />
       </FadeIn>
