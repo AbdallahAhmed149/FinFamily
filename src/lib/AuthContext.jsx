@@ -88,6 +88,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   // ---------------------------------------------------------------------
+  // الأب: يدير أولاده (يشوف الكود، يشوف/يضيف أطفال) — كلها محتاجة auth
+  // ---------------------------------------------------------------------
+
+  const getFamilyCode = async () => {
+    return base44.get('/auth/family/code'); // { family_code, family_name }
+  };
+
+  const getFamilyChildren = async () => {
+    return base44.get('/auth/family/children'); // { family_name, children: [{id, full_name}] }
+  };
+
+  const createChild = async (fullName, pin) => {
+    return base44.post('/auth/children', { full_name: fullName, pin }); // بيرجع اليوزر الجديد
+  };
+
+  // ---------------------------------------------------------------------
   // مشترك
   // ---------------------------------------------------------------------
 
@@ -112,6 +128,9 @@ export const AuthProvider = ({ children }) => {
         registerParent,
         lookupFamilyChildren,
         loginChild,
+        getFamilyCode,
+        getFamilyChildren,
+        createChild,
         logout,
         refreshUser: loadCurrentUser,
       }}

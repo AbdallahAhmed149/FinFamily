@@ -1,35 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, UserPlus, Wallet, CreditCard, Sliders, Trash2, Check } from "lucide-react";
+import { ChevronLeft, UserPlus, Wallet, CreditCard, Sliders, Check, Copy, CopyCheck } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle, Pill, ProgressRing } from "@/components/fin/ui";
-import { familyMembers, fmtEGP } from "@/lib/finData";
-import { Image } from "@/components/ui/image";
+import { fmtEGP } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
+
+const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
 export default function FamilyMembers() {
   const navigate = useNavigate();
-  const [members, setMembers] = useState(familyMembers);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", age: "", role: "Son", daily: 80 });
+  const { getFamilyCode, getFamilyChildren, createChild } = useAuth();
 
-  const addChild = () => {
-    if (!form.name || !form.age) return;
-    const newM = {
-      id: `m${Date.now()}`,
-      name: form.name,
-      age: Number(form.age),
-      avatar: ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"][members.length % 6],
-      role: form.role,
-      balance: 0, savings: 0, financialScore: 50, scoreTrend: 0,
-      cardStatus: "active", cardNumber: "5061 •••• •••• 0000", cardTheme: "blue",
-      limits: { daily: Number(form.daily), weekly: Number(form.daily) * 5, monthly: Number(form.daily) * 15 },
-      spent: { daily: 0, weekly: 0, monthly: 0 },
-      blockedCategories: [],
-      streak: 0, level: 1, xp: 0, coins: 0,
-      weeklyTrend: [0, 0, 0, 0, 0, 0, 0], status: "online", joined: "Jul 2026",
-    };
-    setMembers((m) => [...m, newM]);
-    setForm({ name: "", age: "", role: "Son", daily: 80 });
-    setShowAdd(false);
+  const [familyCode, setFamilyCode] = useState(null);
+  const [familyName, setFamilyName] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ name: "", pin: "" });
+  const [addError, setAddError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // البيانات دي (الرصيد، النقاط، الحد اليومي...) لسه مش موجودة في الـ backend
+  // (محتاجة entities: Wallet + Mission لسه ماتبنوش) — دلوقتي بس بنعرض الاسم الحقيقي
+  // جاي من الداتابيز، والباقي قيم افتراضية لحد ما نبني الجزء ده.
+  const decorate = (child, index) => ({
+    id: child.id,
+    name: child.full_name,
+    avatar: AVATARS[index % AVATARS.length],
+    balance: 0,
+    savings: 0,
+    financialScore: 50,
+    cardStatus: "active",
+    streak: 0,
+    level: 1,
+  });
+
+  const loadFamily = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [codeRes, childrenRes] = await Promise.all([getFamilyCode(), getFamilyChildren()]);
+      setFamilyCode(codeRes.family_code);
+      setFamilyName(codeRes.family_name);
+      setMembers(childrenRes.children.map(decorate));
+    } catch (err) {
+      setLoadError(err.message || "تعذر تحميل بيانات العيلة");
+    } finally {
+      setLoading(false);
+    }
+  }, [getFamilyCode, getFamilyChildren]);
+
+  useEffect(() => {
+    loadFamily();
+  }, [loadFamily]);
+
+  const copyCode = async () => {
+    if (!familyCode) return;
+    try {
+      await navigator.clipboard.writeText(familyCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard API ممكن ترفض (متصفح قديم/http) — مش حاجة نوقف عليها
+    }
+  };
+
+  const handleAddChild = async () => {
+    setAddError(null);
+    if (!form.name.trim()) {
+      setAddError("اكتب اسم الطفل");
+      return;
+    }
+    if (!/^\d{4,6}$/.test(form.pin)) {
+      setAddError("الـ PIN لازم يكون من 4 لـ 6 أرقام");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await createChild(form.name.trim(), form.pin);
+      setForm({ name: "", pin: "" });
+      setShowAdd(false);
+      await loadFamily(); // نجيب القايمة المحدّثة من السيرفر بدل ما نضيفه محلي بس
+    } catch (err) {
+      setAddError(err.message || "حصل خطأ وإحنا بنضيف الطفل");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const statusColor = { active: "#00B894", frozen: "#3b82f6", deactivated: "#94a3b8" };
@@ -47,19 +106,51 @@ export default function FamilyMembers() {
         </button>
       </FadeIn>
 
-      <FadeIn delay={40}>
-        <div className="grad-navy rounded-3xl p-4 text-white shadow-premium flex items-center gap-3">
+      {/* كود العيلة — ده اللي الطفل هيستخدمه في صفحة Child Login */}
+      <FadeIn delay={20}>
+        <div className="grad-navy rounded-3xl p-4 text-white shadow-premium">
+          <div className="text-xs text-white/70 mb-1">Family Code — Share with your kids</div>
+          <div className="flex items-center gap-3">
+            <div className="text-3xl font-extrabold tracking-[0.3em] font-heading flex-1">
+              {loading ? "······" : familyCode || "—"}
+            </div>
+            <button
+              onClick={copyCode}
+              disabled={!familyCode}
+              className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center active:scale-95 transition-all disabled:opacity-40"
+            >
+              {copied ? <CopyCheck className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+            </button>
+          </div>
+          {familyName && <div className="text-xs text-white/60 mt-1">{familyName}</div>}
+        </div>
+      </FadeIn>
+
+      {loadError && (
+        <FadeIn delay={40} className="mt-3">
+          <div className="rounded-2xl bg-red-50 text-red-600 text-sm px-4 py-3">{loadError}</div>
+        </FadeIn>
+      )}
+
+      <FadeIn delay={40} className="mt-4">
+        <div className="grad-emerald/10 rounded-3xl p-4 flex items-center gap-3" style={{ background: "#00B89414" }}>
           <div className="text-2xl">👨‍👩‍👧‍👦</div>
           <div className="flex-1">
-            <div className="text-lg font-bold">{members.length} Members</div>
-            <div className="text-xs text-white/70">Total balance: {fmtEGP(members.reduce((s, m) => s + m.balance, 0))}</div>
+            <div className="text-lg font-bold">{members.length} {members.length === 1 ? "Child" : "Children"}</div>
+            <div className="text-xs text-muted-foreground">Add a child, then share the code above so they can log in.</div>
           </div>
-          <Pill className="bg-emerald-400/20 text-emerald-200">Avg Score {Math.round(members.reduce((s, m) => s + m.financialScore, 0) / members.length)}</Pill>
         </div>
       </FadeIn>
 
       <FadeIn delay={120} className="mt-4">
         <SectionTitle>Manage Each Member</SectionTitle>
+
+        {!loading && members.length === 0 && !loadError && (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            مفيش أطفال متضافين لسه — دوس على <UserPlus className="w-3.5 h-3.5 inline" /> فوق عشان تضيف أول واحد.
+          </div>
+        )}
+
         <div className="space-y-3">
           {members.map((m, i) => (
             <FadeIn key={m.id} delay={i * 50}>
@@ -68,7 +159,7 @@ export default function FamilyMembers() {
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "#0F2D5214" }}>{m.avatar}</div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold flex items-center gap-2">{m.name} <Pill color={statusColor[m.cardStatus]} className="text-[10px] py-0">{statusLabel[m.cardStatus]}</Pill></div>
-                    <div className="text-xs text-muted-foreground">{m.role} · Age {m.age} · Level {m.level}</div>
+                    <div className="text-xs text-muted-foreground">Level {m.level}</div>
                   </div>
                   <ProgressRing value={m.financialScore} size={44} stroke={5} color={m.financialScore >= 75 ? "#00B894" : "#FFC857"}>
                     <span className="text-[11px] font-bold">{m.financialScore}</span>
@@ -109,7 +200,7 @@ export default function FamilyMembers() {
 
       {/* add child modal */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center p-4" onClick={() => setShowAdd(false)}>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center p-4" onClick={() => !submitting && setShowAdd(false)}>
           <div className="glass rounded-3xl p-5 w-full max-w-md animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-extrabold font-heading">Add a Child</h3>
@@ -118,28 +209,36 @@ export default function FamilyMembers() {
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Full Name</label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Salma Hassan" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Age</label>
-                  <input type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} placeholder="10" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground">Role</label>
-                  <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold">
-                    <option>Son</option><option>Daughter</option>
-                  </select>
-                </div>
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. Salma Hassan"
+                  className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold"
+                />
               </div>
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">Daily Spending Limit (EGP)</label>
-                <input type="number" value={form.daily} onChange={(e) => setForm({ ...form, daily: e.target.value })} className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
+                <label className="text-xs font-semibold text-muted-foreground">PIN (4-6 digits) — the child uses this to log in</label>
+                <input
+                  value={form.pin}
+                  onChange={(e) => setForm({ ...form, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  placeholder="1234"
+                  inputMode="numeric"
+                  className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold tracking-[0.3em]"
+                />
               </div>
-              <button onClick={addChild} className="w-full h-12 rounded-2xl text-white font-bold grad-emerald shadow-glow-emerald active:scale-95 transition-all flex items-center justify-center gap-2">
-                <Check className="w-5 h-5" /> Create Member Account
+
+              {addError && <p className="text-xs text-red-600 font-semibold">{addError}</p>}
+
+              <button
+                onClick={handleAddChild}
+                disabled={submitting}
+                className="w-full h-12 rounded-2xl text-white font-bold grad-emerald shadow-glow-emerald active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <Check className="w-5 h-5" /> {submitting ? "Creating..." : "Create Member Account"}
               </button>
-              <p className="text-center text-[11px] text-muted-foreground">A virtual Meeza card will be auto-issued and linked to this account.</p>
+              <p className="text-center text-[11px] text-muted-foreground">
+                Spending limits, cards, and balances will be set up once wallets are wired in — for now this creates their login.
+              </p>
             </div>
           </div>
         </div>
