@@ -33,20 +33,21 @@ export default function Coach() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const send = async (text) => {
-    const msg = (text ?? input).trim();
-    if (!msg || loading) return;
+    const msg = text || input;
+    if (!msg.trim() || loading) return;
+    setMessages((m) => [...m, { role: "user", text: msg }]);
     setInput("");
-    const next = [...messages, { role: "user", text: msg }];
-    setMessages(next);
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("aiCoach", { message: msg });
-      setMessages([...next, { role: "assistant", text: res.data?.reply || fallback(msg) }]);
-    } catch {
-      setMessages([...next, { role: "assistant", text: fallback(msg) }]);
-    } finally {
-      setLoading(false);
+      // نبعت الـ request للـ Endpoint بتاعنا ونحدد mode: "child"
+      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "child" });
+      
+      setMessages((m) => [...m, { role: "ai", text: res?.reply || "Hmm, let me think about that!", icon: "🤖" }]);
+    } catch (error) {
+      console.error("AI Error:", error);
+      setMessages((m) => [...m, { role: "ai", text: "Oops, my brain is offline for a second. Try again!", icon: "🤖" }]);
     }
+    setLoading(false);
   };
 
   return (

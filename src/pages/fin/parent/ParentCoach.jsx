@@ -31,9 +31,13 @@ export default function ParentCoach() {
     setInput("");
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("aiCoach", { message: msg, mode: "parent" });
-      setMessages((m) => [...m, { role: "ai", text: res.data?.reply || "Let me check the family data and get back to you.", icon: "🤖" }]);
-    } catch {
+      // التعديل هنا: استخدام دالة post اللي عملناها، وتوجيهها للـ Route بتاعنا
+      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "parent" });
+      
+      // التعديل هنا: الـ Backend بتاعنا بيرجع { reply: "..." } مباشرة
+      setMessages((m) => [...m, { role: "ai", text: res?.reply || "Let me check the family data and get back to you.", icon: "🤖" }]);
+    } catch (error) {
+      console.error("AI Error:", error);
       setMessages((m) => [...m, { role: "ai", text: "I couldn't reach the AI service right now. Please try again in a moment.", icon: "🤖" }]);
     }
     setLoading(false);

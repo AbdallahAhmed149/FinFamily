@@ -1,14 +1,21 @@
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
+const API_BASE_URL = "http://localhost:8000/api";
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
+export const base44 = {
+  async get(endpoint) {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return response.json();
+  },
 
-//Create a client with authentication required
-export const base44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
-});
+  async post(endpoint, data) {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return response.json();
+  }
+};
