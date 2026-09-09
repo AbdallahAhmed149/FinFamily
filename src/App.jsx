@@ -4,11 +4,14 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 import Splash from './pages/fin/Splash';
 import Onboarding from './pages/fin/Onboarding';
 import RoleSelect from './pages/fin/RoleSelect';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ChildLogin from './pages/ChildLogin';
 import ChildLayout from './components/fin/ChildLayout';
 import ParentLayout from './components/fin/ParentLayout';
 import ChildHome from './pages/fin/child/ChildHome';
@@ -35,10 +38,10 @@ import Missions from './pages/fin/child/Missions';
 import ChildMissions from './pages/fin/parent/ChildMissions';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  // Spinner واحد بس وقت التحقق الأولي من التوكن (لو موجود) — بعدها كل صفحة بتاخد قرارها لوحدها
+  if (isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
@@ -46,24 +49,18 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
-  }
-
-  // Render the main app
   return (
     <Routes>
+      {/* Public: onboarding & auth */}
       <Route path="/" element={<Splash />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/role-select" element={<RoleSelect />} />
-      <Route element={<ChildLayout />}>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/child-login" element={<ChildLogin />} />
+
+      {/* Protected: child */}
+      <Route element={<ProtectedRoute role="child"><ChildLayout /></ProtectedRoute>}>
         <Route path="/child" element={<ChildHome />} />
         <Route path="/child/wallet" element={<WalletPage />} />
         <Route path="/child/card" element={<MeezaCard />} />
@@ -76,7 +73,9 @@ const AuthenticatedApp = () => {
         <Route path="/child/missions" element={<Missions />} />
         <Route path="/child/profile" element={<ChildProfile />} />
       </Route>
-      <Route element={<ParentLayout />}>
+
+      {/* Protected: parent */}
+      <Route element={<ProtectedRoute role="parent"><ParentLayout /></ProtectedRoute>}>
         <Route path="/parent" element={<ParentDashboard />} />
         <Route path="/parent/allowance" element={<Allowance />} />
         <Route path="/parent/insights" element={<Insights />} />
@@ -89,6 +88,7 @@ const AuthenticatedApp = () => {
         <Route path="/parent/coach" element={<ParentCoach />} />
         <Route path="/parent/child-missions" element={<ChildMissions />} />
       </Route>
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

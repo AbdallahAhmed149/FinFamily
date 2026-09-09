@@ -15,7 +15,7 @@ export default function RoleSelect() {
 
       <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
         <button
-          onClick={() => navigate("/parent")}
+          onClick={() => navigate("/login")}
           className="group grad-navy rounded-3xl p-6 text-left text-white shadow-premium active:scale-[0.97] transition-all relative overflow-hidden"
         >
           <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
@@ -23,12 +23,12 @@ export default function RoleSelect() {
           <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center mb-4">
             <Briefcase className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold font-heading">Parent Mode</h3>
-          <p className="text-sm text-white/70 mt-1 max-w-[70%]">Professional banking dashboard with full control & analytics.</p>
+          <h3 className="text-xl font-bold font-heading">I'm a Parent</h3>
+          <p className="text-sm text-white/70 mt-1 max-w-[70%]">Log in for the full banking dashboard & controls.</p>
         </button>
 
         <button
-          onClick={() => navigate("/child")}
+          onClick={() => navigate("/child-login")}
           className="group rounded-3xl p-6 text-left text-white shadow-premium active:scale-[0.97] transition-all relative overflow-hidden"
           style={{ background: "linear-gradient(135deg,#00B894,#0F2D52)" }}
         >
@@ -37,14 +37,10 @@ export default function RoleSelect() {
           <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center mb-4">
             <Gamepad2 className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold font-heading">Child Mode · Lotfy</h3>
-          <p className="text-sm text-white/70 mt-1 max-w-[75%]">Gamified financial education with Lotfy as your guide.</p>
+          <h3 className="text-xl font-bold font-heading">I'm a Kid</h3>
+          <p className="text-sm text-white/70 mt-1 max-w-[75%]">Enter your Family Code and PIN to jump in with Lotfy.</p>
         </button>
       </div>
-
-      <button onClick={() => navigate("/child")} className="mt-8 text-sm font-semibold text-muted-foreground">
-        Continue as Lotfy →
-      </button>
     </div>
   );
 }

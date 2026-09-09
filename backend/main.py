@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db.database import engine, Base
-from api.routes import router as user_router, functions_router
+from api.routes import functions_router
+from api.auth_routes import router as auth_router
 
 # بناء الجداول في الداتا بيز بناءً على الـ Models
 Base.metadata.create_all(bind=engine)
@@ -18,5 +19,5 @@ app.add_middleware(
 )
 
 # تسجيل الـ Routes
-app.include_router(user_router)
+app.include_router(auth_router)
 app.include_router(functions_router)
