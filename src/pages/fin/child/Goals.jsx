@@ -1,19 +1,70 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Plus, Sparkles, Target } from "lucide-react";
-import { GlassCard, ProgressRing, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { savingsGoals, fmtEGP } from "@/lib/finData";
+import { ChevronLeft, Plus } from "lucide-react";
+import { GlassCard, ProgressRing, FadeIn } from "@/components/fin/ui";
+import { fmtEGP } from "@/lib/finData";
+import { getMyWallet, createSavingsGoal, depositToGoal } from "@/lib/finApi";
+
+const COLORS = ["#00B894", "#3b82f6", "#FFC857", "#8b5cf6", "#f97316"];
 
 export default function Goals() {
   const navigate = useNavigate();
-  const [goals, setGoals] = useState(savingsGoals);
+  const [wallet, setWallet] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [burst, setBurst] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ name: "", target: 100, icon: "🎯" });
 
-  const addFunds = (id, amt) => {
-    setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, current: Math.min(g.target, g.current + amt) } : g)));
-    setBurst(id);
-    setTimeout(() => setBurst(null), 1500);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setWallet(await getMyWallet());
+    } catch (err) {
+      setError(err.message || "تعذر تحميل الأهداف");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const addFunds = async (goalId, amt) => {
+    setError(null);
+    if ((wallet?.balance || 0) < amt) {
+      setError("معندكش رصيد كافي في الـ Wallet عشان تحوّل المبلغ ده");
+      return;
+    }
+    setBusyId(goalId);
+    try {
+      await depositToGoal(goalId, amt);
+      setBurst(goalId);
+      setTimeout(() => setBurst(null), 1500);
+      await load();
+    } catch (err) {
+      setError(err.message || "حصل خطأ");
+    } finally {
+      setBusyId(null);
+    }
   };
+
+  const addGoal = async () => {
+    if (!form.name.trim() || !form.target || form.target <= 0) return;
+    try {
+      await createSavingsGoal({ name: form.name.trim(), target: Number(form.target), icon: form.icon });
+      setForm({ name: "", target: 100, icon: "🎯" });
+      setShowAdd(false);
+      await load();
+    } catch (err) {
+      setError(err.message || "حصل خطأ وإحنا بنضيف الهدف");
+    }
+  };
+
+  const goals = wallet?.savings_goals || [];
 
   return (
     <div className="px-4 pt-12">
@@ -22,46 +73,97 @@ export default function Goals() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <h1 className="text-xl font-extrabold font-heading">Savings Goals</h1>
-        <button className="ml-auto w-10 h-10 rounded-full grad-navy flex items-center justify-center">
+        <button onClick={() => setShowAdd(true)} className="ml-auto w-10 h-10 rounded-full grad-navy flex items-center justify-center">
           <Plus className="w-5 h-5 text-white" />
         </button>
       </FadeIn>
 
-      <div className="space-y-4">
-        {goals.map((g, idx) => (
-          <FadeIn key={g.id} delay={idx * 50} className="relative">
-            {burst === g.id && (
-              <div className="absolute inset-0 z-20 pointer-events-none">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="absolute text-xl animate-float" style={{ left: `${30 + i*10}%`, top: "40%", ["--tx"]: `${(i%2?1:-1)*40}px`, animationDelay: `${i*0.05}s` }}>🪙</span>
+      {!loading && wallet && (
+        <FadeIn delay={20} className="mb-4">
+          <div className="glass rounded-2xl p-3 text-center text-sm font-semibold text-muted-foreground">
+            Wallet balance: <span className="text-foreground font-bold">{fmtEGP(wallet.balance)}</span> — use it to fund your goals below
+          </div>
+        </FadeIn>
+      )}
+
+      {error && (
+        <FadeIn className="mb-3">
+          <div className="rounded-2xl bg-red-50 text-red-600 text-sm px-4 py-3">{error}</div>
+        </FadeIn>
+      )}
+
+      {loading ? (
+        <div className="text-center text-sm text-muted-foreground py-8">...بنحمّل</div>
+      ) : goals.length === 0 ? (
+        <div className="text-center text-sm text-muted-foreground py-10">مفيش أهداف لسه — دوس على + وابدأ أول هدف ادخار ليك 🎯</div>
+      ) : (
+        <div className="space-y-4">
+          {goals.map((g, idx) => {
+            const color = COLORS[idx % COLORS.length];
+            const complete = g.current >= g.target;
+            return (
+              <FadeIn key={g.id} delay={idx * 50} className="relative">
+                {burst === g.id && (
+                  <div className="absolute inset-0 z-20 pointer-events-none">
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} className="absolute text-xl animate-float" style={{ left: `${30 + i * 10}%`, top: "40%", ["--tx"]: `${(i % 2 ? 1 : -1) * 40}px`, animationDelay: `${i * 0.05}s` }}>🪙</span>
+                    ))}
+                  </div>
+                )}
+                <GlassCard className="relative overflow-hidden">
+                  <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full" style={{ background: `${color}11` }} />
+                  <div className="flex items-center gap-4 relative">
+                    <ProgressRing value={Math.min(100, (g.current / g.target) * 100)} color={color} size={72}>
+                      <span className="text-2xl">{g.icon}</span>
+                    </ProgressRing>
+                    <div className="flex-1">
+                      <div className="font-bold">{g.name}</div>
+                      <div className="text-sm text-muted-foreground">{fmtEGP(g.current)} / {fmtEGP(g.target)}</div>
+                      {complete && <div className="text-xs font-bold mt-1" style={{ color }}>🎉 Goal reached!</div>}
+                    </div>
+                  </div>
+                  {!complete && (
+                    <div className="flex gap-2 mt-3">
+                      <button disabled={busyId === g.id} onClick={() => addFunds(g.id, 10)} className="flex-1 h-9 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: color }}>+ Save 10 EGP</button>
+                      <button disabled={busyId === g.id} onClick={() => addFunds(g.id, 25)} className="flex-1 h-9 rounded-xl text-sm font-bold disabled:opacity-50" style={{ background: `${color}18`, color }}>+ 25 EGP</button>
+                    </div>
+                  )}
+                </GlassCard>
+              </FadeIn>
+            );
+          })}
+        </div>
+      )}
+      <div className="h-4" />
+
+      {showAdd && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center p-4" onClick={() => setShowAdd(false)}>
+          <div className="glass rounded-3xl p-5 w-full max-w-md animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-extrabold font-heading">New Savings Goal</h3>
+              <button onClick={() => setShowAdd(false)} className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">✕</button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">Goal Name</label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. New Bicycle" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">Target (EGP)</label>
+                <input type="number" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
+              </div>
+              <div className="flex gap-2 text-2xl">
+                {["🎯", "🚲", "🎮", "📱", "⚽", "🎨"].map((ic) => (
+                  <button key={ic} onClick={() => setForm({ ...form, icon: ic })} className={`w-11 h-11 rounded-xl flex items-center justify-center ${form.icon === ic ? "bg-emerald-100 ring-2 ring-emerald-400" : "bg-black/5"}`}>{ic}</button>
                 ))}
               </div>
-            )}
-            <GlassCard className="relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full" style={{ background: `${g.color}11` }} />
-              <div className="flex items-center gap-4 relative">
-                <ProgressRing value={(g.current / g.target) * 100} color={g.color} size={72}>
-                  <span className="text-2xl">{g.icon}</span>
-                </ProgressRing>
-                <div className="flex-1">
-                  <div className="font-bold">{g.name}</div>
-                  <div className="text-sm text-muted-foreground">{fmtEGP(g.current)} / {fmtEGP(g.target)}</div>
-                  <div className="text-xs font-semibold mt-1" style={{ color: g.color }}>ETA: {g.eta}</div>
-                </div>
-              </div>
-              <div className="mt-3 flex items-start gap-2 rounded-xl p-3" style={{ background: `${g.color}10` }}>
-                <Sparkles className="w-4 h-4 shrink-0 mt-0.5" style={{ color: g.color }} />
-                <span className="text-xs text-muted-foreground">{g.aiNote}</span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => addFunds(g.id, 10)} className="flex-1 h-9 rounded-xl text-sm font-bold text-white" style={{ background: g.color }}>+ Save 10 EGP</button>
-                <button onClick={() => addFunds(g.id, 25)} className="flex-1 h-9 rounded-xl text-sm font-bold" style={{ background: `${g.color}18`, color: g.color }}>+ 25 EGP</button>
-              </div>
-            </GlassCard>
-          </FadeIn>
-        ))}
-      </div>
-      <div className="h-4" />
+              <button onClick={addGoal} className="w-full h-12 rounded-2xl text-white font-bold grad-navy active:scale-95 transition-all flex items-center justify-center gap-2">
+                <Plus className="w-5 h-5" /> Create Goal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

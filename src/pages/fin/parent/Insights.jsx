@@ -1,26 +1,76 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Download, FileText } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { aiInsights, parentSummary, child } from "@/lib/finData";
 import { fmtEGP } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
+import { getChildWallet, getChildTransactions, getFamilyInsights } from "@/lib/finApi";
 
-const iconEmoji = { utensils: "🍽️", "piggy-bank": "🐷", "trending-up": "📈", "shield-check": "🛡️", wallet: "👛", target: "🎯", sparkles: "✨" };
+const iconEmoji = { "shield-alert": "🚨", "trending-down": "📉", "trending-up": "📈", "piggy-bank": "🐷", sparkles: "✨", wallet: "👛" };
+const sevColor = { alert: "#ef4444", warn: "#f97316", info: "#3b82f6", good: "#00B894" };
 
 export default function Insights() {
   const navigate = useNavigate();
+  const { getFamilyChildren } = useAuth();
+
+  const [avgScore, setAvgScore] = useState(null);
+  const [totals, setTotals] = useState({ spending: 0, savings: 0, goalsCompleted: 0 });
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [{ children }, realInsights] = await Promise.all([getFamilyChildren(), getFamilyInsights()]);
+      setInsights(realInsights);
+
+      const perChild = await Promise.all(
+        children.map(async (c) => ({
+          wallet: await getChildWallet(c.id),
+          transactions: await getChildTransactions(c.id),
+        }))
+      );
+
+      let spending = 0, savings = 0, goalsCompleted = 0;
+      for (const { wallet, transactions } of perChild) {
+        savings += wallet.savings_balance || 0;
+        for (const g of wallet.savings_goals || []) if (g.current >= g.target) goalsCompleted += 1;
+        for (const t of transactions) if (t.type === "redemption" && t.direction === "debit") spending += t.amount;
+      }
+      const score = perChild.length ? Math.round(perChild.reduce((s, { wallet }) => s + (wallet.financial_score ?? 50), 0) / perChild.length) : null;
+
+      setTotals({ spending, savings, goalsCompleted });
+      setAvgScore(score);
+    } catch (err) {
+      setError(err.message || "تعذر تحميل التحليل");
+    } finally {
+      setLoading(false);
+    }
+  }, [getFamilyChildren]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // لو فيه هدف ادخار قريب يخلص، نعرضه كـ "تحدي مقترح" — بيانات حقيقية مش مقترح مصمم بخوارزمية
+  const closeToGoal = insights.find((i) => i.icon === "sparkles");
+
   return (
     <div className="px-4 pt-12">
       <FadeIn className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">AI Insights</h1>
-        <div className="ml-auto flex gap-2">
-          <button className="w-10 h-10 rounded-full glass flex items-center justify-center"><Download className="w-4 h-4" /></button>
-          <button className="w-10 h-10 rounded-full glass flex items-center justify-center"><FileText className="w-4 h-4" /></button>
-        </div>
+        <h1 className="text-xl font-extrabold font-heading">Family Insights</h1>
       </FadeIn>
+
+      {error && (
+        <FadeIn className="mb-3">
+          <div className="rounded-2xl bg-red-50 text-red-600 text-sm px-4 py-3">{error}</div>
+        </FadeIn>
+      )}
 
       {/* report card */}
       <FadeIn delay={60}>
@@ -28,57 +78,52 @@ export default function Insights() {
           <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">🤖</span>
-            <span className="text-sm font-semibold text-white/80">Weekly AI Report · Lotfy</span>
+            <span className="text-sm font-semibold text-white/80">Family Financial Report</span>
           </div>
-          <div className="text-3xl font-extrabold font-heading">Financial Score {child.financialScore}/100</div>
-          <div className="flex gap-2 mt-3">
-            <Pill className="bg-emerald-400/20 text-emerald-200">Saving +{parentSummary.savingImprovement}%</Pill>
-            <Pill className="bg-amber-400/20 text-amber-200">Impulse -{parentSummary.impulseDrop}%</Pill>
+          <div className="text-3xl font-extrabold font-heading">
+            {loading || avgScore === null ? "···" : `Financial Score ${avgScore}/100`}
+          </div>
+          <div className="flex gap-3 mt-3 text-sm">
+            <span className="text-white/80">Spending: <b className="text-white">{fmtEGP(totals.spending)}</b></span>
+            <span className="text-white/80">Savings: <b className="text-white">{fmtEGP(totals.savings)}</b></span>
           </div>
         </div>
       </FadeIn>
 
-      {/* insight cards */}
-      <FadeIn delay={120}>
+      {/* insight cards — بيانات حقيقية 100% من /family/insights */}
+      <FadeIn delay={120} className="mt-4">
         <SectionTitle>Key Findings</SectionTitle>
-        <div className="space-y-3">
-          {aiInsights.map((ins, i) => (
-            <FadeIn key={ins.id} delay={i * 50}>
-              <GlassCard className="flex gap-3">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: `${ins.color}18` }}>
-                  {iconEmoji[ins.icon] || "💡"}
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-sm">{ins.text}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{ins.detail}</div>
-                </div>
-              </GlassCard>
-            </FadeIn>
-          ))}
-        </div>
-      </FadeIn>
-
-      {/* recommendation */}
-      <FadeIn delay={240} className="mt-4">
-        <GlassCard className="text-center" >
-          <div className="text-3xl mb-2">🎯</div>
-          <div className="font-bold">Suggested Challenge</div>
-          <div className="text-sm text-muted-foreground mt-1">Save 30 EGP this week to complete the bicycle goal 2 weeks early.</div>
-          <button className="mt-3 px-5 h-10 rounded-xl text-white font-bold text-sm grad-emerald">Assign to Lotfy</button>
-        </GlassCard>
-      </FadeIn>
-
-      {/* allowance recommendation */}
-      <FadeIn delay={300} className="mt-4">
-        <GlassCard className="flex items-center justify-between">
-          <div>
-            <div className="text-xs text-muted-foreground">Recommended Allowance</div>
-            <div className="text-2xl font-extrabold font-heading">{fmtEGP(parentSummary.recommendedAllowance)}</div>
-            <div className="text-xs text-muted-foreground">Based on spending + goals</div>
+        {loading ? (
+          <div className="text-center text-sm text-muted-foreground py-8">...بنحمّل</div>
+        ) : (
+          <div className="space-y-3">
+            {insights.map((ins, i) => (
+              <FadeIn key={ins.id} delay={i * 50}>
+                <GlassCard className="flex gap-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: `${sevColor[ins.severity]}18` }}>
+                    {iconEmoji[ins.icon] || "💡"}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm">{ins.text}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{ins.detail}</div>
+                  </div>
+                </GlassCard>
+              </FadeIn>
+            ))}
           </div>
-          <Pill color="#00B894">AI suggested</Pill>
-        </GlassCard>
+        )}
       </FadeIn>
+
+      {/* اقتراح حقيقي بس لو فيه هدف فعلاً قريب يخلص — مفيش خوارزمية توصية مصممة لسه */}
+      {closeToGoal && (
+        <FadeIn delay={240} className="mt-4">
+          <GlassCard className="text-center">
+            <div className="text-3xl mb-2">🎯</div>
+            <div className="font-bold">{closeToGoal.text}</div>
+            <div className="text-sm text-muted-foreground mt-1">{closeToGoal.detail}</div>
+          </GlassCard>
+        </FadeIn>
+      )}
       <div className="h-4" />
     </div>
   );
