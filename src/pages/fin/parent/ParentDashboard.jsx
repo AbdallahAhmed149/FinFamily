@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronRight, TrendingDown, TrendingUp, Target, Wallet, Bell, Download, Search, Repeat2,
@@ -9,6 +9,7 @@ import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { child, parentSummary, spendingCategories, weeklySpending, scoreHistory, notifications, PARENT_IMAGE, parent, LOGO_IMAGE, familyMembers, parentAiInsights } from "@/lib/finData";
 import { fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
+import { getChildWallet, getChildTransactions } from "@/lib/finApi";
 import { Image } from "@/components/ui/image";
 
 const iconEmoji = { utensils: "🍽️", "piggy-bank": "🐷", "trending-down": "📉", "shield-alert": "🚨", wallet: "👛", sparkles: "✨", "trending-up": "📈" };
@@ -16,7 +17,63 @@ const sevColor = { alert: "#ef4444", warn: "#FFC857", good: "#00B894", info: "#3
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth(); // اليوزر الحقيقي بتاع الأب الداخل دلوقتي
+  const { user, getFamilyChildren } = useAuth(); // اليوزر الحقيقي بتاع الأب الداخل دلوقتي
+
+  const [childrenCount, setChildrenCount] = useState(familyMembers.length); // fallback للموك لحد ما تجيب الحقيقي
+  const [familySummary, setFamilySummary] = useState({ totalSpending: 0, totalSavings: 0, goalsCompleted: 0 });
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
+  // بنجمع بيانات كل الأطفال في العيلة: رصيد الادخار + المصاريف الحقيقية (كوينز اتصرفت على حاجات)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFamilySummary() {
+      try {
+        const { children } = await getFamilyChildren();
+        if (cancelled) return;
+        setChildrenCount(children.length);
+
+        const perChild = await Promise.all(
+          children.map(async (c) => {
+            const [wallet, transactions] = await Promise.all([
+              getChildWallet(c.id),
+              getChildTransactions(c.id),
+            ]);
+            return { wallet, transactions };
+          })
+        );
+        if (cancelled) return;
+
+        let totalSavings = 0;
+        let totalSpending = 0;
+        let goalsCompleted = 0;
+
+        for (const { wallet, transactions } of perChild) {
+          totalSavings += wallet.savings_balance || 0;
+          for (const goal of wallet.savings_goals || []) {
+            if (goal.current >= goal.target) goalsCompleted += 1;
+          }
+          // "مصاريف" هنا يعني كوينز اتصرفت فعليًا على حاجة (redemption)، مش تحويل لحساب الادخار
+          for (const txn of transactions) {
+            if (txn.type === "redemption" && txn.direction === "debit") {
+              totalSpending += txn.amount;
+            }
+          }
+        }
+
+        setFamilySummary({ totalSpending, totalSavings, goalsCompleted });
+      } catch (err) {
+        console.error("Failed to load family summary:", err);
+      } finally {
+        if (!cancelled) setSummaryLoading(false);
+      }
+    }
+
+    loadFamilySummary();
+    return () => {
+      cancelled = true;
+    };
+  }, [getFamilyChildren]);
 
   return (
     <div className="px-4 pt-12">
@@ -55,10 +112,32 @@ export default function ParentDashboard() {
       </FadeIn>
 
       {/* summary cards */}
+      {/* ملحوظة: Fin. Score لسه موك بالكامل — مفيش خوارزمية أو حقل ليها في الباك اند لحد دلوقتي */}
       <FadeIn delay={60} className="grid grid-cols-2 gap-3">
-        <StatCard label="Total Spending" value={fmtEGP(parentSummary.totalSpending)} trend="-8%" up={false} icon={TrendingDown} color="#ef4444" />
-        <StatCard label="Total Savings" value={fmtEGP(parentSummary.totalSavings)} trend="+19%" up={true} icon={TrendingUp} color="#00B894" />
-        <StatCard label="Goals Completed" value={parentSummary.goalsCompleted} trend="this month" up={true} icon={Target} color="#FFC857" />
+        <StatCard
+          label="Total Spending"
+          value={summaryLoading ? "…" : fmtEGP(familySummary.totalSpending)}
+          trend="this month"
+          up={false}
+          icon={TrendingDown}
+          color="#ef4444"
+        />
+        <StatCard
+          label="Total Savings"
+          value={summaryLoading ? "…" : fmtEGP(familySummary.totalSavings)}
+          trend="across kids"
+          up={true}
+          icon={TrendingUp}
+          color="#00B894"
+        />
+        <StatCard
+          label="Goals Completed"
+          value={summaryLoading ? "…" : familySummary.goalsCompleted}
+          trend="this month"
+          up={true}
+          icon={Target}
+          color="#FFC857"
+        />
         <StatCard label="Fin. Score" value={`${child.financialScore}/100`} trend={`+${child.scoreTrend}`} up={true} icon={Wallet} color="#0F2D52" />
       </FadeIn>
 
@@ -140,7 +219,7 @@ export default function ParentDashboard() {
       <FadeIn delay={300} className="mt-4">
         <SectionTitle>Family Management</SectionTitle>
         <div className="grid grid-cols-3 gap-3">
-          <MgmtTile icon={Users} color="#0F2D52" label="Members" sub={`${familyMembers.length} kids`} onClick={() => navigate("/parent/members")} />
+          <MgmtTile icon={Users} color="#0F2D52" label="Members" sub={`${childrenCount} kids`} onClick={() => navigate("/parent/members")} />
           <MgmtTile icon={ListChecks} color="#8b5cf6" label="Chores" sub="Assign tasks" onClick={() => navigate("/parent/chores")} />
           <MgmtTile icon={SlidersHorizontal} color="#3b82f6" label="Limits" sub="Spend caps" onClick={() => navigate("/parent/limits")} />
           <MgmtTile icon={CreditCard} color="#00B894" label="Cards" sub="Freeze / replace" onClick={() => navigate("/parent/cards")} />

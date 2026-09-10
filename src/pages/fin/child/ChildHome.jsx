@@ -9,6 +9,7 @@ import GameLauncher from "@/components/fin/GameLauncher";
 import MissionComplete from "@/components/fin/MissionComplete";
 import { child, todayMissions, playLearnCards, levels, fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
+import { getMyWallet } from "@/lib/finApi";
 
 const diffColor = { Easy: "#00B894", Medium: "#FFC857", Hard: "#ef4444" };
 
@@ -18,17 +19,35 @@ export default function ChildHome() {
   const [greet, setGreet] = useState("Good Morning");
   const [activeGame, setActiveGame] = useState(null);
   const [missionDone, setMissionDone] = useState(null);
+  const [wallet, setWallet] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(true);
 
   useEffect(() => {
     const h = new Date().getHours();
     setGreet(h < 12 ? "Good Morning" : h < 18 ? "Good Afternoon" : "Good Evening");
   }, []);
 
-  const level = levels.find((l) => l.level === child.level);
-  const nextLevel = levels.find((l) => l.level === child.level + 1);
-  const xpInLevel = child.xp - level.minXp;
-  const xpSpan = (nextLevel?.minXp || child.xpToNext) - level.minXp;
+  // الكوينز/الرصيد المتاح جاي من الـ Wallet الحقيقية (wallet.balance)
+  useEffect(() => {
+    getMyWallet()
+      .then(setWallet)
+      .catch((err) => console.error("Failed to load wallet:", err))
+      .finally(() => setWalletLoading(false));
+  }, []);
 
+  // xp/level/streak جايين من /auth/me الحقيقي (مش من finData الوهمي)
+  const userXp = user?.xp || 0;
+  const userLevel = user?.level || 1;
+  const userStreak = user?.streak || 0;
+  const coins = wallet?.balance ?? 0;
+
+  const level = levels.find((l) => l.level === userLevel) || levels[0];
+  const nextLevel = levels.find((l) => l.level === userLevel + 1);
+  const xpInLevel = userXp - level.minXp;
+  const xpSpan = nextLevel ? nextLevel.minXp - level.minXp : 1; // مفيش تقسيم على صفر لو وصل لأعلى مستوى
+  const progressPct = nextLevel ? Math.min(100, Math.max(0, (xpInLevel / xpSpan) * 100)) : 100;
+
+  // "Today's Mission" و"Play & Learn" لسه محتوى تعليمي ثابت من finData (اتفقنا نأجل ربطها بالـ missions الحقيقية)
   const mission = todayMissions[0];
   const launchGame = (gameId) => {
     const card = playLearnCards.find((c) => c.game === gameId) || { id: gameId, title: mission.title, icon: mission.icon, color: mission.color, xp: mission.xp };
@@ -61,18 +80,18 @@ export default function ChildHome() {
           <div className="relative">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-white/70 font-medium">Financial Hero Status</span>
-              <Pill className="bg-white/15 text-white"><Flame className="w-3 h-3" /> {child.streak}-day streak</Pill>
+              <Pill className="bg-white/15 text-white"><Flame className="w-3 h-3" /> {userStreak}-day streak</Pill>
             </div>
-            <div className="text-lg font-extrabold font-heading">Level {child.level} · {level.name}</div>
+            <div className="text-lg font-extrabold font-heading">Level {userLevel} · {level.name}</div>
             <div className="mt-3">
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-white/70">{child.xp} XP</span>
+                <span className="text-white/70">{userXp} XP</span>
                 <span className="text-white/70">{nextLevel ? `${nextLevel.minXp} XP` : "MAX"}</span>
               </div>
               <div className="h-2.5 rounded-full bg-white/15 overflow-hidden">
-                <div className="h-full rounded-full grad-gold transition-all duration-700" style={{ width: `${Math.min(100, (xpInLevel / xpSpan) * 100)}%` }} />
+                <div className="h-full rounded-full grad-gold transition-all duration-700" style={{ width: `${progressPct}%` }} />
               </div>
-              <div className="text-[11px] text-white/60 mt-1">{nextLevel ? `${nextLevel.minXp - child.xp} XP to ${nextLevel.name}` : "You reached the top level! 👑"}</div>
+              <div className="text-[11px] text-white/60 mt-1">{nextLevel ? `${nextLevel.minXp - userXp} XP to ${nextLevel.name}` : "You reached the top level! 👑"}</div>
             </div>
           </div>
         </div>
@@ -82,17 +101,17 @@ export default function ChildHome() {
       <FadeIn delay={100} className="grid grid-cols-3 gap-3 mt-4">
         <div className="glass rounded-2xl p-3 text-center shadow-premium">
           <Zap className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-          <div className="text-lg font-extrabold font-heading">{child.xp}</div>
+          <div className="text-lg font-extrabold font-heading">{userXp}</div>
           <div className="text-[10px] text-muted-foreground">Total XP</div>
         </div>
         <div className="glass rounded-2xl p-3 text-center shadow-premium">
           <Flame className="w-5 h-5 text-red-500 mx-auto mb-1" />
-          <div className="text-lg font-extrabold font-heading">{child.streak}</div>
+          <div className="text-lg font-extrabold font-heading">{userStreak}</div>
           <div className="text-[10px] text-muted-foreground">Day Streak</div>
         </div>
         <div className="glass rounded-2xl p-3 text-center shadow-premium">
           <Trophy className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-          <div className="text-lg font-extrabold font-heading">{child.coins}</div>
+          <div className="text-lg font-extrabold font-heading">{walletLoading ? "…" : Math.round(coins)}</div>
           <div className="text-[10px] text-muted-foreground">Coins 🪙</div>
         </div>
       </FadeIn>
@@ -185,7 +204,7 @@ export default function ChildHome() {
       {activeGame && <GameLauncher game={activeGame} onClose={onGameClose} />}
       {missionDone && (
         <div className="fixed inset-0 z-[70] bg-background overflow-y-auto">
-          <MissionComplete xp={missionDone.xp} badge={missionDone.badge} streak={child.streak + 1} nextMission={missionDone.nextMission} onClose={() => setMissionDone(null)} />
+          <MissionComplete xp={missionDone.xp} badge={missionDone.badge} streak={userStreak + 1} nextMission={missionDone.nextMission} onClose={() => setMissionDone(null)} />
         </div>
       )}
     </div>
