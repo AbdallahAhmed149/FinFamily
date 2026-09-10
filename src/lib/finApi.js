@@ -7,6 +7,8 @@ export const getChildWallet = (childId) => base44.get(`/wallet/child/${childId}`
 export const updateChildLimits = (childId, payload) => base44.patch(`/wallet/child/${childId}/limits`, payload);
 export const updateCardStatus = (childId, cardStatus) =>
   base44.patch(`/wallet/child/${childId}/card-status`, { card_status: cardStatus });
+export const sendAllowance = (childId, amount, label) =>
+  base44.post(`/wallet/child/${childId}/allowance`, { amount, label });
 
 // ---------------- Savings goals ----------------
 

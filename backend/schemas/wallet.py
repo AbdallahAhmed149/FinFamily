@@ -58,6 +58,13 @@ class WalletCardStatusUpdate(BaseModel):
     card_status: CardStatus
 
 
+# ---------------- Allowance (manual "Send Now" — no scheduling/cron yet) ----------------
+
+class AllowanceSend(BaseModel):
+    amount: float = Field(gt=0)
+    label: str = "Allowance"
+
+
 # ---------------- Mission ----------------
 
 class MissionCreate(BaseModel):

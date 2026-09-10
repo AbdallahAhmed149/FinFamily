@@ -24,9 +24,9 @@ export default function FamilyMembers() {
   const [addError, setAddError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // xp/level/streak لسه معروضة تقريبية — محتاجة endpoint يدّي الأب تفاصيل جامفكيشن
-  // طفل تاني (اللي عندنا دلوقتي هو /auth/me بيرجع بيانات اليوزر الحالي بس).
-  // الرصيد/الادخار/حالة الكارت بقوا حقيقيين من الـ Wallet.
+  // xp/level/streak بقوا حقيقيين من /auth/family/children (ChildSummary بترجعهم دلوقتي).
+  // الرصيد/الادخار/حالة الكارت حقيقيين من الـ Wallet.
+  // financialScore لسه موك — مفيش خوارزمية أو حقل ليها في الباك اند من الأساس، هتتصمم لوحدها لاحقًا.
   const decorate = (child, index, wallet) => ({
     id: child.id,
     name: child.full_name,
@@ -35,8 +35,8 @@ export default function FamilyMembers() {
     savings: wallet?.savings_balance ?? 0,
     financialScore: 50,
     cardStatus: wallet?.card_status ?? "active",
-    streak: 0,
-    level: 1,
+    streak: child.streak ?? 0,
+    level: child.level ?? 1,
   });
 
   const loadFamily = useCallback(async () => {

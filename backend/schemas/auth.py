@@ -52,6 +52,9 @@ class ChildCreate(BaseModel):
 class ChildSummary(BaseModel):
     id: str
     full_name: str
+    xp: int = 0
+    level: int = 1
+    streak: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 

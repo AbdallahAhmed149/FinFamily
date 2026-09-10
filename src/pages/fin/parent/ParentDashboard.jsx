@@ -6,14 +6,22 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, LineChart, Line, CartesianGrid } from "recharts";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { child, parentSummary, spendingCategories, weeklySpending, scoreHistory, notifications, PARENT_IMAGE, parent, LOGO_IMAGE, familyMembers, parentAiInsights } from "@/lib/finData";
+import { child, parentSummary, scoreHistory, notifications, PARENT_IMAGE, parent, LOGO_IMAGE, familyMembers, parentAiInsights } from "@/lib/finData";
 import { fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
-import { getChildWallet, getChildTransactions } from "@/lib/finApi";
+import { getChildWallet, getChildTransactions, getFamilyMissions } from "@/lib/finApi";
 import { Image } from "@/components/ui/image";
 
 const iconEmoji = { utensils: "🍽️", "piggy-bank": "🐷", "trending-down": "📉", "shield-alert": "🚨", wallet: "👛", sparkles: "✨", "trending-up": "📈" };
 const sevColor = { alert: "#ef4444", warn: "#FFC857", good: "#00B894", info: "#3b82f6" };
+const CATEGORY_COLORS = ["#FFC857", "#00B894", "#0F2D52", "#3b82f6", "#8b5cf6", "#ef4444", "#f97316", "#ec4899", "#64748b"];
+const WEEKDAY_LABELS = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]; // الأسبوع بيبدأ السبت (زي SpendingLimits.jsx)
+
+function startOfWeek() {
+  const now = new Date();
+  const day = (now.getDay() + 1) % 7; // تحويل الأحد=0 لـ السبت=0
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+}
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
@@ -21,6 +29,8 @@ export default function ParentDashboard() {
 
   const [childrenCount, setChildrenCount] = useState(familyMembers.length); // fallback للموك لحد ما تجيب الحقيقي
   const [familySummary, setFamilySummary] = useState({ totalSpending: 0, totalSavings: 0, goalsCompleted: 0 });
+  const [realSpendingCategories, setRealSpendingCategories] = useState([]);
+  const [realWeeklySpending, setRealWeeklySpending] = useState([]);
   const [summaryLoading, setSummaryLoading] = useState(true);
 
   // بنجمع بيانات كل الأطفال في العيلة: رصيد الادخار + المصاريف الحقيقية (كوينز اتصرفت على حاجات)
@@ -29,9 +39,16 @@ export default function ParentDashboard() {
 
     async function loadFamilySummary() {
       try {
-        const { children } = await getFamilyChildren();
+        const [{ children }, familyMissions] = await Promise.all([
+          getFamilyChildren(),
+          getFamilyMissions(), // عشان نجيب category كل mission redemption ونربطها بالـ transaction بتاعتها
+        ]);
         if (cancelled) return;
         setChildrenCount(children.length);
+
+        // Transaction مفيهوش category مباشرة، بس فيه related_mission_id — وMission فيه category حقيقي
+        const missionCategoryById = {};
+        for (const m of familyMissions) missionCategoryById[m.id] = m.category;
 
         const perChild = await Promise.all(
           children.map(async (c) => {
@@ -47,6 +64,9 @@ export default function ParentDashboard() {
         let totalSavings = 0;
         let totalSpending = 0;
         let goalsCompleted = 0;
+        const categoryTotals = {};
+        const weekStart = startOfWeek();
+        const weeklyTotals = [0, 0, 0, 0, 0, 0, 0]; // مقابل WEEKDAY_LABELS
 
         for (const { wallet, transactions } of perChild) {
           totalSavings += wallet.savings_balance || 0;
@@ -57,11 +77,24 @@ export default function ParentDashboard() {
           for (const txn of transactions) {
             if (txn.type === "redemption" && txn.direction === "debit") {
               totalSpending += txn.amount;
+
+              const category = missionCategoryById[txn.related_mission_id] || "Other";
+              categoryTotals[category] = (categoryTotals[category] || 0) + txn.amount;
+
+              const txnDate = new Date(txn.created_date);
+              if (txnDate >= weekStart) {
+                const dayIndex = Math.floor((txnDate - weekStart) / 86400000);
+                if (dayIndex >= 0 && dayIndex < 7) weeklyTotals[dayIndex] += txn.amount;
+              }
             }
           }
         }
 
         setFamilySummary({ totalSpending, totalSavings, goalsCompleted });
+        setRealSpendingCategories(
+          Object.entries(categoryTotals).map(([name, value], i) => ({ name, value, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+        );
+        setRealWeeklySpending(WEEKDAY_LABELS.map((day, i) => ({ day, amount: weeklyTotals[i] })));
       } catch (err) {
         console.error("Failed to load family summary:", err);
       } finally {
@@ -160,25 +193,31 @@ export default function ParentDashboard() {
       <FadeIn delay={180} className="mt-4">
         <GlassCard>
           <SectionTitle>Spending by Category</SectionTitle>
-          <div className="flex items-center gap-3">
-            <ResponsiveContainer width="50%" height={140}>
-              <PieChart>
-                <Pie data={spendingCategories} dataKey="value" innerRadius={35} outerRadius={60} paddingAngle={2}>
-                  {spendingCategories.map((c) => <Cell key={c.name} fill={c.color} />)}
-                </Pie>
-                <Tooltip formatter={(v) => fmtEGP(v)} contentStyle={{ borderRadius: 12, border: "none" }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex-1 space-y-1.5">
-              {spendingCategories.map((c) => (
-                <div key={c.name} className="flex items-center gap-2 text-xs">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: c.color }} />
-                  <span className="text-muted-foreground flex-1">{c.name}</span>
-                  <span className="font-bold">{fmtEGP(c.value)}</span>
-                </div>
-              ))}
+          {!summaryLoading && realSpendingCategories.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-6">
+              لسه مفيش مصاريف حقيقية (redemptions موافق عليها) نقدر نجمّعها حسب الفئة.
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <ResponsiveContainer width="50%" height={140}>
+                <PieChart>
+                  <Pie data={realSpendingCategories} dataKey="value" innerRadius={35} outerRadius={60} paddingAngle={2}>
+                    {realSpendingCategories.map((c) => <Cell key={c.name} fill={c.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(v) => fmtEGP(v)} contentStyle={{ borderRadius: 12, border: "none" }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex-1 space-y-1.5">
+                {realSpendingCategories.map((c) => (
+                  <div key={c.name} className="flex items-center gap-2 text-xs">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: c.color }} />
+                    <span className="text-muted-foreground flex-1">{c.name}</span>
+                    <span className="font-bold">{fmtEGP(c.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </GlassCard>
       </FadeIn>
 
@@ -187,7 +226,7 @@ export default function ParentDashboard() {
         <GlassCard>
           <SectionTitle>Weekly Spending</SectionTitle>
           <ResponsiveContainer width="100%" height={130}>
-            <BarChart data={weeklySpending}>
+            <BarChart data={realWeeklySpending}>
               <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip formatter={(v) => fmtEGP(v)} contentStyle={{ borderRadius: 12, border: "none" }} cursor={{ fill: "#0001" }} />
               <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="#0F2D52" barSize={26} />

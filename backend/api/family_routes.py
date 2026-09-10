@@ -14,7 +14,7 @@ from schemas.wallet import (
     WalletOut, WalletLimitsUpdate, WalletCardStatusUpdate,
     SavingsGoalCreate, SavingsGoalDeposit, SavingsGoalOut,
     MissionCreate, MissionReview, MissionOut,
-    TransactionOut,
+    TransactionOut, AllowanceSend,
 )
 
 router = APIRouter(prefix="/api", tags=["Wallet & Missions"])
@@ -106,6 +106,29 @@ def update_card_status(
     child = _get_family_child(db, parent.family_id, child_id)
     wallet = _get_wallet_for(db, child)
     wallet.card_status = payload.card_status
+    db.commit()
+    db.refresh(wallet)
+    return wallet
+
+
+@router.post("/wallet/child/{child_id}/allowance", response_model=WalletOut)
+def send_allowance(
+    child_id: str,
+    payload: AllowanceSend,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    # إرسال مصروف يدوي فوري ("Disburse Now") — مفيش جدولة/cron لسه، الأب بيدوس والفلوس بتتحط فورًا
+    child = _get_family_child(db, parent.family_id, child_id)
+    wallet = _get_wallet_for(db, child)
+
+    wallet.balance += payload.amount
+    _log_transaction(
+        db, wallet, parent.family_id,
+        TransactionType.allowance, TransactionDirection.credit,
+        payload.amount, payload.label,
+    )
+
     db.commit()
     db.refresh(wallet)
     return wallet
