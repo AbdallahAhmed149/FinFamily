@@ -14,6 +14,9 @@ class UserResponse(BaseModel):
     role: UserRole
     full_name: str
     email: Optional[EmailStr] = None
+    xp: int = 0
+    level: int = 1
+    streak: int = 0
     created_date: datetime
 
     model_config = ConfigDict(from_attributes=True)

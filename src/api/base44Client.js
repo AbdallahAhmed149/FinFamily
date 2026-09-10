@@ -51,4 +51,7 @@ export const base44 = {
   post(endpoint, data) {
     return request("POST", endpoint, data);
   },
+  patch(endpoint, data) {
+    return request("PATCH", endpoint, data);
+  },
 };

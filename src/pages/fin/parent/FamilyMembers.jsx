@@ -4,6 +4,7 @@ import { ChevronLeft, UserPlus, Wallet, CreditCard, Sliders, Check, Copy, CopyCh
 import { GlassCard, FadeIn, SectionTitle, Pill, ProgressRing } from "@/components/fin/ui";
 import { fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
+import { getChildWallet } from "@/lib/finApi";
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
@@ -23,17 +24,17 @@ export default function FamilyMembers() {
   const [addError, setAddError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // البيانات دي (الرصيد، النقاط، الحد اليومي...) لسه مش موجودة في الـ backend
-  // (محتاجة entities: Wallet + Mission لسه ماتبنوش) — دلوقتي بس بنعرض الاسم الحقيقي
-  // جاي من الداتابيز، والباقي قيم افتراضية لحد ما نبني الجزء ده.
-  const decorate = (child, index) => ({
+  // xp/level/streak لسه معروضة تقريبية — محتاجة endpoint يدّي الأب تفاصيل جامفكيشن
+  // طفل تاني (اللي عندنا دلوقتي هو /auth/me بيرجع بيانات اليوزر الحالي بس).
+  // الرصيد/الادخار/حالة الكارت بقوا حقيقيين من الـ Wallet.
+  const decorate = (child, index, wallet) => ({
     id: child.id,
     name: child.full_name,
     avatar: AVATARS[index % AVATARS.length],
-    balance: 0,
-    savings: 0,
+    balance: wallet?.balance ?? 0,
+    savings: wallet?.savings_balance ?? 0,
     financialScore: 50,
-    cardStatus: "active",
+    cardStatus: wallet?.card_status ?? "active",
     streak: 0,
     level: 1,
   });
@@ -45,7 +46,11 @@ export default function FamilyMembers() {
       const [codeRes, childrenRes] = await Promise.all([getFamilyCode(), getFamilyChildren()]);
       setFamilyCode(codeRes.family_code);
       setFamilyName(codeRes.family_name);
-      setMembers(childrenRes.children.map(decorate));
+
+      const wallets = await Promise.all(
+        childrenRes.children.map((c) => getChildWallet(c.id).catch(() => null))
+      );
+      setMembers(childrenRes.children.map((c, i) => decorate(c, i, wallets[i])));
     } catch (err) {
       setLoadError(err.message || "تعذر تحميل بيانات العيلة");
     } finally {

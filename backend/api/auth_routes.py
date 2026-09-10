@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
-from db.models import User, Family, UserRole
+from db.models import User, Family, UserRole, Wallet
 from core.security import (
     hash_password,
     verify_password,
@@ -83,6 +83,11 @@ def create_child(
         pin_hash=hash_pin(payload.pin),
     )
     db.add(child)
+    db.flush()  # عشان ناخد child.id قبل ما نعمل الـ Wallet بتاعته
+
+    wallet = Wallet(owner_id=child.id)
+    db.add(wallet)
+
     db.commit()
     db.refresh(child)
     return child
