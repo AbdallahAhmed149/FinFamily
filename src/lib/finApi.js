@@ -36,3 +36,8 @@ export const getFamilyMissions = ({ childId, status } = {}) => {
 
 export const getMyTransactions = () => base44.get("/transactions/mine");
 export const getChildTransactions = (childId) => base44.get(`/transactions/child/${childId}`);
+
+// ---------------- Family feed (insights + activity) ----------------
+
+export const getFamilyInsights = () => base44.get("/family/insights");
+export const getFamilyActivity = () => base44.get("/family/activity");

@@ -6,10 +6,10 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, LineChart, Line, CartesianGrid } from "recharts";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { child, parentSummary, scoreHistory, notifications, PARENT_IMAGE, parent, LOGO_IMAGE, familyMembers, parentAiInsights } from "@/lib/finData";
-import { fmtEGP } from "@/lib/finData";
+import { scoreHistory, PARENT_IMAGE, parent, LOGO_IMAGE, familyMembers } from "@/lib/finData";
+import { fmtEGP, timeAgo } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
-import { getChildWallet, getChildTransactions, getFamilyMissions } from "@/lib/finApi";
+import { getChildWallet, getChildTransactions, getFamilyMissions, getFamilyInsights, getFamilyActivity } from "@/lib/finApi";
 import { Image } from "@/components/ui/image";
 
 const iconEmoji = { utensils: "🍽️", "piggy-bank": "🐷", "trending-down": "📉", "shield-alert": "🚨", wallet: "👛", sparkles: "✨", "trending-up": "📈" };
@@ -28,9 +28,12 @@ export default function ParentDashboard() {
   const { user, getFamilyChildren } = useAuth(); // اليوزر الحقيقي بتاع الأب الداخل دلوقتي
 
   const [childrenCount, setChildrenCount] = useState(familyMembers.length); // fallback للموك لحد ما تجيب الحقيقي
-  const [familySummary, setFamilySummary] = useState({ totalSpending: 0, totalSavings: 0, goalsCompleted: 0 });
+  const [familySummary, setFamilySummary] = useState({ totalSpending: 0, totalSavings: 0, goalsCompleted: 0, avgScore: null });
   const [realSpendingCategories, setRealSpendingCategories] = useState([]);
   const [realWeeklySpending, setRealWeeklySpending] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [activity, setActivity] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
   const [summaryLoading, setSummaryLoading] = useState(true);
 
   // بنجمع بيانات كل الأطفال في العيلة: رصيد الادخار + المصاريف الحقيقية (كوينز اتصرفت على حاجات)
@@ -39,12 +42,17 @@ export default function ParentDashboard() {
 
     async function loadFamilySummary() {
       try {
-        const [{ children }, familyMissions] = await Promise.all([
+        const [{ children }, familyMissions, realInsights, realActivity] = await Promise.all([
           getFamilyChildren(),
           getFamilyMissions(), // عشان نجيب category كل mission redemption ونربطها بالـ transaction بتاعتها
+          getFamilyInsights(),
+          getFamilyActivity(),
         ]);
         if (cancelled) return;
         setChildrenCount(children.length);
+        setInsights(realInsights);
+        setActivity(realActivity);
+        setPendingApprovals(familyMissions.filter((m) => m.status === "submitted").length);
 
         // Transaction مفيهوش category مباشرة، بس فيه related_mission_id — وMission فيه category حقيقي
         const missionCategoryById = {};
@@ -90,7 +98,12 @@ export default function ParentDashboard() {
           }
         }
 
-        setFamilySummary({ totalSpending, totalSavings, goalsCompleted });
+        // متوسط الـ Financial Score الحقيقي بتاع كل الأطفال (كل واحد بيتحسب Live في الباك اند)
+        const avgScore = perChild.length
+          ? Math.round(perChild.reduce((s, { wallet }) => s + (wallet.financial_score ?? 50), 0) / perChild.length)
+          : null;
+
+        setFamilySummary({ totalSpending, totalSavings, goalsCompleted, avgScore });
         setRealSpendingCategories(
           Object.entries(categoryTotals).map(([name, value], i) => ({ name, value, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
         );
@@ -124,7 +137,9 @@ export default function ParentDashboard() {
         </button>
         <button onClick={() => navigate("/parent/approvals")} className="relative w-10 h-10 rounded-full glass flex items-center justify-center shadow-premium shrink-0">
           <Bell className="w-5 h-5" />
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">2</span>
+          {pendingApprovals > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{pendingApprovals}</span>
+          )}
         </button>
       </FadeIn>
 
@@ -145,7 +160,7 @@ export default function ParentDashboard() {
       </FadeIn>
 
       {/* summary cards */}
-      {/* ملحوظة: Fin. Score لسه موك بالكامل — مفيش خوارزمية أو حقل ليها في الباك اند لحد دلوقتي */}
+      {/* Fin. Score دلوقتي حقيقي (متوسط أطفال العيلة، كل واحد بيتحسب Live في الباك اند) */}
       <FadeIn delay={60} className="grid grid-cols-2 gap-3">
         <StatCard
           label="Total Spending"
@@ -171,13 +186,21 @@ export default function ParentDashboard() {
           icon={Target}
           color="#FFC857"
         />
-        <StatCard label="Fin. Score" value={`${child.financialScore}/100`} trend={`+${child.scoreTrend}`} up={true} icon={Wallet} color="#0F2D52" />
+        <StatCard
+          label="Fin. Score"
+          value={summaryLoading || familySummary.avgScore === null ? "…" : `${familySummary.avgScore}/100`}
+          trend="family avg"
+          up={true}
+          icon={Wallet}
+          color="#0F2D52"
+        />
       </FadeIn>
 
-      {/* score trend */}
+      {/* score trend — لسه sample data: الدرجة الحقيقية بتتحسب Live بس مش بنخزّن تاريخها
+          أسبوع بأسبوع لحد دلوقتي (محتاج snapshot job دوري)، فمينفعش نرسم trend حقيقي. */}
       <FadeIn delay={120} className="mt-4">
         <GlassCard>
-          <SectionTitle action={<Pill color="#00B894">+{child.scoreTrend} this week</Pill>}>Financial Score Trend</SectionTitle>
+          <SectionTitle action={<Pill color="#94a3b8">Sample data</Pill>}>Financial Score Trend</SectionTitle>
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={scoreHistory.map((v, i) => ({ week: `W${i+1}`, score: v }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="#0001" vertical={false} />
@@ -235,11 +258,11 @@ export default function ParentDashboard() {
         </GlassCard>
       </FadeIn>
 
-      {/* AI alerts */}
+      {/* AI alerts — تنبيهات حقيقية مبنية على قواعد (rule-based) من بيانات العيلة الفعلية */}
       <FadeIn delay={260} className="mt-4">
         <SectionTitle action={<button onClick={() => navigate("/parent/coach")} className="text-xs font-bold text-emerald-600 flex items-center gap-1"><Bot className="w-4 h-4" /> Ask Coach</button>}>AI Alerts & Suggestions</SectionTitle>
         <div className="space-y-2">
-          {parentAiInsights.slice(0, 4).map((ins) => (
+          {insights.slice(0, 4).map((ins) => (
             <button key={ins.id} onClick={() => navigate("/parent/coach")} className="w-full glass rounded-2xl p-3 flex items-center gap-3 text-left shadow-premium active:scale-[0.99] transition-all">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0" style={{ background: `${sevColor[ins.severity]}18` }}>
                 {iconEmoji[ins.icon] || "💡"}
@@ -283,9 +306,12 @@ export default function ParentDashboard() {
       </FadeIn>
 
       <FadeIn delay={360} className="mt-4">
-        <SectionTitle>Recent Notifications</SectionTitle>
+        <SectionTitle>Recent Activity</SectionTitle>
         <div className="space-y-2">
-          {notifications.slice(0, 3).map((n) => (
+          {activity.length === 0 && !summaryLoading && (
+            <div className="text-center text-sm text-muted-foreground py-4">No activity yet — assign a chore or send an allowance to get started.</div>
+          )}
+          {activity.slice(0, 5).map((n) => (
             <div key={n.id} className="glass rounded-2xl p-3 flex items-center gap-3 shadow-premium">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${n.color}18`, color: n.color }}>
                 <Bell className="w-4 h-4" />
@@ -294,7 +320,7 @@ export default function ParentDashboard() {
                 <div className="text-sm font-semibold truncate">{n.title}</div>
                 <div className="text-xs text-muted-foreground truncate">{n.body}</div>
               </div>
-              <span className="text-xs text-muted-foreground">{n.time}</span>
+              <span className="text-xs text-muted-foreground shrink-0">{timeAgo(n.created_date)}</span>
             </div>
           ))}
         </div>

@@ -10,6 +10,9 @@ from db.models import (
     Transaction, TransactionType, TransactionDirection,
 )
 from core.deps import get_current_user, require_parent, require_child
+from services.scoring import compute_financial_score
+from services.insights import build_family_insights, build_family_activity
+from schemas.insights import InsightOut, ActivityOut
 from schemas.wallet import (
     WalletOut, WalletLimitsUpdate, WalletCardStatusUpdate,
     SavingsGoalCreate, SavingsGoalDeposit, SavingsGoalOut,
@@ -57,19 +60,25 @@ def _log_transaction(db: Session, wallet: Wallet, family_id: str, type_, directi
     return txn
 
 
+def _wallet_out(db: Session, wallet: Wallet, child: User) -> WalletOut:
+    out = WalletOut.model_validate(wallet)
+    out.financial_score = compute_financial_score(db, wallet, child)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Wallet
 # ---------------------------------------------------------------------------
 
 @router.get("/wallet/me", response_model=WalletOut)
 def get_my_wallet(child: User = Depends(require_child), db: Session = Depends(get_db)):
-    return _get_wallet_for(db, child)
+    return _wallet_out(db, _get_wallet_for(db, child), child)
 
 
 @router.get("/wallet/child/{child_id}", response_model=WalletOut)
 def get_child_wallet(child_id: str, parent: User = Depends(require_parent), db: Session = Depends(get_db)):
     child = _get_family_child(db, parent.family_id, child_id)
-    return _get_wallet_for(db, child)
+    return _wallet_out(db, _get_wallet_for(db, child), child)
 
 
 @router.patch("/wallet/child/{child_id}/limits", response_model=WalletOut)
@@ -93,7 +102,7 @@ def update_child_limits(
 
     db.commit()
     db.refresh(wallet)
-    return wallet
+    return _wallet_out(db, wallet, child)
 
 
 @router.patch("/wallet/child/{child_id}/card-status", response_model=WalletOut)
@@ -108,7 +117,7 @@ def update_card_status(
     wallet.card_status = payload.card_status
     db.commit()
     db.refresh(wallet)
-    return wallet
+    return _wallet_out(db, wallet, child)
 
 
 @router.post("/wallet/child/{child_id}/allowance", response_model=WalletOut)
@@ -131,7 +140,7 @@ def send_allowance(
 
     db.commit()
     db.refresh(wallet)
-    return wallet
+    return _wallet_out(db, wallet, child)
 
 
 # ---------------------------------------------------------------------------
@@ -351,3 +360,18 @@ def child_transactions(child_id: str, parent: User = Depends(require_parent), db
         .order_by(Transaction.created_date.desc())
         .all()
     )
+
+
+# ---------------------------------------------------------------------------
+# Family feed: rule-based insights + recent activity (بديل حقيقي للـ mock
+# notifications و parentAiInsights — مبنية بالكامل من Mission/Transaction الفعليين)
+# ---------------------------------------------------------------------------
+
+@router.get("/family/insights", response_model=List[InsightOut])
+def family_insights(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
+    return build_family_insights(db, parent)
+
+
+@router.get("/family/activity", response_model=List[ActivityOut])
+def family_activity(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
+    return build_family_activity(db, parent)

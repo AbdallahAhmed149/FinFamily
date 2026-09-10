@@ -26,14 +26,15 @@ export default function FamilyMembers() {
 
   // xp/level/streak بقوا حقيقيين من /auth/family/children (ChildSummary بترجعهم دلوقتي).
   // الرصيد/الادخار/حالة الكارت حقيقيين من الـ Wallet.
-  // financialScore لسه موك — مفيش خوارزمية أو حقل ليها في الباك اند من الأساس، هتتصمم لوحدها لاحقًا.
+  // financialScore بقى حقيقي دلوقتي — بيتحسب Live في الباك اند (services/scoring.py)
+  // من: نسبة الادخار + انضباط تنفيذ المهام + streak + الالتزام بحدود الصرف.
   const decorate = (child, index, wallet) => ({
     id: child.id,
     name: child.full_name,
     avatar: AVATARS[index % AVATARS.length],
     balance: wallet?.balance ?? 0,
     savings: wallet?.savings_balance ?? 0,
-    financialScore: 50,
+    financialScore: wallet?.financial_score ?? 50,
     cardStatus: wallet?.card_status ?? "active",
     streak: child.streak ?? 0,
     level: child.level ?? 1,

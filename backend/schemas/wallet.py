@@ -43,6 +43,7 @@ class WalletOut(BaseModel):
     blocked_categories: List[str] = []
     card_status: CardStatus
     savings_goals: List[SavingsGoalOut] = []
+    financial_score: int = 50  # بيتحسب Live وقت الـ request، مش متخزّن — شوف services/scoring.py
 
     model_config = ConfigDict(from_attributes=True)
 
