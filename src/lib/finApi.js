@@ -7,6 +7,8 @@ export const getChildWallet = (childId) => base44.get(`/wallet/child/${childId}`
 export const updateChildLimits = (childId, payload) => base44.patch(`/wallet/child/${childId}/limits`, payload);
 export const updateCardStatus = (childId, cardStatus) =>
   base44.patch(`/wallet/child/${childId}/card-status`, { card_status: cardStatus });
+export const replaceCard = (childId) => base44.post(`/wallet/child/${childId}/card/replace`, {});
+export const updateMyCardTheme = (theme) => base44.patch("/wallet/me/card-theme", { theme });
 export const sendAllowance = (childId, amount, label) =>
   base44.post(`/wallet/child/${childId}/allowance`, { amount, label });
 
@@ -31,6 +33,15 @@ export const getFamilyMissions = ({ childId, status } = {}) => {
   const qs = params.toString();
   return base44.get(`/missions/family${qs ? `?${qs}` : ""}`);
 };
+
+// ---------------- Card purchases (POS simulation — مفيش تكامل حقيقي مع Meeza) ----------------
+
+export const makeCardPurchase = (payload) => base44.post("/card/purchases", payload);
+export const reviewCardPurchase = (purchaseId, decision) =>
+  base44.post(`/card/purchases/${purchaseId}/review`, { decision });
+export const getMyCardPurchases = () => base44.get("/card/purchases/mine");
+export const getFamilyCardPurchases = (status) =>
+  base44.get(`/card/purchases/family${status ? `?status=${status}` : ""}`);
 
 // ---------------- Transactions ----------------
 

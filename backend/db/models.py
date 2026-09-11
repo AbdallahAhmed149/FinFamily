@@ -18,6 +18,7 @@ class UserRole(str, enum.Enum):
 class CardStatus(str, enum.Enum):
     active = "active"
     frozen = "frozen"
+    deactivated = "deactivated"  # دائم — بيحتاج "Claim New Card" عشان يرجع يشتغل
 
 
 class MissionKind(str, enum.Enum):
@@ -37,6 +38,7 @@ class TransactionType(str, enum.Enum):
     redemption = "redemption"
     allowance = "allowance"
     savings_transfer = "savings_transfer"
+    card_purchase = "card_purchase"
     adjustment = "adjustment"
 
 
@@ -45,9 +47,21 @@ class TransactionDirection(str, enum.Enum):
     debit = "debit"
 
 
+class PurchaseStatus(str, enum.Enum):
+    completed = "completed"  # اتخصمت فورًا (جوه الحدود المسموحة)
+    pending = "pending"      # مستنية موافقة الأب (تخطت حد الصرف)
+    rejected = "rejected"    # الأب رفضها، أو الفئة محظورة، أو الكارت مجمد/متعطل
+
+
 def _generate_family_code():
     # كود قصير سهل إن الأب يقوله لابنه (زي كود دعوة)
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+def _generate_card_number():
+    # رقم كارت وهمي (مش حقيقي خالص) — بنعرض آخر 4 أرقام بس، زي أي كارت حقيقي
+    last4 = "".join(random.choices(string.digits, k=4))
+    return f"5061 •••• •••• {last4}"
 
 
 class Family(Base):
@@ -113,12 +127,15 @@ class Wallet(Base):
     blocked_categories = Column(JSON, default=list)  # ["Entertainment", ...]
 
     card_status = Column(Enum(CardStatus), default=CardStatus.active)
+    card_number = Column(String, default=_generate_card_number)  # وهمي بالكامل — مفيش تكامل حقيقي مع Meeza
+    card_theme = Column(String, default="blue")  # الطفل هو اللي بيختاره من صفحته
 
     created_date = Column(DateTime, default=datetime.utcnow)
     updated_date = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     savings_goals = relationship("SavingsGoal", back_populates="wallet", cascade="all, delete-orphan")
     transactions = relationship("Transaction", back_populates="wallet", cascade="all, delete-orphan")
+    card_purchases = relationship("CardPurchase", back_populates="wallet", cascade="all, delete-orphan")
 
 
 class SavingsGoal(Base):
@@ -183,5 +200,33 @@ class Transaction(Base):
     direction = Column(Enum(TransactionDirection), nullable=False)
     amount = Column(Float, nullable=False)
     description = Column(String, nullable=False)
+
+    created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class CardPurchase(Base):
+    """
+    محاكاة 'سحبة كارت' في محل (POS) — مفيش تكامل حقيقي مع Meeza أو أي بنك.
+    الطفل بيعمل submit لمحاولة شراء، والباك اند بيقرر فورًا (completed) أو
+    بيحطها مستنية موافقة الأب (pending) لو تخطت حد الصرف.
+    """
+    __tablename__ = "card_purchases"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    family_id = Column(String, ForeignKey("families.id"), nullable=False, index=True)
+    child_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    wallet_id = Column(String, ForeignKey("wallets.id"), nullable=False, index=True)
+    wallet = relationship("Wallet", back_populates="card_purchases")
+
+    merchant = Column(String, nullable=False)
+    category = Column(String, default="Other")
+    location = Column(String, nullable=True)
+    amount = Column(Float, nullable=False)
+
+    status = Column(Enum(PurchaseStatus), nullable=False, default=PurchaseStatus.pending)
+    decline_reason = Column(String, nullable=True)  # ليه اترفضت فورًا (فئة محظورة / كارت مجمد...)
+
+    reviewed_by_id = Column(String, nullable=True)
+    reviewed_date = Column(DateTime, nullable=True)
 
     created_date = Column(DateTime, default=datetime.utcnow)

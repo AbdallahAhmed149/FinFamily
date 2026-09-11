@@ -1,29 +1,109 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeft, Snowflake, PowerOff, CreditCard, RotateCw, Check, Wifi } from "lucide-react";
+import { ChevronLeft, Snowflake, PowerOff, CreditCard, RotateCw, Check, Wifi, Loader2 } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle, Pill } from "@/components/fin/ui";
-import { familyMembers, cardThemes, fmtEGP } from "@/lib/finData";
+import { cardThemes, fmtEGP } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
+import { getChildWallet, updateCardStatus, replaceCard as replaceCardApi } from "@/lib/finApi";
 
+const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 const themeMap = Object.fromEntries(cardThemes.map((t) => [t.id, t.gradient]));
+
+const statusMeta = {
+  active: { label: "Active", color: "#00B894", icon: Wifi, desc: "Card works normally" },
+  frozen: { label: "Frozen", color: "#3b82f6", icon: Snowflake, desc: "All payments blocked" },
+  deactivated: { label: "Deactivated", color: "#94a3b8", icon: PowerOff, desc: "Needs a new card to work again" },
+};
 
 export default function FamilyCards() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [members, setMembers] = useState(familyMembers.map((m) => ({ ...m })));
-  const [activeId, setActiveId] = useState(location.state?.member || familyMembers[0].id);
+  const { getFamilyChildren } = useAuth();
+
+  const [members, setMembers] = useState([]);
+  const [activeId, setActiveId] = useState(location.state?.member || null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { children } = await getFamilyChildren();
+      const wallets = await Promise.all(children.map((c) => getChildWallet(c.id)));
+      const decorated = children.map((c, i) => ({
+        id: c.id,
+        name: c.full_name,
+        avatar: AVATARS[i % AVATARS.length],
+        wallet: wallets[i],
+      }));
+      setMembers(decorated);
+      setActiveId((prev) => prev || decorated[0]?.id || null);
+    } catch (err) {
+      console.error("Failed to load family cards:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [getFamilyChildren]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const active = members.find((m) => m.id === activeId);
 
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2000); };
-  const setCardStatus = (id, status) => { setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, cardStatus: status } : m))); flash(`Card ${status === "frozen" ? "frozen" : status === "active" ? "unfrozen" : "deactivated"} for ${members.find((m) => m.id === id).name}`); };
-  const replaceCard = (id) => { setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, cardNumber: `5061 •••• •••• ${Math.floor(1000 + Math.random() * 9000)}`, cardStatus: "active" } : m))); flash("New card claimed — old one voided"); };
 
-  const statusMeta = {
-    active: { label: "Active", color: "#00B894", icon: Wifi, desc: "Card works normally" },
-    frozen: { label: "Frozen", color: "#3b82f6", icon: Snowflake, desc: "All payments blocked" },
-    deactivated: { label: "Deactivated", color: "#94a3b8", icon: PowerOff, desc: "Permanently off" },
+  const setStatus = async (id, status) => {
+    setBusy(true);
+    try {
+      const wallet = await updateCardStatus(id, status);
+      setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, wallet } : m)));
+      flash(`Card ${status === "frozen" ? "frozen" : status === "active" ? "activated" : "deactivated"} for ${members.find((m) => m.id === id)?.name}`);
+    } catch (err) {
+      flash(err.message || "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const claimNewCard = async (id) => {
+    setBusy(true);
+    try {
+      const wallet = await replaceCardApi(id);
+      setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, wallet } : m)));
+      flash("New card claimed — old one voided");
+    } catch (err) {
+      flash(err.message || "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="px-4 pt-12 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!active) {
+    return (
+      <div className="px-4 pt-12">
+        <FadeIn className="flex items-center gap-3 mb-5">
+          <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-xl font-extrabold font-heading">Family Cards</h1>
+        </FadeIn>
+        <div className="text-center text-sm text-muted-foreground py-8">No kids added yet — add one from Family Members first.</div>
+      </div>
+    );
+  }
+
+  const cardStatus = active.wallet.card_status;
+  const meta = statusMeta[cardStatus];
 
   return (
     <div className="px-4 pt-12 pb-6">
@@ -44,37 +124,35 @@ export default function FamilyCards() {
 
       {/* live card preview */}
       <FadeIn delay={80} className="mt-4">
-        <div className="rounded-3xl p-5 text-white shadow-premium relative overflow-hidden h-52" style={{ background: themeMap[active.cardTheme] || themeMap.blue, filter: active.cardStatus === "frozen" ? "saturate(0.5) brightness(0.8)" : active.cardStatus === "deactivated" ? "grayscale(1) brightness(0.6)" : "none" }}>
+        <div className="rounded-3xl p-5 text-white shadow-premium relative overflow-hidden h-52" style={{ background: themeMap[active.wallet.card_theme] || themeMap.blue, filter: cardStatus === "frozen" ? "saturate(0.5) brightness(0.8)" : cardStatus === "deactivated" ? "grayscale(1) brightness(0.6)" : "none" }}>
           <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-white/70">Meeza Card</div>
               <div className="font-bold">{active.name}</div>
             </div>
-            {active.cardStatus !== "active" && (
-              <Pill className="bg-white/20 text-white">{statusMeta[active.cardStatus].label}</Pill>
-            )}
+            {cardStatus !== "active" && <Pill className="bg-white/20 text-white">{meta.label}</Pill>}
           </div>
           <div className="absolute bottom-5 left-5 right-5">
-            <div className="font-mono text-lg tracking-widest">{active.cardNumber}</div>
+            <div className="font-mono text-lg tracking-widest">{active.wallet.card_number}</div>
             <div className="flex items-center justify-between mt-2 text-xs text-white/70">
               <span>VIRTUAL · MEEZA</span>
-              <span>EXP 09/29</span>
+              <span>{fmtEGP(active.wallet.balance)}</span>
             </div>
           </div>
-          {active.cardStatus === "frozen" && <div className="absolute inset-0 flex items-center justify-center"><Snowflake className="w-16 h-16 text-white/40" /></div>}
+          {cardStatus === "frozen" && <div className="absolute inset-0 flex items-center justify-center"><Snowflake className="w-16 h-16 text-white/40" /></div>}
         </div>
       </FadeIn>
 
       {/* status banner */}
       <FadeIn delay={120} className="mt-3">
-        <div className="glass rounded-2xl p-4 flex items-center gap-3" style={{ boxShadow: `inset 0 0 0 2px ${statusMeta[active.cardStatus].color}40` }}>
-          {React.createElement(statusMeta[active.cardStatus].icon, { className: "w-6 h-6", style: { color: statusMeta[active.cardStatus].color } })}
+        <div className="glass rounded-2xl p-4 flex items-center gap-3" style={{ boxShadow: `inset 0 0 0 2px ${meta.color}40` }}>
+          {React.createElement(meta.icon, { className: "w-6 h-6", style: { color: meta.color } })}
           <div className="flex-1">
-            <div className="font-bold text-sm">{statusMeta[active.cardStatus].label}</div>
-            <div className="text-xs text-muted-foreground">{statusMeta[active.cardStatus].desc}</div>
+            <div className="font-bold text-sm">{meta.label}</div>
+            <div className="text-xs text-muted-foreground">{meta.desc}</div>
           </div>
-          <Pill color={statusMeta[active.cardStatus].color}>●</Pill>
+          <Pill color={meta.color}>●</Pill>
         </div>
       </FadeIn>
 
@@ -82,32 +160,32 @@ export default function FamilyCards() {
       <FadeIn delay={160} className="mt-4">
         <SectionTitle>Card Controls</SectionTitle>
         <div className="grid grid-cols-2 gap-3">
-          {active.cardStatus === "active" ? (
-            <button onClick={() => setCardStatus(active.id, "frozen")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all">
+          {cardStatus === "active" ? (
+            <button disabled={busy} onClick={() => setStatus(active.id, "frozen")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#3b82f618", color: "#3b82f6" }}><Snowflake className="w-5 h-5" /></div>
               <div className="font-bold text-sm">Freeze Card</div>
               <div className="text-[10px] text-muted-foreground">Block all payments instantly</div>
             </button>
-          ) : (
-            <button onClick={() => setCardStatus(active.id, "active")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all">
+          ) : cardStatus === "frozen" ? (
+            <button disabled={busy} onClick={() => setStatus(active.id, "active")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#00B89418", color: "#00B894" }}><Wifi className="w-5 h-5" /></div>
               <div className="font-bold text-sm">Unfreeze</div>
               <div className="text-[10px] text-muted-foreground">Reactivate the card</div>
             </button>
-          )}
-          <button onClick={() => replaceCard(active.id)} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all">
+          ) : null}
+          <button disabled={busy} onClick={() => claimNewCard(active.id)} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#FFC85718", color: "#b8860b" }}><RotateCw className="w-5 h-5" /></div>
             <div className="font-bold text-sm">Claim New Card</div>
             <div className="text-[10px] text-muted-foreground">Replace lost/stolen card</div>
           </button>
-          {active.cardStatus !== "deactivated" ? (
-            <button onClick={() => setCardStatus(active.id, "deactivated")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all">
+          {cardStatus !== "deactivated" ? (
+            <button disabled={busy} onClick={() => setStatus(active.id, "deactivated")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#ef444418", color: "#ef4444" }}><PowerOff className="w-5 h-5" /></div>
               <div className="font-bold text-sm">Deactivate</div>
               <div className="text-[10px] text-muted-foreground">Permanently disable</div>
             </button>
           ) : (
-            <button onClick={() => setCardStatus(active.id, "active")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all">
+            <button disabled={busy} onClick={() => setStatus(active.id, "active")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#00B89418", color: "#00B894" }}><Check className="w-5 h-5" /></div>
               <div className="font-bold text-sm">Reactivate</div>
               <div className="text-[10px] text-muted-foreground">Turn card back on</div>
@@ -122,12 +200,12 @@ export default function FamilyCards() {
         <div className="space-y-2">
           {members.map((m) => (
             <div key={m.id} className="glass rounded-2xl p-3 flex items-center gap-3">
-              <div className="w-11 h-8 rounded-lg flex items-center justify-center" style={{ background: themeMap[m.cardTheme] }}><CreditCard className="w-4 h-4 text-white" /></div>
+              <div className="w-11 h-8 rounded-lg flex items-center justify-center" style={{ background: themeMap[m.wallet.card_theme] || themeMap.blue }}><CreditCard className="w-4 h-4 text-white" /></div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm">{m.name}</div>
-                <div className="font-mono text-[10px] text-muted-foreground">{m.cardNumber}</div>
+                <div className="font-mono text-[10px] text-muted-foreground">{m.wallet.card_number}</div>
               </div>
-              <Pill color={statusMeta[m.cardStatus].color} className="text-[10px] py-0">{statusMeta[m.cardStatus].label}</Pill>
+              <Pill color={statusMeta[m.wallet.card_status].color} className="text-[10px] py-0">{statusMeta[m.wallet.card_status].label}</Pill>
             </div>
           ))}
         </div>

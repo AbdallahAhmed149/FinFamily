@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
+import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getChildWallet, getChildTransactions, getFamilyInsights } from "@/lib/finApi";
 
 const iconEmoji = { "shield-alert": "🚨", "trending-down": "📉", "trending-up": "📈", "piggy-bank": "🐷", sparkles: "✨", wallet: "👛" };
-const sevColor = { alert: "#ef4444", warn: "#f97316", info: "#3b82f6", good: "#00B894" };
+const sevColor = { alert: "#ef4444", warn: "#FFC857", info: "#3b82f6", good: "#00B894" };
 
 export default function Insights() {
   const navigate = useNavigate();

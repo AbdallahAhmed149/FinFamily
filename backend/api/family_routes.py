@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -8,16 +8,18 @@ from db.database import get_db
 from db.models import (
     User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
     Transaction, TransactionType, TransactionDirection,
+    CardStatus, CardPurchase, PurchaseStatus, _generate_card_number,
 )
 from core.deps import get_current_user, require_parent, require_child
-from services.scoring import compute_financial_score
+from services.scoring import compute_financial_score, _debit_spend_since
 from services.insights import build_family_insights, build_family_activity
 from schemas.insights import InsightOut, ActivityOut
 from schemas.wallet import (
-    WalletOut, WalletLimitsUpdate, WalletCardStatusUpdate,
+    WalletOut, WalletLimitsUpdate, WalletCardStatusUpdate, CardThemeUpdate,
     SavingsGoalCreate, SavingsGoalDeposit, SavingsGoalOut,
     MissionCreate, MissionReview, MissionOut,
     TransactionOut, AllowanceSend,
+    CardPurchaseCreate, CardPurchaseReview, CardPurchaseOut,
 )
 
 router = APIRouter(prefix="/api", tags=["Wallet & Missions"])
@@ -66,6 +68,18 @@ def _wallet_out(db: Session, wallet: Wallet, child: User) -> WalletOut:
     return out
 
 
+def _over_any_limit(db: Session, wallet: Wallet, extra_amount: float) -> bool:
+    """هل إضافة extra_amount (طلب صرف جديد) هتخلّي الطفل يتخطى أي حد صرف حدده الأب؟"""
+    now = datetime.utcnow()
+    if wallet.daily_limit and _debit_spend_since(db, wallet.id, now.replace(hour=0, minute=0, second=0, microsecond=0)) + extra_amount > wallet.daily_limit:
+        return True
+    if wallet.weekly_limit and _debit_spend_since(db, wallet.id, now - timedelta(days=7)) + extra_amount > wallet.weekly_limit:
+        return True
+    if wallet.monthly_limit and _debit_spend_since(db, wallet.id, now - timedelta(days=30)) + extra_amount > wallet.monthly_limit:
+        return True
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Wallet
 # ---------------------------------------------------------------------------
@@ -112,9 +126,41 @@ def update_card_status(
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
+    # ملحوظة: تغيير حالة الكارت (freeze/unfreeze/deactivate) مسؤولية الأب بس —
+    # الطفل معندوش تحكم في كارته من صفحته، غير إنه يشوف الحالة الحالية.
     child = _get_family_child(db, parent.family_id, child_id)
     wallet = _get_wallet_for(db, child)
     wallet.card_status = payload.card_status
+    db.commit()
+    db.refresh(wallet)
+    return _wallet_out(db, wallet, child)
+
+
+@router.post("/wallet/child/{child_id}/card/replace", response_model=WalletOut)
+def replace_card(
+    child_id: str,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    """كارت جديد (رقم جديد وهمي) وترجيع الحالة لـ active — بديل لكارت ضاع/اتسرق أو كان deactivated."""
+    child = _get_family_child(db, parent.family_id, child_id)
+    wallet = _get_wallet_for(db, child)
+    wallet.card_number = _generate_card_number()
+    wallet.card_status = CardStatus.active
+    db.commit()
+    db.refresh(wallet)
+    return _wallet_out(db, wallet, child)
+
+
+@router.patch("/wallet/me/card-theme", response_model=WalletOut)
+def update_my_card_theme(
+    payload: CardThemeUpdate,
+    child: User = Depends(require_child),
+    db: Session = Depends(get_db),
+):
+    # الطفل هو اللي بيختار شكل الكارت بتاعه (تخصيص بس، مالهاش علاقة بالأمان)
+    wallet = _get_wallet_for(db, child)
+    wallet.card_theme = payload.theme
     db.commit()
     db.refresh(wallet)
     return _wallet_out(db, wallet, child)
@@ -336,6 +382,116 @@ def family_missions(
 
 
 # ---------------------------------------------------------------------------
+# Card purchases (محاكاة POS — مفيش تكامل حقيقي مع Meeza أو أي بنك)
+# ---------------------------------------------------------------------------
+
+@router.post("/card/purchases", response_model=CardPurchaseOut)
+def make_purchase(payload: CardPurchaseCreate, child: User = Depends(require_child), db: Session = Depends(get_db)):
+    """
+    الطفل بيعمل 'سحبة كارت' وهمية. القرار بيتاخد فورًا:
+    - الكارت مش active / الفئة محظورة / الرصيد مش كافي -> ترفض فورًا (rejected)
+    - جوه حدود الصرف -> بتتخصم فورًا (completed)
+    - بتخطى حد صرف حدده الأب -> بتتحط 'pending' مستنية موافقته
+    """
+    wallet = _get_wallet_for(db, child)
+
+    def _instant(status, decline_reason=None):
+        purchase = CardPurchase(
+            family_id=child.family_id,
+            child_id=child.id,
+            wallet_id=wallet.id,
+            merchant=payload.merchant,
+            category=payload.category,
+            location=payload.location,
+            amount=payload.amount,
+            status=status,
+            decline_reason=decline_reason,
+            reviewed_date=datetime.utcnow() if status != PurchaseStatus.pending else None,
+        )
+        db.add(purchase)
+        return purchase
+
+    if wallet.card_status != CardStatus.active:
+        purchase = _instant(PurchaseStatus.rejected, f"Card is {wallet.card_status.value}")
+    elif payload.category in (wallet.blocked_categories or []):
+        purchase = _instant(PurchaseStatus.rejected, f"{payload.category} is a blocked category")
+    elif wallet.balance < payload.amount:
+        purchase = _instant(PurchaseStatus.rejected, "Not enough balance")
+    elif _over_any_limit(db, wallet, payload.amount):
+        purchase = _instant(PurchaseStatus.pending)
+    else:
+        wallet.balance -= payload.amount
+        purchase = _instant(PurchaseStatus.completed)
+        _log_transaction(
+            db, wallet, child.family_id,
+            TransactionType.card_purchase, TransactionDirection.debit,
+            payload.amount, f"{payload.merchant} ({payload.category})",
+        )
+
+    db.commit()
+    db.refresh(purchase)
+    return purchase
+
+
+@router.post("/card/purchases/{purchase_id}/review", response_model=CardPurchaseOut)
+def review_purchase(
+    purchase_id: str,
+    payload: CardPurchaseReview,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    purchase = db.query(CardPurchase).filter(CardPurchase.id == purchase_id, CardPurchase.family_id == parent.family_id).first()
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase request not found")
+    if purchase.status != PurchaseStatus.pending:
+        raise HTTPException(status_code=400, detail=f"Purchase is already {purchase.status.value}")
+
+    wallet = db.query(Wallet).filter(Wallet.id == purchase.wallet_id).first()
+
+    if payload.decision == "reject":
+        purchase.status = PurchaseStatus.rejected
+    else:
+        if wallet.balance < purchase.amount:
+            raise HTTPException(status_code=400, detail="Child doesn't have enough balance anymore")
+        wallet.balance -= purchase.amount
+        purchase.status = PurchaseStatus.completed
+        _log_transaction(
+            db, wallet, parent.family_id,
+            TransactionType.card_purchase, TransactionDirection.debit,
+            purchase.amount, f"{purchase.merchant} ({purchase.category})",
+        )
+
+    purchase.reviewed_by_id = parent.id
+    purchase.reviewed_date = datetime.utcnow()
+
+    db.commit()
+    db.refresh(purchase)
+    return purchase
+
+
+@router.get("/card/purchases/mine", response_model=List[CardPurchaseOut])
+def my_purchases(child: User = Depends(require_child), db: Session = Depends(get_db)):
+    return (
+        db.query(CardPurchase)
+        .filter(CardPurchase.child_id == child.id)
+        .order_by(CardPurchase.created_date.desc())
+        .all()
+    )
+
+
+@router.get("/card/purchases/family", response_model=List[CardPurchaseOut])
+def family_purchases(
+    status: Optional[PurchaseStatus] = Query(None),
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    q = db.query(CardPurchase).filter(CardPurchase.family_id == parent.family_id)
+    if status:
+        q = q.filter(CardPurchase.status == status)
+    return q.order_by(CardPurchase.created_date.desc()).all()
+
+
+# ---------------------------------------------------------------------------
 # Transactions
 # ---------------------------------------------------------------------------
 
@@ -364,7 +520,7 @@ def child_transactions(child_id: str, parent: User = Depends(require_parent), db
 
 # ---------------------------------------------------------------------------
 # Family feed: rule-based insights + recent activity (بديل حقيقي للـ mock
-# notifications و parentAiInsights — مبنية بالكامل من Mission/Transaction الفعليين)
+# notifications و parentAiInsights — مبنية بالكامل من Mission/Transaction/CardPurchase الفعليين)
 # ---------------------------------------------------------------------------
 
 @router.get("/family/insights", response_model=List[InsightOut])

@@ -5,13 +5,14 @@ from sqlalchemy.orm import Session
 from db.models import User, Wallet, Mission, MissionKind, MissionStatus, Transaction, TransactionDirection, TransactionType
 
 
-def _redemption_spend_since(db: Session, wallet_id: str, since: datetime) -> float:
+def _debit_spend_since(db: Session, wallet_id: str, since: datetime) -> float:
+    """إجمالي اللي 'اتصرف فعليًا' (مش الادخار) من محفظة الطفل من تاريخ معيّن — طلبات صرف (redemption) + مشتريات كارت (card_purchase)."""
     rows = (
         db.query(Transaction)
         .filter(
             Transaction.wallet_id == wallet_id,
             Transaction.direction == TransactionDirection.debit,
-            Transaction.type == TransactionType.redemption,
+            Transaction.type.in_([TransactionType.redemption, TransactionType.card_purchase]),
             Transaction.created_date >= since,
         )
         .all()
@@ -58,14 +59,14 @@ def compute_financial_score(db: Session, wallet: Wallet, child: User) -> int:
     # 3) الـ streak (سقف 10 يوم عشان مايبقاش هو المتحكم الوحيد في الدرجة)
     score += min(child.streak or 0, 10)
 
-    # 4) الالتزام بحدود الصرف — خصم لو الطفل تخطى أي حد حدده الأب
+    # 4) الالتزام بحدود الصرف — خصم لو الطفل تخطى أي حد حدده الأب (بيشمل طلبات الصرف ومشتريات الكارت مع بعض)
     now = datetime.utcnow()
     penalty = 0
-    if wallet.daily_limit and _redemption_spend_since(db, wallet.id, now - timedelta(days=1)) > wallet.daily_limit:
+    if wallet.daily_limit and _debit_spend_since(db, wallet.id, now - timedelta(days=1)) > wallet.daily_limit:
         penalty += 7
-    if wallet.weekly_limit and _redemption_spend_since(db, wallet.id, now - timedelta(days=7)) > wallet.weekly_limit:
+    if wallet.weekly_limit and _debit_spend_since(db, wallet.id, now - timedelta(days=7)) > wallet.weekly_limit:
         penalty += 7
-    if wallet.monthly_limit and _redemption_spend_since(db, wallet.id, now - timedelta(days=30)) > wallet.monthly_limit:
+    if wallet.monthly_limit and _debit_spend_since(db, wallet.id, now - timedelta(days=30)) > wallet.monthly_limit:
         penalty += 6
     score -= penalty
 
