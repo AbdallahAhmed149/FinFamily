@@ -100,8 +100,10 @@ def get_family_code(parent: User = Depends(require_parent), db: Session = Depend
 
 
 @router.get("/family/children", response_model=FamilyChildrenResponse)
-def list_my_children(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
-    family = db.query(Family).filter(Family.id == parent.family_id).first()
+def list_my_children(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # مفتوح للأب والطفل الاتنين — الاستعلام أصلاً محصور بـ family_id بتاع اللي بيطلب،
+    # يعني الطفل بيشوف بس إخواته في نفس عيلته، مش أي عيلة تانية.
+    family = db.query(Family).filter(Family.id == user.family_id).first()
     children = db.query(User).filter(User.family_id == family.id, User.role == UserRole.child).all()
     return FamilyChildrenResponse(family_name=family.name, children=children)
 
