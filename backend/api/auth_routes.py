@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -11,6 +11,7 @@ from core.security import (
     create_access_token,
 )
 from core.deps import get_current_user, require_parent
+from core.limiter import limiter
 from schemas.auth import (
     ParentRegister,
     ParentLogin,
@@ -30,7 +31,8 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 # ---------------------------------------------------------------------------
 
 @router.post("/register", response_model=TokenResponse)
-def register_parent(payload: ParentRegister, db: Session = Depends(get_db)):
+@limiter.limit("5/hour")
+def register_parent(request: Request, payload: ParentRegister, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -56,7 +58,8 @@ def register_parent(payload: ParentRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login_parent(payload: ParentLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login_parent(request: Request, payload: ParentLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email, User.role == UserRole.parent).first()
     if not user or not user.password_hash or not verify_password(payload.password, user.password_hash):
         # رسالة واحدة عامة لإيميل غلط أو باسورد غلط — عشان محدش يعرف يستنتج إن الإيميل ده مسجل أصلاً
@@ -113,7 +116,8 @@ def list_my_children(user: User = Depends(get_current_user), db: Session = Depen
 # ---------------------------------------------------------------------------
 
 @router.post("/children/lookup", response_model=FamilyChildrenResponse)
-def lookup_family_children(payload: ChildLoginLookup, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def lookup_family_children(request: Request, payload: ChildLoginLookup, db: Session = Depends(get_db)):
     family = db.query(Family).filter(Family.family_code == payload.family_code.upper()).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family code not found")
@@ -123,7 +127,8 @@ def lookup_family_children(payload: ChildLoginLookup, db: Session = Depends(get_
 
 
 @router.post("/child-login", response_model=TokenResponse)
-def child_login(payload: ChildLogin, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def child_login(request: Request, payload: ChildLogin, db: Session = Depends(get_db)):
     family = db.query(Family).filter(Family.family_code == payload.family_code.upper()).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family code not found")
