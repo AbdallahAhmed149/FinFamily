@@ -10,6 +10,7 @@ import SmartShopper from "@/components/fin/games/SmartShopper";
 import ScamDetective from "@/components/fin/games/ScamDetective";
 import FutureInvestor from "@/components/fin/games/FutureInvestor";
 import SavingHero from "@/components/fin/games/SavingHero";
+import { completeGame } from "@/lib/finApi";
 
 const registry = {
   gm1: BudgetBuilder, gm2: BudgetBuilder, gm3: NeedsVsWants, gm4: GuessPrice,
@@ -19,10 +20,21 @@ const registry = {
 
 export default function GameLauncher({ game, onClose }) {
   const [reward, setReward] = useState(null);
+  const [error, setError] = useState(null);
   const G = registry[game.id] || SmartShopper;
 
-  const handleFinish = (score, total) => {
-    setReward({ score, total, coins: Math.round(score * 6), xp: game.xp || 50 });
+  // المكافأة بتتحدد في الباك اند بس (GAME_CATALOG) — احنا هنا بس بنبعت النتيجة
+  // الخام (score/total) اللي اللعبة وصلتلها، وبنعرض اللي السيرفر يرجعه فعليًا.
+  const handleFinish = async (score, total) => {
+    setError(null);
+    try {
+      const res = await completeGame(game.id, score, total);
+      setReward({ score, total, coins: res.coins_awarded, xp: res.xp_awarded, alreadyToday: res.already_rewarded_today, leveledUp: res.leveled_up });
+    } catch (err) {
+      setError(err.message || "تعذر تسجيل نتيجة اللعبة");
+      // برضو نوري شاشة إنهاء (من غير مكافأة) عشان الطفل ميفضلش واقف
+      setReward({ score, total, coins: 0, xp: 0, alreadyToday: false, leveledUp: false });
+    }
   };
 
   const abort = () => onClose(false);
@@ -31,7 +43,15 @@ export default function GameLauncher({ game, onClose }) {
   return (
     <GameOverlay title={game.title} icon={game.icon} onClose={abort}>
       {reward ? (
-        <RewardScreen title="Mission Complete!" score={reward.score} total={reward.total} coins={reward.coins} xp={reward.xp} onClose={complete} />
+        <RewardScreen
+          title={reward.leveledUp ? "Level Up! 🎉" : "Mission Complete!"}
+          score={reward.score}
+          total={reward.total}
+          coins={reward.coins}
+          xp={reward.xp}
+          note={reward.alreadyToday ? "You already earned coins for this game today — nice practice run though! 💪" : error || undefined}
+          onClose={complete}
+        />
       ) : (
         <G onFinish={handleFinish} />
       )}

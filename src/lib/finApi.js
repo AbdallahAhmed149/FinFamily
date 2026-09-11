@@ -52,3 +52,8 @@ export const getChildTransactions = (childId) => base44.get(`/transactions/child
 
 export const getFamilyInsights = () => base44.get("/family/insights");
 export const getFamilyActivity = () => base44.get("/family/activity");
+
+// ---------------- Mini-games ----------------
+
+export const completeGame = (gameId, score, total) =>
+  base44.post("/games/complete", { game_id: gameId, score, total });

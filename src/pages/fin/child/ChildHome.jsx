@@ -55,10 +55,9 @@ export default function ChildHome() {
   };
 
   const onGameClose = (completed) => {
+    // GameLauncher بيعرض الشاشة الحقيقية (RewardScreen) بالمكافأة الفعلية من الباك اند
+    // قبل ما يقفل — مفيش داعي نكرر احتفال تاني هنا بأرقام وهمية زي ما كان بيحصل قبل كده.
     setActiveGame(null);
-    if (completed) {
-      setMissionDone({ xp: mission.xp, badge: { name: "Smart Shopper", icon: "🛒", desc: "Completed a shopping scenario", color: "#00B894" }, nextMission: "Save Your First 100 EGP" });
-    }
   };
 
   return (

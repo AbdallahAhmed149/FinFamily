@@ -4,7 +4,7 @@ import string
 from datetime import datetime
 import enum
 
-from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Float, Integer, JSON
+from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Float, Integer, JSON, Boolean
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -39,6 +39,7 @@ class TransactionType(str, enum.Enum):
     allowance = "allowance"
     savings_transfer = "savings_transfer"
     card_purchase = "card_purchase"
+    game_reward = "game_reward"
     adjustment = "adjustment"
 
 
@@ -228,5 +229,27 @@ class CardPurchase(Base):
 
     reviewed_by_id = Column(String, nullable=True)
     reviewed_date = Column(DateTime, nullable=True)
+
+    created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class GameCompletion(Base):
+    """
+    كل مرة الطفل يخلّص لعبة (بغض النظر لو أخدت مكافأة حقيقية ولا لأ) — بتتسجل هنا.
+    اليوم الأول لكل لعبة بياخد مكافأة كاملة، أي إعادة لعب في نفس اليوم بتتسجل للتاريخ
+    بس من غير مكافأة تانية (عشان محدش يكرر نفس اللعبة يزنق كوينز لا نهائية).
+    """
+    __tablename__ = "game_completions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    child_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    game_id = Column(String, nullable=False, index=True)
+
+    score = Column(Float, nullable=False)
+    total = Column(Float, nullable=False)
+
+    xp_awarded = Column(Integer, default=0)
+    coins_awarded = Column(Float, default=0)
+    was_rewarded = Column(Boolean, default=True)  # False لو ده تكرار نفس اللعبة في نفس اليوم
 
     created_date = Column(DateTime, default=datetime.utcnow)

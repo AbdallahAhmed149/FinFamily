@@ -9,11 +9,15 @@ from db.models import (
     User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
     Transaction, TransactionType, TransactionDirection,
     CardStatus, CardPurchase, PurchaseStatus, _generate_card_number,
+    GameCompletion,
 )
 from core.deps import get_current_user, require_parent, require_child
 from services.scoring import compute_financial_score, _debit_spend_since
 from services.insights import build_family_insights, build_family_activity
+from services.leveling import apply_xp
+from services.games import compute_reward
 from schemas.insights import InsightOut, ActivityOut
+from schemas.games import GameCompleteRequest, GameCompleteResponse
 from schemas.wallet import (
     WalletOut, WalletLimitsUpdate, WalletCardStatusUpdate, CardThemeUpdate,
     SavingsGoalCreate, SavingsGoalDeposit, SavingsGoalOut,
@@ -328,7 +332,7 @@ def review_mission(
     else:
         if mission.kind == MissionKind.chore:
             wallet.balance += mission.reward
-            child.xp = (child.xp or 0) + int(mission.reward)
+            apply_xp(child, int(mission.reward))
             _log_transaction(
                 db, wallet, parent.family_id,
                 TransactionType.mission_reward, TransactionDirection.credit,
@@ -531,3 +535,69 @@ def family_insights(parent: User = Depends(require_parent), db: Session = Depend
 @router.get("/family/activity", response_model=List[ActivityOut])
 def family_activity(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
     return build_family_activity(db, parent)
+
+
+# ---------------------------------------------------------------------------
+# Mini-games: مكافأة حقيقية فورية (من غير موافقة الأب — عكس الشورز) لما الطفل
+# يخلّص لعبة تعليمية. الباك اند هو اللي بيحدد المكافأة (من GAME_CATALOG)، مش
+# أي رقم جاي من الفرونت — عشان محدش يقدر يعدّل الطلب ويدّي نفسه كوينز وهمية.
+# ---------------------------------------------------------------------------
+
+@router.post("/games/complete", response_model=GameCompleteResponse)
+def complete_game(payload: GameCompleteRequest, child: User = Depends(require_child), db: Session = Depends(get_db)):
+    result = compute_reward(payload.game_id, payload.score, payload.total)
+    if not result:
+        raise HTTPException(status_code=404, detail="Unknown game_id")
+    title, xp_awarded, coins_awarded = result
+
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    already_today = (
+        db.query(GameCompletion)
+        .filter(
+            GameCompletion.child_id == child.id,
+            GameCompletion.game_id == payload.game_id,
+            GameCompletion.was_rewarded == True,  # noqa: E712
+            GameCompletion.created_date >= today_start,
+        )
+        .first()
+        is not None
+    )
+
+    leveled_up = False
+    wallet = _get_wallet_for(db, child)
+
+    if already_today:
+        xp_awarded, coins_awarded = 0, 0
+    else:
+        wallet.balance += coins_awarded
+        leveled_up = apply_xp(child, xp_awarded)
+        _log_transaction(
+            db, wallet, child.family_id,
+            TransactionType.game_reward, TransactionDirection.credit,
+            coins_awarded, f"{title} — mini-game reward",
+        )
+
+    db.add(GameCompletion(
+        child_id=child.id,
+        game_id=payload.game_id,
+        score=payload.score,
+        total=payload.total,
+        xp_awarded=xp_awarded,
+        coins_awarded=coins_awarded,
+        was_rewarded=not already_today,
+    ))
+
+    db.commit()
+    db.refresh(child)
+    db.refresh(wallet)
+
+    return GameCompleteResponse(
+        game_title=title,
+        xp_awarded=xp_awarded,
+        coins_awarded=coins_awarded,
+        already_rewarded_today=already_today,
+        leveled_up=leveled_up,
+        new_xp=child.xp,
+        new_level=child.level,
+        new_balance=wallet.balance,
+    )

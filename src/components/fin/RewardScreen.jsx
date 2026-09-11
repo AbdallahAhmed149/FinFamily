@@ -1,7 +1,7 @@
 import React from "react";
 import { Star, X } from "lucide-react";
 
-export default function RewardScreen({ title = "Great job!", score, total, coins, xp, onClose }) {
+export default function RewardScreen({ title = "Great job!", score, total, coins, xp, note, onClose }) {
   const pct = total ? Math.round((score / total) * 100) : 100;
   const stars = pct >= 80 ? 3 : pct >= 50 ? 2 : 1;
 
@@ -30,6 +30,8 @@ export default function RewardScreen({ title = "Great job!", score, total, coins
           <Star key={s} className={"w-9 h-9 " + (s <= stars ? "text-amber-400 fill-amber-400" : "text-black/15")} />
         ))}
       </div>
+
+      {note && <p className="text-xs text-muted-foreground -mt-2 mb-4 max-w-xs">{note}</p>}
 
       <div className="flex gap-3 mb-6">
         <div className="grad-gold rounded-2xl px-5 py-3 text-white shadow-glow-gold">
