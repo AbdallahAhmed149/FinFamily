@@ -61,3 +61,10 @@ export const completeGame = (gameId, score, total) =>
 // ---------------- Badges ----------------
 
 export const getMyBadges = () => base44.get("/badges/mine");
+
+// ---------------- MFA (الأب بس) ----------------
+
+export const getMfaStatus = () => base44.get("/auth/mfa/status");
+export const setupMfa = () => base44.post("/auth/mfa/setup", {});
+export const enableMfa = (code) => base44.post("/auth/mfa/enable", { code });
+export const disableMfa = (password) => base44.post("/auth/mfa/disable", { password });

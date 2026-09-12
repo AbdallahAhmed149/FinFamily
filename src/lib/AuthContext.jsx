@@ -47,13 +47,18 @@ export const AuthProvider = ({ children }) => {
   // الأب: تسجيل دخول / تسجيل حساب جديد
   // ---------------------------------------------------------------------
 
-  const loginParent = async (email, password) => {
+  // otp_code اختياري: أول مرة (من غير كود) لو الأب مفعّل MFA هيرجع mfa_required=true
+  // من غير token، والفرونت هيسأله عن الكود ويبعت نفس الدالة تاني بالكود.
+  const loginParent = async (email, password, otpCode) => {
     setAuthError(null);
-    const res = await base44.post('/auth/login', { email, password });
+    const res = await base44.post('/auth/login', { email, password, otp_code: otpCode || undefined });
+    if (res.mfa_required) {
+      return { mfaRequired: true };
+    }
     setToken(res.access_token);
     setUser(res.user);
     setIsAuthenticated(true);
-    return res.user;
+    return { mfaRequired: false, user: res.user };
   };
 
   const registerParent = async ({ family_name, full_name, email, password }) => {

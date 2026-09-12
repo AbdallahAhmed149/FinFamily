@@ -17,6 +17,7 @@ class UserResponse(BaseModel):
     xp: int = 0
     level: int = 1
     streak: int = 0
+    mfa_enabled: bool = False
     created_date: datetime
 
     model_config = ConfigDict(from_attributes=True)

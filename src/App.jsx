@@ -36,6 +36,7 @@ import Leaderboard from './pages/fin/child/Leaderboard';
 import AdventureMap from './pages/fin/child/AdventureMap';
 import Missions from './pages/fin/child/Missions';
 import ChildMissions from './pages/fin/parent/ChildMissions';
+import Security from './pages/fin/parent/Security';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
         <Route path="/parent/rewards" element={<RewardApprovals />} />
         <Route path="/parent/coach" element={<ParentCoach />} />
         <Route path="/parent/child-missions" element={<ChildMissions />} />
+        <Route path="/parent/security" element={<Security />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />
