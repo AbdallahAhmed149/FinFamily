@@ -4,19 +4,21 @@ import { ChevronLeft, Send, Sparkles, AlertTriangle, TrendingUp, ShieldCheck } f
 import { GlassCard, FadeIn, Pill } from "@/components/fin/ui";
 import { familyMembers, fmtEGP } from "@/lib/finData";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 
 const SUGGESTIONS = [
   "How is each child doing this week?",
   "Any spending risks I should know about?",
-  "Suggest a better allowance for Lotfy",
+  "Suggest a better allowance plan",
   "How do I protect the family from scams?",
   "Who is the most disciplined saver?",
 ];
 
 export default function ParentCoach() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([
-    { role: "ai", text: "Hello Ahmed 👋 I'm Coach Nour, your family finance analyst. I monitor all 3 children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.", icon: "🤖" },
+    { role: "ai", text: `Hello ${user?.full_name || "there"} 👋 I'm Coach Nour, your family finance analyst. I monitor your children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.`, icon: "🤖" },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
