@@ -1,4 +1,6 @@
 import os
+import secrets
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
@@ -61,3 +63,17 @@ def create_access_token(*, user_id: str, family_id: str, role: str) -> str:
 def decode_access_token(token: str) -> dict:
     # بيرمي jose.JWTError لو التوكن باظت أو خلص وقتها — الـ caller هو اللي هيترجمها لـ 401
     return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+
+# ---------- Password reset tokens ----------
+# مش bcrypt هنا عمدًا: دي مش باسورد اليوزر، هي قيمة عشوائية (secrets.token_urlsafe)
+# محتاجة نلاقيها في الداتابيز بالـ hash بتاعها (lookup)، وbcrypt بيعمل salt عشوائي
+# مختلف كل مرة فمينفعش تدور بيه على row في جدول. sha256 هنا كافي وآمن لأن
+# التوكن الأصلي نفسه عالي العشوائية (32 بايت) مش حاجة حد ممكن يخمّنها.
+
+def generate_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()

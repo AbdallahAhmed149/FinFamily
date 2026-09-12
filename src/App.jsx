@@ -12,6 +12,8 @@ import RoleSelect from './pages/fin/RoleSelect';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ChildLogin from './pages/ChildLogin';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import ChildLayout from './components/fin/ChildLayout';
 import ParentLayout from './components/fin/ParentLayout';
 import ChildHome from './pages/fin/child/ChildHome';
@@ -59,6 +61,8 @@ const AuthenticatedApp = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/child-login" element={<ChildLogin />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Protected: child */}
       <Route element={<ProtectedRoute role="child"><ChildLayout /></ProtectedRoute>}>

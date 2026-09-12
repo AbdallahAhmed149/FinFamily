@@ -1,19 +1,25 @@
+from datetime import datetime, timedelta
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
-from db.models import User, Family, UserRole, Wallet
+from db.models import User, Family, UserRole, Wallet, PasswordResetToken
 from core.security import (
     hash_password,
     verify_password,
     hash_pin,
     verify_pin,
     create_access_token,
+    generate_reset_token,
+    hash_reset_token,
 )
 from core.deps import get_current_user, require_parent
 from core.limiter import limiter
 from core.audit import log_action
 from core import mfa
+from services.email import send_password_reset_email
 from schemas.auth import (
     ParentRegister,
     ParentLogin,
@@ -28,9 +34,15 @@ from schemas.auth import (
     MfaSetupResponse,
     MfaEnableRequest,
     MfaDisableRequest,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    ResetPasswordRequest,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
+
+RESET_TOKEN_EXPIRE_MINUTES = 30
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +220,80 @@ def child_login(request: Request, payload: ChildLogin, db: Session = Depends(get
 
 
 # ---------------------------------------------------------------------------
+# Parent: forgot / reset password
+# ---------------------------------------------------------------------------
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+@limiter.limit("3/hour")
+def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    generic_response = ForgotPasswordResponse()
+
+    user = db.query(User).filter(User.email == payload.email, User.role == UserRole.parent).first()
+    if not user:
+        # نفس الرد بالظبط لو الإيميل مش موجود — عشان محدش يعرف يستنتج إن الإيميل ده مسجل ولا لأ
+        return generic_response
+
+    raw_token = generate_reset_token()
+    reset = PasswordResetToken(
+        user_id=user.id,
+        token_hash=hash_reset_token(raw_token),
+        expires_at=datetime.utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+    )
+    db.add(reset)
+
+    log_action(
+        db, request=request, action="password_reset_requested",
+        actor_id=user.id, actor_role="parent", family_id=user.family_id,
+    )
+    db.commit()
+
+    reset_url = f"{FRONTEND_URL}/reset-password?token={raw_token}"
+    try:
+        send_password_reset_email(user.email, reset_url)
+    except Exception:
+        # ماينفعش نفشل الطلب ونوري للمستخدم إن الإيميل فشل — هيسرّب إن الإيميل ده
+        # فعلاً مسجل (لو مش موجود، مكناش هنوصل للسطر ده أصلاً). نرجّع نفس الرد العام دايمًا.
+        pass
+
+    return generic_response
+
+
+@router.post("/reset-password", response_model=ForgotPasswordResponse)
+@limiter.limit("10/hour")
+def reset_password(request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    token_hash = hash_reset_token(payload.token)
+    reset = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
+
+    if not reset or reset.used or reset.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+
+    user = db.query(User).filter(User.id == reset.user_id, User.role == UserRole.parent).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+
+    user.password_hash = hash_password(payload.new_password)
+    reset.used = True
+
+    # أي روابط تانية لسه صالحة لنفس الأب (لو طلب أكتر من مرة) — تتقفل كمان،
+    # عشان محدش يقدر يستخدم لينك قديم بعد ما الباسورد اتغيّرت فعلاً
+    other_tokens = (
+        db.query(PasswordResetToken)
+        .filter(PasswordResetToken.user_id == user.id, PasswordResetToken.used == False)  # noqa: E712
+        .all()
+    )
+    for t in other_tokens:
+        t.used = True
+
+    log_action(
+        db, request=request, action="password_reset_completed",
+        actor_id=user.id, actor_role="parent", family_id=user.family_id,
+    )
+    db.commit()
+
+    return ForgotPasswordResponse(message="Your password has been reset. You can log in now.")
+
+
+# ---------------------------------------------------------------------------
 # Parent: MFA (TOTP — Google/Microsoft Authenticator)
 # ---------------------------------------------------------------------------
 
@@ -270,6 +356,7 @@ def mfa_enable(
 
 
 @router.post("/mfa/disable", response_model=MfaStatus)
+@limiter.limit("5/minute")
 def mfa_disable(
     request: Request,
     payload: MfaDisableRequest,

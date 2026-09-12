@@ -70,6 +70,16 @@ export const AuthProvider = ({ children }) => {
     return res.user;
   };
 
+  // مفيهاش auth (الأب لسه مش داخل، ده أصلاً الغرض منها) — نفس الرد سواء الإيميل
+  // مسجل أو لأ، عشان محدش يعرف يستنتج مين عنده حساب
+  const forgotPassword = async (email) => {
+    return base44.post('/auth/forgot-password', { email });
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    return base44.post('/auth/reset-password', { token, new_password: newPassword });
+  };
+
   // ---------------------------------------------------------------------
   // الطفل: يدور على عيلته بالكود، وبعدين يدخل بالـ PIN
   // ---------------------------------------------------------------------
@@ -131,6 +141,8 @@ export const AuthProvider = ({ children }) => {
         isChild: user?.role === 'child',
         loginParent,
         registerParent,
+        forgotPassword,
+        resetPassword,
         lookupFamilyChildren,
         loginChild,
         getFamilyCode,

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,8 @@ import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function ResetPassword() {
+  const navigate = useNavigate();
+  const { resetPassword } = useAuth();
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
 
@@ -25,8 +27,8 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      await base44.auth.resetPassword({ resetToken, newPassword });
-      window.location.href = "/login";
+      await resetPassword(resetToken, newPassword);
+      navigate("/login");
     } catch (err) {
       setError(err.message || "Failed to reset password");
     } finally {

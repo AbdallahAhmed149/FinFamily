@@ -297,3 +297,21 @@ class UserBadge(Base):
 
     badge_id = Column(String, nullable=False)  # مفتاح من BADGE_DEFS، زي "first_chore"
     unlocked_date = Column(DateTime, default=datetime.utcnow)
+
+
+class PasswordResetToken(Base):
+    """
+    توكن استعادة الباسورد (الأب بس). بنخزّن الـ hash بتاعه مش القيمة الخام —
+    لو الداتابيز اتسربت محدش يقدر يستخدمهم مباشرة. صالح لمدة محدودة
+    (RESET_TOKEN_EXPIRE_MINUTES في auth_routes.py) واستخدام واحد بس (used).
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+
+    token_hash = Column(String, nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+
+    created_date = Column(DateTime, default=datetime.utcnow)

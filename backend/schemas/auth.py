@@ -75,6 +75,23 @@ class MfaDisableRequest(BaseModel):
     password: str  # تأكيد بالباسورد الحالي قبل ما نقفل MFA
 
 
+# ---------- Forgot / reset password (الأب بس) ----------
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    # نفس الرسالة بالظبط سواء الإيميل مسجل ولا لأ — عشان محدش يعرف يستنتج
+    # مين عنده حساب من رد الـ endpoint (نفس منطق /login بالظبط).
+    message: str = "If that email is registered, a password reset link has been sent."
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8)
+
+
 # ---------- Child management (done by the parent) ----------
 
 class ChildCreate(BaseModel):
