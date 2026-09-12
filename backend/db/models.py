@@ -99,10 +99,11 @@ class User(Base):
     # بيانات الطفل بس
     pin_hash = Column(String, nullable=True)
 
-    # gamification (الطفل بس — بتتحدث تلقائي مع كل mission يتوافق عليها)
+    # gamification (الطفل بس — بتتحدث تلقائي مع كل mission يتوافق عليها أو لعبة يخلّصها)
     xp = Column(Integer, default=0)
     level = Column(Integer, default=1)
     streak = Column(Integer, default=0)
+    last_active_date = Column(DateTime, nullable=True)  # آخر يوم اتحسب فيه نشاط للـ streak
 
     # MFA (الأب بس) — TOTP زي Google/Microsoft Authenticator
     mfa_enabled = Column(Boolean, default=False, nullable=False)
@@ -110,6 +111,7 @@ class User(Base):
     mfa_pending_secret = Column(String, nullable=True)  # سيكريت مؤقت وقت setup لحد ما يتأكد بكود صحيح
 
     wallet = relationship("Wallet", back_populates="owner", uselist=False, cascade="all, delete-orphan")
+    badges = relationship("UserBadge", back_populates="user", cascade="all, delete-orphan")
 
     created_date = Column(DateTime, default=datetime.utcnow)
     updated_date = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -283,3 +285,15 @@ class AuditLog(Base):
     ip_address = Column(String, nullable=True)
 
     created_date = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class UserBadge(Base):
+    """شارة اتفتحت فعليًا لطفل معيّن — التعريفات نفسها (الاسم/الوصف/شرط الفتح) في services/badges.py"""
+    __tablename__ = "user_badges"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    user = relationship("User", back_populates="badges")
+
+    badge_id = Column(String, nullable=False)  # مفتاح من BADGE_DEFS، زي "first_chore"
+    unlocked_date = Column(DateTime, default=datetime.utcnow)

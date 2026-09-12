@@ -9,17 +9,20 @@ from db.models import (
     User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
     Transaction, TransactionType, TransactionDirection,
     CardStatus, CardPurchase, PurchaseStatus, _generate_card_number,
-    GameCompletion, AuditLog,
+    GameCompletion, AuditLog, UserBadge,
 )
 from core.deps import get_current_user, require_parent, require_child
 from core.audit import log_action
 from services.scoring import compute_financial_score, _debit_spend_since
 from services.insights import build_family_insights, build_family_activity
 from services.leveling import apply_xp
-from services.games import compute_reward
+from services.games import compute_reward, PERFECT_DAY_BONUS_XP, PERFECT_DAY_BONUS_COINS
+from services.streaks import touch_streak
+from services.badges import BADGE_DEFS, check_and_award_badges
 from schemas.insights import InsightOut, ActivityOut
 from schemas.audit import AuditLogOut
 from schemas.games import GameCompleteRequest, GameCompleteResponse
+from schemas.badges import BadgeOut
 from schemas.wallet import (
     WalletOut, WalletLimitsUpdate, WalletCardStatusUpdate, CardThemeUpdate,
     SavingsGoalCreate, SavingsGoalDeposit, SavingsGoalOut,
@@ -282,6 +285,8 @@ def deposit_to_goal(
         payload.amount, f"Transferred to savings goal: {goal.name}",
     )
 
+    check_and_award_badges(db, child)  # super_saver ممكن تتفتح هنا لو الهدف خلص
+
     db.commit()
     db.refresh(goal)
     return goal
@@ -349,6 +354,7 @@ def submit_mission(mission_id: str, child: User = Depends(require_child), db: Se
         raise HTTPException(status_code=400, detail=f"Mission is already {mission.status.value}")
 
     mission.status = MissionStatus.submitted
+    touch_streak(child)
     db.commit()
     db.refresh(mission)
     return mission
@@ -392,6 +398,8 @@ def review_mission(
                 mission.reward, mission.title, mission_id=mission.id,
             )
         mission.status = MissionStatus.approved
+        if mission.kind == MissionKind.chore:
+            check_and_award_badges(db, child)  # first_chore / big_earner ممكن تتفتح هنا
 
     mission.reviewed_by_id = parent.id
     mission.reviewed_date = datetime.utcnow()
@@ -679,10 +687,32 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         coins_awarded=coins_awarded,
         was_rewarded=not already_today,
     ))
+    db.flush()  # عشان محاولة اللعب دي تتحسب لو كانت هي آخر لعبة في تحدي "Perfect Day"
+
+    touch_streak(child)
+
+    newly_unlocked = check_and_award_badges(db, child)
+
+    perfect_bonus_xp, perfect_bonus_coins = 0, 0
+    if any(b["id"] == "perfect_day" for b in newly_unlocked):
+        perfect_bonus_xp, perfect_bonus_coins = PERFECT_DAY_BONUS_XP, PERFECT_DAY_BONUS_COINS
+        wallet.balance += perfect_bonus_coins
+        if apply_xp(child, perfect_bonus_xp):
+            leveled_up = True
+        _log_transaction(
+            db, wallet, child.family_id,
+            TransactionType.game_reward, TransactionDirection.credit,
+            perfect_bonus_coins, "Perfect Day bonus — all mini-games completed today! 🌟",
+        )
 
     db.commit()
     db.refresh(child)
     db.refresh(wallet)
+
+    badge_out = [
+        BadgeOut(id=b["id"], name=b["name"], icon=b["icon"], desc=b["desc"], unlocked=True, unlocked_date=datetime.utcnow())
+        for b in newly_unlocked
+    ]
 
     return GameCompleteResponse(
         game_title=title,
@@ -693,4 +723,20 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         new_xp=child.xp,
         new_level=child.level,
         new_balance=wallet.balance,
+        new_streak=child.streak,
+        newly_unlocked_badges=badge_out,
+        perfect_day_bonus_xp=perfect_bonus_xp,
+        perfect_day_bonus_coins=perfect_bonus_coins,
     )
+
+
+@router.get("/badges/mine", response_model=List[BadgeOut])
+def my_badges(child: User = Depends(require_child), db: Session = Depends(get_db)):
+    unlocked = {b.badge_id: b.unlocked_date for b in db.query(UserBadge).filter(UserBadge.user_id == child.id).all()}
+    return [
+        BadgeOut(
+            id=bd["id"], name=bd["name"], icon=bd["icon"], desc=bd["desc"],
+            unlocked=bd["id"] in unlocked, unlocked_date=unlocked.get(bd["id"]),
+        )
+        for bd in BADGE_DEFS
+    ]

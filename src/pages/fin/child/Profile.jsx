@@ -6,9 +6,9 @@ import {
 } from "lucide-react";
 import Lotfy from "@/components/fin/Lotfy";
 import { GlassCard, ProgressBar, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { LOGO_IMAGE, skills, adventureBadges, levels } from "@/lib/finData";
+import { LOGO_IMAGE, skills, levels } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
-import { getMyWallet, getMyMissions } from "@/lib/finApi";
+import { getMyWallet, getMyMissions, getMyBadges } from "@/lib/finApi";
 import { useTheme } from "@/lib/useTheme";
 import { Image } from "@/components/ui/image";
 
@@ -19,15 +19,17 @@ export default function ChildProfile() {
 
   const [wallet, setWallet] = useState(null);
   const [missions, setMissions] = useState([]);
+  const [badges, setBadges] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [w, m] = await Promise.all([getMyWallet(), getMyMissions()]);
+        const [w, m, b] = await Promise.all([getMyWallet(), getMyMissions(), getMyBadges()]);
         if (!cancelled) {
           setWallet(w);
           setMissions(m);
+          setBadges(b);
         }
       } catch {
         // فشل التحميل هنا مش critical — الصفحة بتفضل تشتغل بالقيم الافتراضية
@@ -125,14 +127,14 @@ export default function ChildProfile() {
         </GlassCard>
       </FadeIn>
 
-      {/* adventure badges */}
+      {/* badges — حقيقية دلوقتي من /badges/mine، مش mock */}
       <FadeIn delay={200}>
         <SectionTitle>Badges</SectionTitle>
         <div className="grid grid-cols-4 gap-3">
-          {adventureBadges.map((b) => (
-            <div key={b.id} className={"text-center " + (b.earned ? "" : "opacity-30 grayscale")}>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-premium" style={{ background: b.earned ? `linear-gradient(135deg, ${b.color}, ${b.color}cc)` : "#0001" }}>
-                {b.earned ? b.icon : "🔒"}
+          {badges.map((b) => (
+            <div key={b.id} className={"text-center " + (b.unlocked ? "" : "opacity-30 grayscale")}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-premium" style={{ background: b.unlocked ? "linear-gradient(135deg, #FFC857, #f5a623)" : "#0001" }}>
+                {b.unlocked ? b.icon : "🔒"}
               </div>
               <div className="text-[9px] font-semibold mt-1 leading-tight">{b.name}</div>
             </div>

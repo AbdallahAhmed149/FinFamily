@@ -29,27 +29,39 @@ export default function GameLauncher({ game, onClose }) {
     setError(null);
     try {
       const res = await completeGame(game.id, score, total);
-      setReward({ score, total, coins: res.coins_awarded, xp: res.xp_awarded, alreadyToday: res.already_rewarded_today, leveledUp: res.leveled_up });
+      setReward({
+        score, total,
+        coins: res.coins_awarded, xp: res.xp_awarded,
+        alreadyToday: res.already_rewarded_today, leveledUp: res.leveled_up,
+        newBadges: res.newly_unlocked_badges || [],
+        perfectDayCoins: res.perfect_day_bonus_coins, perfectDayXp: res.perfect_day_bonus_xp,
+      });
     } catch (err) {
       setError(err.message || "تعذر تسجيل نتيجة اللعبة");
       // برضو نوري شاشة إنهاء (من غير مكافأة) عشان الطفل ميفضلش واقف
-      setReward({ score, total, coins: 0, xp: 0, alreadyToday: false, leveledUp: false });
+      setReward({ score, total, coins: 0, xp: 0, alreadyToday: false, leveledUp: false, newBadges: [], perfectDayCoins: 0, perfectDayXp: 0 });
     }
   };
 
   const abort = () => onClose(false);
   const complete = () => { setReward(null); onClose(true); };
 
+  const noteLines = [];
+  if (reward?.alreadyToday) noteLines.push("You already earned coins for this game today — nice practice run though! 💪");
+  if (reward?.perfectDayCoins > 0) noteLines.push(`🌟 Perfect Day bonus: +${reward.perfectDayCoins} coins, +${reward.perfectDayXp} XP — you played every game today!`);
+  if (reward?.newBadges?.length) noteLines.push(`New badge${reward.newBadges.length > 1 ? "s" : ""}: ${reward.newBadges.map((b) => `${b.icon} ${b.name}`).join(", ")}`);
+  if (!reward?.alreadyToday && error) noteLines.push(error);
+
   return (
     <GameOverlay title={game.title} icon={game.icon} onClose={abort}>
       {reward ? (
         <RewardScreen
-          title={reward.leveledUp ? "Level Up! 🎉" : "Mission Complete!"}
+          title={reward.newBadges?.length ? "New Badge Unlocked! 🏅" : reward.leveledUp ? "Level Up! 🎉" : "Mission Complete!"}
           score={reward.score}
           total={reward.total}
-          coins={reward.coins}
-          xp={reward.xp}
-          note={reward.alreadyToday ? "You already earned coins for this game today — nice practice run though! 💪" : error || undefined}
+          coins={reward.coins + (reward.perfectDayCoins || 0)}
+          xp={reward.xp + (reward.perfectDayXp || 0)}
+          note={noteLines.length ? noteLines.join(" · ") : undefined}
           onClose={complete}
         />
       ) : (

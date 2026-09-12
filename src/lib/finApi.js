@@ -57,3 +57,7 @@ export const getFamilyActivity = () => base44.get("/family/activity");
 
 export const completeGame = (gameId, score, total) =>
   base44.post("/games/complete", { game_id: gameId, score, total });
+
+// ---------------- Badges ----------------
+
+export const getMyBadges = () => base44.get("/badges/mine");

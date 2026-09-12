@@ -14,6 +14,10 @@ GAME_CATALOG = {
     "gm11": {"title": "Saving Hero", "base_xp": 50},
 }
 
+# مكافأة إضافية لو الطفل خلّص كل الألعاب في نفس اليوم — مرة واحدة بس في اليوم
+PERFECT_DAY_BONUS_XP = 100
+PERFECT_DAY_BONUS_COINS = 50
+
 
 def compute_reward(game_id: str, score: float, total: float):
     """
