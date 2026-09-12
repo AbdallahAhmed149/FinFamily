@@ -15,6 +15,7 @@ import SmartShopper from "@/components/fin/games/SmartShopper";
 import ScamDetective from "@/components/fin/games/ScamDetective";
 import FutureInvestor from "@/components/fin/games/FutureInvestor";
 import SavingHero from "@/components/fin/games/SavingHero";
+import { useTranslation } from "react-i18next";
 
 const iconEmoji = { coins: "🪙", scale: "⚖️", "pie-chart": "📊", "piggy-bank": "🐷", smartphone: "📱", "credit-card": "💳", shield: "🛡️", "alert-triangle": "⚠️", landmark: "🏦", "trending-up": "📈" };
 
@@ -33,6 +34,7 @@ const gameComponents = {
 };
 
 export default function Learn() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [tab, setTab] = useState("lessons");
   const [openLesson, setOpenLesson] = useState(null);
@@ -52,33 +54,33 @@ export default function Learn() {
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Learn</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("child_learn.title")}</h1>
       </FadeIn>
 
       <FadeIn delay={60}>
         <div className="grad-navy rounded-3xl p-4 text-white shadow-premium flex items-center gap-4">
           <div className="text-3xl">🎓</div>
           <div className="flex-1">
-            <div className="text-sm text-white/70">Learning Path</div>
-            <div className="font-bold">{child.xp} XP · Level {child.level}</div>
+            <div className="text-sm text-white/70">{t("child_learn.path")}</div>
+            <div className="font-bold">{t("child_learn.level", { xp: child.xp, level: child.level })}</div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-extrabold">3/10</div>
-            <div className="text-xs text-white/60">lessons</div>
+            <div className="text-2xl font-extrabold">{t("child_learn.lessons_count", { done: 3 })}</div>
+            <div className="text-xs text-white/60">{t("child_learn.lessons_label")}</div>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn delay={120} className="flex gap-2 mt-5 mb-4">
-        {["lessons", "games"].map((t) => {
-          const Icon = t === "lessons" ? GraduationCap : Gamepad2;
+        {["lessons", "games"].map((tabKey) => {
+          const Icon = tabKey === "lessons" ? GraduationCap : Gamepad2;
           return (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={"flex-1 h-11 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 " + (tab === t ? "grad-navy text-white shadow-premium" : "glass text-muted-foreground")}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
+              className={"flex-1 h-11 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 " + (tab === tabKey ? "grad-navy text-white shadow-premium" : "glass text-muted-foreground")}
             >
-              <Icon className="w-4 h-4" /> {t === "lessons" ? "Lessons" : "Games"}
+              <Icon className="w-4 h-4" /> {tabKey === "lessons" ? t("child_learn.tab_lessons") : t("child_learn.tab_games")}
             </button>
           );
         })}
@@ -110,17 +112,17 @@ export default function Learn() {
                 </button>
                 {openLesson === l.id && (
                   <FadeIn className="glass rounded-2xl p-4 mt-1.5 animate-pop">
-                    <div className="text-sm font-semibold mb-2">{l.title} · Story</div>
+                    <div className="text-sm font-semibold mb-2">{l.title}{t("child_learn.story")}</div>
                     <div className="rounded-xl p-4 mb-3 text-sm leading-relaxed" style={{ background: `${l.color}12` }}>
-                      🦁 Once upon a time, Lotfy earned his first 10 EGP. He learned that money can be saved, spent, or shared — and that smart choices today grow into big dreams tomorrow!
+                      {t("child_learn.story_desc")}
                     </div>
                     <div className="flex gap-2 mb-3">
-                      <Pill color={l.color}>+{l.xp} XP</Pill>
-                      <Pill color="#FFC857">🪙 +20</Pill>
-                      <Pill color="#8b5cf6">Certificate</Pill>
+                      <Pill color={l.color}>{t("child_learn.pts", { xp: l.xp })}</Pill>
+                      <Pill color="#FFC857">{t("child_learn.coins")}</Pill>
+                      <Pill color="#8b5cf6">{t("child_learn.certificate")}</Pill>
                     </div>
                     <button onClick={() => setQuiz(l)} disabled={locked} className="w-full h-11 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{ background: l.color }}>
-                      <Play className="w-4 h-4" /> Start Quiz
+                      <Play className="w-4 h-4" /> {t("child_learn.start_quiz")}
                     </button>
                   </FadeIn>
                 )}
@@ -156,7 +158,7 @@ export default function Learn() {
       {activeGame && (
         <GameOverlay title={activeGame.title} icon={activeGame.icon} onClose={closeGame}>
           {reward ? (
-            <RewardScreen title="Game Complete!" score={reward.score} total={reward.total} coins={reward.coins} xp={reward.xp} onClose={closeGame} />
+            <RewardScreen title={t("child_learn.game_completed")} score={reward.score} total={reward.total} coins={reward.coins} xp={reward.xp} onClose={closeGame} />
           ) : (() => {
             const G = gameComponents[activeGame.id] || GuessPrice;
             return <G onFinish={handleGameFinish} />;

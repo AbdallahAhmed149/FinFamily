@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import AuthLayout from "@/components/AuthLayout";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { registerParent } = useAuth();
 
   const [familyName, setFamilyName] = useState("");
@@ -23,7 +25,7 @@ export default function Register() {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t('auth.pass_mismatch'));
       return;
     }
     setLoading(true);
@@ -36,7 +38,7 @@ export default function Register() {
       });
       navigate("/parent");
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || t('auth.reg_failed'));
     } finally {
       setLoading(false);
     }
@@ -45,13 +47,13 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      title={t('auth.reg_title')}
+      subtitle={t('auth.reg_subtitle')}
       footer={
         <>
-          Already have an account?{" "}
+          {t('auth.already_have')}{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">
-            Log in
+            {t('auth.log_in_btn')}
           </Link>
         </>
       }
@@ -64,7 +66,7 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="familyName">Family Name</Label>
+          <Label htmlFor="familyName">{t('auth.family_name')}</Label>
           <div className="relative">
             <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -72,7 +74,7 @@ export default function Register() {
               type="text"
               autoComplete="off"
               autoFocus
-              placeholder="The Ahmed Family"
+              placeholder={t('auth.family_placeholder')}
               value={familyName}
               onChange={(e) => setFamilyName(e.target.value)}
               className="pl-10 h-12"
@@ -81,14 +83,14 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="fullName">Your Name</Label>
+          <Label htmlFor="fullName">{t('auth.your_name')}</Label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="fullName"
               type="text"
               autoComplete="name"
-              placeholder="Abdallah Ahmed"
+              placeholder={t('auth.name_placeholder')}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="pl-10 h-12"
@@ -97,14 +99,14 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t('auth.email')}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder={t('auth.email_placeholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"
@@ -113,14 +115,14 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t('auth.password')}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="password"
               type="password"
               autoComplete="new-password"
-              placeholder="••••••••"
+              placeholder={t('auth.password_placeholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 h-12"
@@ -130,14 +132,14 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">{t('auth.confirm_pass')}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="confirm"
               type="password"
               autoComplete="new-password"
-              placeholder="••••••••"
+              placeholder={t('auth.password_placeholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 h-12"
@@ -150,10 +152,10 @@ export default function Register() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
+              {t('auth.creating')}
             </>
           ) : (
-            "Create account"
+            t('auth.create_account')
           )}
         </Button>
       </form>

@@ -4,13 +4,7 @@ import { ChevronLeft, Send, Sparkles } from "lucide-react";
 import Lotfy from "@/components/fin/Lotfy";
 import { FadeIn } from "@/components/fin/ui";
 import { base44 } from "@/api/base44Client";
-
-const suggestions = [
-  "I want a football ⚽",
-  "How do I save money?",
-  "What's a budget?",
-  "Is this message a scam?",
-];
+import { useTranslation } from "react-i18next";
 
 const fallback = (msg) => {
   const m = msg.toLowerCase();
@@ -22,9 +16,11 @@ const fallback = (msg) => {
 };
 
 export default function Coach() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const suggestions = t("child_coach.suggestions", { returnObjects: true });
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Hi Lotfy! 👋 I'm FinBuddy 🤖, your AI money buddy. I'll help you learn money skills by thinking together. Tell me a goal or ask me anything! 💚" },
+    { role: "assistant", text: t("child_coach.welcome") },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,10 +38,10 @@ export default function Coach() {
       // نبعت الـ request للـ Endpoint بتاعنا ونحدد mode: "child"
       const res = await base44.post("/functions/aiCoach", { message: msg, mode: "child" });
       
-      setMessages((m) => [...m, { role: "ai", text: res?.reply || "Hmm, let me think about that!", icon: "🤖" }]);
+      setMessages((m) => [...m, { role: "ai", text: res?.reply || t("child_coach.error1"), icon: "🤖" }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages((m) => [...m, { role: "ai", text: "Oops, my brain is offline for a second. Try again!", icon: "🤖" }]);
+      setMessages((m) => [...m, { role: "ai", text: t("child_coach.error2"), icon: "🤖" }]);
     }
     setLoading(false);
   };
@@ -60,8 +56,8 @@ export default function Coach() {
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-lg font-extrabold font-heading leading-tight">FinBuddy 🤖</h1>
-          <div className="text-xs text-emerald-600 font-semibold">● Online · AI Money Buddy</div>
+          <h1 className="text-lg font-extrabold font-heading leading-tight">{t("child_coach.title")}</h1>
+          <div className="text-xs text-emerald-600 font-semibold">{t("child_coach.subtitle")}</div>
         </div>
       </FadeIn>
 
@@ -105,7 +101,7 @@ export default function Coach() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Ask FinBuddy anything..."
+          placeholder={t("child_coach.placeholder")}
           className="flex-1 bg-transparent px-3 py-2 text-sm outline-none"
         />
         <button onClick={() => send()} disabled={loading || !input.trim()} className="w-10 h-10 rounded-xl grad-emerald flex items-center justify-center disabled:opacity-40">

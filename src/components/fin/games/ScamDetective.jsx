@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Check, X, ShieldCheck, ArrowRight } from "lucide-react";
 import { scamDetectiveScenarios } from "@/lib/finData";
+import { useTranslation } from "react-i18next";
 
 export default function ScamDetective({ onFinish }) {
+  const { t } = useTranslation();
   const [round, setRound] = useState(0);
   const [picked, setPicked] = useState(null);
   const [score, setScore] = useState(0);
@@ -32,10 +34,10 @@ export default function ScamDetective({ onFinish }) {
     return (
       <div className="px-6 py-12 text-center animate-pop">
         <div className="text-5xl mb-3">🕵️</div>
-        <h2 className="text-xl font-extrabold font-heading">Scam Detective Complete!</h2>
-        <p className="text-sm text-muted-foreground mt-1">You spotted {score} of {scamDetectiveScenarios.length} scams</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("game_scam_detective.complete")}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t("game_scam_detective.score", { score, total: scamDetectiveScenarios.length })}</p>
         <div className="mt-4 inline-flex items-center gap-2 grad-emerald rounded-full px-4 py-2 text-white text-sm font-bold shadow-glow-emerald">
-          <ShieldCheck className="w-4 h-4" /> Badge Unlocked: Scam Detective
+          <ShieldCheck className="w-4 h-4" /> {t("game_scam_detective.badge")}
         </div>
       </div>
     );
@@ -45,8 +47,8 @@ export default function ScamDetective({ onFinish }) {
     <div className="px-4 pt-8 pb-8 max-w-md mx-auto">
       <div className="text-center mb-4">
         <div className="text-5xl mb-2">🕵️</div>
-        <h2 className="text-xl font-extrabold font-heading">Scam Detective</h2>
-        <p className="text-xs text-muted-foreground">Case {round + 1} of {scamDetectiveScenarios.length} · Spot the danger</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("game_scam_detective.title")}</h2>
+        <p className="text-xs text-muted-foreground">{t("game_scam_detective.desc", { current: round + 1, total: scamDetectiveScenarios.length })}</p>
       </div>
 
       <div className="flex gap-1.5 mb-4">
@@ -80,10 +82,10 @@ export default function ScamDetective({ onFinish }) {
 
       {picked !== null && (
         <div className="mt-4 rounded-2xl p-4 animate-pop" style={{ background: opt?.correct ? "#00B89415" : "#ef444415" }}>
-          <div className="font-bold text-sm mb-1">{opt?.correct ? "✅ Correct!" : "⚠️ Not the safest move"}</div>
+          <div className="font-bold text-sm mb-1">{opt?.correct ? t("game_scam_detective.correct") : t("game_scam_detective.warning")}</div>
           <p className="text-xs text-muted-foreground leading-relaxed">{opt?.explain}</p>
           <button onClick={next} className="w-full h-11 mt-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 grad-navy active:scale-[0.98] transition-all">
-            {round + 1 >= scamDetectiveScenarios.length ? "Finish" : "Next Case"} <ArrowRight className="w-4 h-4" />
+            {round + 1 >= scamDetectiveScenarios.length ? t("game_scam_detective.finish") : t("game_scam_detective.next_case")} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       )}

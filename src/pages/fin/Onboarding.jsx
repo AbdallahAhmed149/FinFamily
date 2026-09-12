@@ -1,35 +1,38 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ShieldCheck, Gamepad2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const pages = [
-  {
-    icon: ShieldCheck,
-    title: "Parents Stay in Control",
-    desc: "Set allowances, approve purchases, and monitor spending — all from one secure dashboard.",
-    color: "#0F2D52",
-    art: "👨‍👩‍👧‍👦",
-  },
-  {
-    icon: Gamepad2,
-    title: "Children Learn by Doing",
-    desc: "Lotfy saves, budgets, and plays educational games that build real financial habits.",
-    color: "#00B894",
-    art: "🦁",
-  },
-  {
-    icon: Sparkles,
-    title: "AI Builds Healthy Habits",
-    desc: "A personal AI coach guides every decision, celebrates wins, and recommends the next step.",
-    color: "#FFC857",
-    art: "🤖",
-  },
-];
 
 export default function Onboarding() {
   const [i, setI] = useState(0);
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const pages = [
+    {
+      icon: ShieldCheck,
+      title: t('onboarding.pages.0.title'),
+      desc: t('onboarding.pages.0.desc'),
+      color: "#0F2D52",
+      art: "👨‍👩‍👧‍👦",
+    },
+    {
+      icon: Gamepad2,
+      title: t('onboarding.pages.1.title'),
+      desc: t('onboarding.pages.1.desc'),
+      color: "#00B894",
+      art: "🦁",
+    },
+    {
+      icon: Sparkles,
+      title: t('onboarding.pages.2.title'),
+      desc: t('onboarding.pages.2.desc'),
+      color: "#FFC857",
+      art: "🤖",
+    },
+  ];
+
   const page = pages[i];
   const Icon = page.icon;
   const last = i === pages.length - 1;
@@ -41,7 +44,7 @@ export default function Onboarding() {
       <div className="flex justify-end p-5">
         {!last && (
           <button onClick={() => navigate("/role-select")} className="text-sm font-semibold text-muted-foreground">
-            Skip
+            {t('onboarding.skip')}
           </button>
         )}
       </div>
@@ -81,7 +84,7 @@ export default function Onboarding() {
           className="w-full h-14 rounded-2xl text-white font-bold font-heading shadow-premium active:scale-[0.98] transition-all"
           style={{ background: last ? "linear-gradient(135deg,#00B894,#0F2D52)" : "linear-gradient(135deg,#0F2D52,#1a4571)" }}
         >
-          {last ? "Start Journey" : "Next"}
+          {last ? t('onboarding.start') : t('onboarding.next')}
         </button>
       </div>
     </div>

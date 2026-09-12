@@ -5,6 +5,7 @@ import { GlassCard, FadeIn, SectionTitle, Pill, ProgressBar } from "@/components
 import { useAuth } from "@/lib/AuthContext";
 import { getChildWallet, getChildTransactions, updateChildLimits } from "@/lib/finApi";
 import { blockableCategories, fmtEGP } from "@/lib/finData";
+import { useTranslation } from "react-i18next";
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
@@ -38,6 +39,7 @@ function computeSpent(transactions) {
 }
 
 export default function SpendingLimits() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { getFamilyChildren } = useAuth();
@@ -82,7 +84,7 @@ export default function SpendingLimits() {
       });
       setMemberData(data);
     } catch (err) {
-      setLoadError(err.message || "تعذر تحميل بيانات العيلة");
+      setLoadError(err.message || t("spending_limits.load_error"));
     } finally {
       setLoading(false);
     }
@@ -125,7 +127,7 @@ export default function SpendingLimits() {
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
     } catch (err) {
-      setSaveError(err.message || "حصل خطأ وإحنا بنحفظ الحدود");
+      setSaveError(err.message || t("spending_limits.save_error"));
     } finally {
       setSaving(false);
     }
@@ -138,13 +140,13 @@ export default function SpendingLimits() {
           <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-extrabold font-heading">Spending Limits</h1>
+          <h1 className="text-xl font-extrabold font-heading">{t("spending_limits.title")}</h1>
         </FadeIn>
         {loadError ? (
           <div className="rounded-2xl bg-red-50 text-red-600 text-sm px-4 py-3">{loadError}</div>
         ) : (
           <div className="text-center text-sm text-muted-foreground py-8">
-            مفيش أطفال متضافين لسه — ضيف طفل الأول من صفحة Family Members.
+            {t("spending_limits.no_kids")}
           </div>
         )}
       </div>
@@ -152,9 +154,9 @@ export default function SpendingLimits() {
   }
 
   const periods = activeData ? [
-    { key: "daily", label: "Daily", icon: "☀️", spent: activeData.spent.daily, color: "#FFC857" },
-    { key: "weekly", label: "Weekly", icon: "📅", spent: activeData.spent.weekly, color: "#00B894" },
-    { key: "monthly", label: "Monthly", icon: "🗓️", spent: activeData.spent.monthly, color: "#0F2D52" },
+    { key: "daily", label: t("spending_limits.daily_limit"), icon: "☀️", spent: activeData.spent.daily, color: "#FFC857" },
+    { key: "weekly", label: t("spending_limits.weekly_limit"), icon: "📅", spent: activeData.spent.weekly, color: "#00B894" },
+    { key: "monthly", label: t("spending_limits.monthly_limit"), icon: "🗓️", spent: activeData.spent.monthly, color: "#0F2D52" },
   ] : [];
 
   return (
@@ -163,7 +165,7 @@ export default function SpendingLimits() {
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Spending Limits</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("spending_limits.title")}</h1>
       </FadeIn>
 
       {loadError && (
@@ -184,7 +186,7 @@ export default function SpendingLimits() {
       {/* limit sliders */}
       {activeData && (
         <FadeIn delay={80} className="mt-4">
-          <SectionTitle>Auto Spending Limits · {active?.full_name}</SectionTitle>
+          <SectionTitle>{t("spending_limits.auto_limits", { name: active?.full_name })}</SectionTitle>
           <div className="space-y-3">
             {periods.map((p) => {
               const limit = activeData.limits[p.key];
@@ -194,19 +196,19 @@ export default function SpendingLimits() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{p.icon}</span>
-                      <span className="font-bold text-sm">{p.label} Limit</span>
+                      <span className="font-bold text-sm">{p.label}</span>
                     </div>
-                    {over && <Pill color="#ef4444" className="text-[10px] py-0"><AlertTriangle className="w-3 h-3" /> Exceeded</Pill>}
+                    {over && <Pill color="#ef4444" className="text-[10px] py-0"><AlertTriangle className="w-3 h-3" /> {t("spending_limits.exceeded")}</Pill>}
                   </div>
                   <div className="flex items-center gap-3">
                     <input type="range" min="0" max={p.key === "monthly" ? 3000 : p.key === "weekly" ? 800 : 200} step="5" value={limit} onChange={(e) => setLimit(p.key, Number(e.target.value))} className="flex-1 accent-emerald-500" />
                     <div className="text-right min-w-[90px]">
                       <div className="font-extrabold font-heading">{fmtEGP(limit)}</div>
-                      <div className="text-[10px] text-muted-foreground">spent {fmtEGP(p.spent)}</div>
+                      <div className="text-[10px] text-muted-foreground">{t("spending_limits.spent", { amount: fmtEGP(p.spent) })}</div>
                     </div>
                   </div>
                   <ProgressBar value={p.spent} max={limit || 1} color={over ? "#ef4444" : p.color} className="mt-2" />
-                  <div className="text-[11px] text-muted-foreground mt-1">Card auto-freezes if {p.label.toLowerCase()} limit is exceeded.</div>
+                  <div className="text-[11px] text-muted-foreground mt-1">{t("spending_limits.freeze_note", { label: p.label })}</div>
                 </GlassCard>
               );
             })}
@@ -217,9 +219,9 @@ export default function SpendingLimits() {
       {/* category blocking */}
       {activeData && (
         <FadeIn delay={120} className="mt-5">
-          <SectionTitle>Blocked Categories</SectionTitle>
+          <SectionTitle>{t("spending_limits.blocked_categories")}</SectionTitle>
           <div className="glass rounded-2xl p-3 mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <Lock className="w-4 h-4 text-red-500" /> Block categories so {active?.full_name} can't spend on them at all.
+            <Lock className="w-4 h-4 text-red-500" /> {t("spending_limits.block_note", { name: active?.full_name })}
           </div>
           <div className="grid grid-cols-2 gap-3">
             {blockableCategories.map((c) => {
@@ -231,7 +233,7 @@ export default function SpendingLimits() {
                     {blocked ? <div className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center"><Lock className="w-3.5 h-3.5" /></div> : <div className="w-7 h-7 rounded-full bg-black/5 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-emerald-500" /></div>}
                   </div>
                   <div className="font-bold text-sm mt-2">{c.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{blocked ? "Blocked" : "Allowed"}</div>
+                  <div className="text-[10px] text-muted-foreground">{blocked ? t("spending_limits.blocked") : t("spending_limits.allowed")}</div>
                 </button>
               );
             })}
@@ -248,7 +250,7 @@ export default function SpendingLimits() {
       {activeData && (
         <FadeIn delay={160} className="mt-5">
           <button onClick={save} disabled={saving} className="w-full h-13 py-3.5 rounded-2xl text-white font-bold grad-navy shadow-premium active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-            {saved ? <><Check className="w-5 h-5" /> Limits Saved for {active?.full_name}</> : <><Shield className="w-5 h-5" /> {saving ? "Saving..." : "Save Limits & Blocks"}</>}
+            {saved ? <><Check className="w-5 h-5" /> {t("spending_limits.saved", { name: active?.full_name })}</> : <><Shield className="w-5 h-5" /> {saving ? t("spending_limits.saving") : t("spending_limits.save_btn")}</>}
           </button>
         </FadeIn>
       )}

@@ -5,11 +5,13 @@ import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getChildWallet, getChildTransactions, getFamilyInsights } from "@/lib/finApi";
+import { useTranslation } from "react-i18next";
 
 const iconEmoji = { "shield-alert": "🚨", "trending-down": "📉", "trending-up": "📈", "piggy-bank": "🐷", sparkles: "✨", wallet: "👛" };
 const sevColor = { alert: "#ef4444", warn: "#FFC857", info: "#3b82f6", good: "#00B894" };
 
 export default function Insights() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getFamilyChildren } = useAuth();
 
@@ -44,7 +46,7 @@ export default function Insights() {
       setTotals({ spending, savings, goalsCompleted });
       setAvgScore(score);
     } catch (err) {
-      setError(err.message || "تعذر تحميل التحليل");
+      setError(err.message || t("insights.load_error"));
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ export default function Insights() {
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Family Insights</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("insights.title")}</h1>
       </FadeIn>
 
       {error && (
@@ -78,23 +80,23 @@ export default function Insights() {
           <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">🤖</span>
-            <span className="text-sm font-semibold text-white/80">Family Financial Report</span>
+            <span className="text-sm font-semibold text-white/80">{t("insights.report_title")}</span>
           </div>
           <div className="text-3xl font-extrabold font-heading">
-            {loading || avgScore === null ? "···" : `Financial Score ${avgScore}/100`}
+            {loading || avgScore === null ? "···" : t("insights.score", { score: avgScore })}
           </div>
           <div className="flex gap-3 mt-3 text-sm">
-            <span className="text-white/80">Spending: <b className="text-white">{fmtEGP(totals.spending)}</b></span>
-            <span className="text-white/80">Savings: <b className="text-white">{fmtEGP(totals.savings)}</b></span>
+            <span className="text-white/80">{t("insights.spending")} <b className="text-white">{fmtEGP(totals.spending)}</b></span>
+            <span className="text-white/80">{t("insights.savings")} <b className="text-white">{fmtEGP(totals.savings)}</b></span>
           </div>
         </div>
       </FadeIn>
 
       {/* insight cards — بيانات حقيقية 100% من /family/insights */}
       <FadeIn delay={120} className="mt-4">
-        <SectionTitle>Key Findings</SectionTitle>
+        <SectionTitle>{t("insights.key_findings")}</SectionTitle>
         {loading ? (
-          <div className="text-center text-sm text-muted-foreground py-8">...بنحمّل</div>
+          <div className="text-center text-sm text-muted-foreground py-8">{t("insights.loading")}</div>
         ) : (
           <div className="space-y-3">
             {insights.map((ins, i) => (

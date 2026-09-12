@@ -5,19 +5,21 @@ import { GlassCard, FadeIn, SectionTitle, Pill } from "@/components/fin/ui";
 import { cardThemes, fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getChildWallet, updateCardStatus, replaceCard as replaceCardApi } from "@/lib/finApi";
+import { useTranslation } from "react-i18next";
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 const themeMap = Object.fromEntries(cardThemes.map((t) => [t.id, t.gradient]));
 
-const statusMeta = {
-  active: { label: "Active", color: "#00B894", icon: Wifi, desc: "Card works normally" },
-  frozen: { label: "Frozen", color: "#3b82f6", icon: Snowflake, desc: "All payments blocked" },
-  deactivated: { label: "Deactivated", color: "#94a3b8", icon: PowerOff, desc: "Needs a new card to work again" },
-};
-
 export default function FamilyCards() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const statusMeta = {
+    active: { label: t("family_cards.status.active"), color: "#00B894", icon: Wifi, desc: t("family_cards.status.active_desc") },
+    frozen: { label: t("family_cards.status.frozen"), color: "#3b82f6", icon: Snowflake, desc: t("family_cards.status.frozen_desc") },
+    deactivated: { label: t("family_cards.status.deactivated"), color: "#94a3b8", icon: PowerOff, desc: t("family_cards.status.deactivated_desc") },
+  };
   const { getFamilyChildren } = useAuth();
 
   const [members, setMembers] = useState([]);
@@ -59,9 +61,10 @@ export default function FamilyCards() {
     try {
       const wallet = await updateCardStatus(id, status);
       setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, wallet } : m)));
-      flash(`Card ${status === "frozen" ? "frozen" : status === "active" ? "activated" : "deactivated"} for ${members.find((m) => m.id === id)?.name}`);
+      const name = members.find((m) => m.id === id)?.name;
+      flash(t(`family_cards.toast.${status}`, { name }));
     } catch (err) {
-      flash(err.message || "Something went wrong");
+      flash(err.message || t("family_cards.toast.error"));
     } finally {
       setBusy(false);
     }
@@ -72,9 +75,9 @@ export default function FamilyCards() {
     try {
       const wallet = await replaceCardApi(id);
       setMembers((ms) => ms.map((m) => (m.id === id ? { ...m, wallet } : m)));
-      flash("New card claimed — old one voided");
+      flash(t("family_cards.toast.new_card"));
     } catch (err) {
-      flash(err.message || "Something went wrong");
+      flash(err.message || t("family_cards.toast.error"));
     } finally {
       setBusy(false);
     }
@@ -95,9 +98,9 @@ export default function FamilyCards() {
           <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-extrabold font-heading">Family Cards</h1>
+          <h1 className="text-xl font-extrabold font-heading">{t("family_cards.title")}</h1>
         </FadeIn>
-        <div className="text-center text-sm text-muted-foreground py-8">No kids added yet — add one from Family Members first.</div>
+        <div className="text-center text-sm text-muted-foreground py-8">{t("family_cards.no_kids")}</div>
       </div>
     );
   }
@@ -111,7 +114,7 @@ export default function FamilyCards() {
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Family Cards</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("family_cards.title")}</h1>
       </FadeIn>
 
       <FadeIn delay={40} className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -128,7 +131,7 @@ export default function FamilyCards() {
           <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs text-white/70">Meeza Card</div>
+              <div className="text-xs text-white/70">{t("family_cards.meeza_card")}</div>
               <div className="font-bold">{active.name}</div>
             </div>
             {cardStatus !== "active" && <Pill className="bg-white/20 text-white">{meta.label}</Pill>}
@@ -136,7 +139,7 @@ export default function FamilyCards() {
           <div className="absolute bottom-5 left-5 right-5">
             <div className="font-mono text-lg tracking-widest">{active.wallet.card_number}</div>
             <div className="flex items-center justify-between mt-2 text-xs text-white/70">
-              <span>VIRTUAL · MEEZA</span>
+              <span>{t("family_cards.virtual_meeza")}</span>
               <span>{fmtEGP(active.wallet.balance)}</span>
             </div>
           </div>
@@ -158,37 +161,37 @@ export default function FamilyCards() {
 
       {/* card lifecycle controls */}
       <FadeIn delay={160} className="mt-4">
-        <SectionTitle>Card Controls</SectionTitle>
+        <SectionTitle>{t("family_cards.card_control")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3">
           {cardStatus === "active" ? (
             <button disabled={busy} onClick={() => setStatus(active.id, "frozen")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#3b82f618", color: "#3b82f6" }}><Snowflake className="w-5 h-5" /></div>
-              <div className="font-bold text-sm">Freeze Card</div>
-              <div className="text-[10px] text-muted-foreground">Block all payments instantly</div>
+              <div className="font-bold text-sm">{t("family_cards.controls.freeze")}</div>
+              <div className="text-[10px] text-muted-foreground">{t("family_cards.controls.freeze_desc")}</div>
             </button>
           ) : cardStatus === "frozen" ? (
             <button disabled={busy} onClick={() => setStatus(active.id, "active")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#00B89418", color: "#00B894" }}><Wifi className="w-5 h-5" /></div>
-              <div className="font-bold text-sm">Unfreeze</div>
-              <div className="text-[10px] text-muted-foreground">Reactivate the card</div>
+              <div className="font-bold text-sm">{t("family_cards.controls.unfreeze")}</div>
+              <div className="text-[10px] text-muted-foreground">{t("family_cards.controls.unfreeze_desc")}</div>
             </button>
           ) : null}
           <button disabled={busy} onClick={() => claimNewCard(active.id)} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#FFC85718", color: "#b8860b" }}><RotateCw className="w-5 h-5" /></div>
-            <div className="font-bold text-sm">Claim New Card</div>
-            <div className="text-[10px] text-muted-foreground">Replace lost/stolen card</div>
+            <div className="font-bold text-sm">{t("family_cards.controls.request_new")}</div>
+            <div className="text-[10px] text-muted-foreground">{t("family_cards.controls.request_new_desc")}</div>
           </button>
           {cardStatus !== "deactivated" ? (
             <button disabled={busy} onClick={() => setStatus(active.id, "deactivated")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#ef444418", color: "#ef4444" }}><PowerOff className="w-5 h-5" /></div>
-              <div className="font-bold text-sm">Deactivate</div>
-              <div className="text-[10px] text-muted-foreground">Permanently disable</div>
+              <div className="font-bold text-sm">{t("family_cards.controls.deactivate")}</div>
+              <div className="text-[10px] text-muted-foreground">{t("family_cards.controls.deactivate_desc")}</div>
             </button>
           ) : (
             <button disabled={busy} onClick={() => setStatus(active.id, "active")} className="glass rounded-2xl p-4 text-left active:scale-95 transition-all disabled:opacity-50">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: "#00B89418", color: "#00B894" }}><Check className="w-5 h-5" /></div>
-              <div className="font-bold text-sm">Reactivate</div>
-              <div className="text-[10px] text-muted-foreground">Turn card back on</div>
+              <div className="font-bold text-sm">{t("family_cards.controls.reactivate")}</div>
+              <div className="text-[10px] text-muted-foreground">{t("family_cards.controls.reactivate_desc")}</div>
             </button>
           )}
         </div>
@@ -196,7 +199,7 @@ export default function FamilyCards() {
 
       {/* all cards overview */}
       <FadeIn delay={200} className="mt-5">
-        <SectionTitle>All Family Cards</SectionTitle>
+        <SectionTitle>{t("family_cards.all_cards")}</SectionTitle>
         <div className="space-y-2">
           {members.map((m) => (
             <div key={m.id} className="glass rounded-2xl p-3 flex items-center gap-3">

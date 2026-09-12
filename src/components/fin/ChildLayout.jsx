@@ -2,20 +2,30 @@ import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Home, Wallet, GraduationCap, Gift, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const nav = [
-  { to: "/child", label: "Home", icon: Home, exact: true },
-  { to: "/child/wallet", label: "Wallet", icon: Wallet },
-  { to: "/child/learn", label: "Learn", icon: GraduationCap },
-  { to: "/child/rewards", label: "Rewards", icon: Gift },
-  { to: "/child/profile", label: "Profile", icon: User },
-];
+import { useTranslation } from "react-i18next";
+import LanguageToggle from "@/components/LanguageToggle";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function ChildLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const nav = [
+    { to: "/child", label: t("nav.home"), icon: Home, exact: true },
+    { to: "/child/wallet", label: t("nav.wallet"), icon: Wallet },
+    { to: "/child/learn", label: t("nav.learn"), icon: GraduationCap },
+    { to: "/child/rewards", label: t("nav.rewards"), icon: Gift },
+    { to: "/child/profile", label: t("nav.profile"), icon: User },
+  ];
+
   return (
     <div className="min-h-screen bg-background pb-28">
+      {/* Language Toggle for Child */}
+      <div className="max-w-md mx-auto flex justify-end gap-2 px-4 pt-3">
+        <ThemeToggle />
+        <LanguageToggle />
+      </div>
       <div className="max-w-md mx-auto">
         <Outlet />
       </div>

@@ -175,14 +175,14 @@ export const approvals = [
 ];
 
 export const allowanceTypes = [
-  { id: "daily", label: "Daily Allowance", icon: "sun", amount: 25, color: "#FFC857" },
-  { id: "weekly", label: "Weekly Allowance", icon: "calendar", amount: 150, color: "#00B894" },
-  { id: "monthly", label: "Monthly Allowance", icon: "calendar-days", amount: 600, color: "#0F2D52" },
-  { id: "homework", label: "Homework Reward", icon: "book", amount: 20, color: "#3b82f6" },
-  { id: "exam", label: "Exam Reward", icon: "graduation-cap", amount: 100, color: "#8b5cf6" },
-  { id: "chores", label: "Extra Chores", icon: "sparkles", amount: 15, color: "#f97316" },
-  { id: "birthday", label: "Birthday Gift", icon: "gift", amount: 200, color: "#ef4444" },
-  { id: "emergency", label: "Emergency Transfer", icon: "zap", amount: 0, color: "#64748b" },
+  { id: "daily", label: "مصروف يومي", icon: "sun", amount: 25, color: "#FFC857" },
+  { id: "weekly", label: "مصروف أسبوعي", icon: "calendar", amount: 150, color: "#00B894" },
+  { id: "monthly", label: "مصروف شهري", icon: "calendar-days", amount: 600, color: "#0F2D52" },
+  { id: "homework", label: "مكافأة الواجب", icon: "book", amount: 20, color: "#3b82f6" },
+  { id: "exam", label: "مكافأة الامتحان", icon: "graduation-cap", amount: 100, color: "#8b5cf6" },
+  { id: "chores", label: "مهام إضافية", icon: "sparkles", amount: 15, color: "#f97316" },
+  { id: "birthday", label: "هدية عيد ميلاد", icon: "gift", amount: 200, color: "#ef4444" },
+  { id: "emergency", label: "تحويل طارئ", icon: "zap", amount: 0, color: "#64748b" },
 ];
 
 export const scoreHistory = [62, 65, 64, 70, 72, 75, 78];
@@ -495,9 +495,10 @@ export const savingHeroGoal = { name: "Football", icon: "⚽", target: 500, curr
 
 export const timeAgo = (iso) => {
   const d = new Date(iso);
-  const now = new Date("2026-07-27T06:28:00");
-  const diff = (now - d) / 3600000;
-  if (diff < 1) return `${Math.round(diff * 60)}m ago`;
-  if (diff < 24) return `${Math.floor(diff)}h ago`;
-  return `${Math.floor(diff / 24)}d ago`;
+  const now = new Date();
+  const diff = Math.max(0, (now - d) / 3600000);
+  if (diff < 0.1) return "الآن";
+  if (diff < 1) return `منذ ${Math.round(diff * 60)} دقيقة`;
+  if (diff < 24) return `منذ ${Math.floor(diff)} ساعة`;
+  return `منذ ${Math.floor(diff / 24)} يوم`;
 };

@@ -11,11 +11,13 @@ import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyMissions } from "@/lib/finApi";
 import { useTheme } from "@/lib/useTheme";
 import { Image } from "@/components/ui/image";
+import { useTranslation } from "react-i18next";
 
 export default function ChildProfile() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
-  const { user } = useAuth(); // اليوزر الحقيقي بتاع الطفل الداخل دلوقتي
+  const { user } = useAuth();
 
   const [wallet, setWallet] = useState(null);
   const [missions, setMissions] = useState([]);
@@ -37,18 +39,18 @@ export default function ChildProfile() {
   }, []);
 
   // اسم اللقب مرتبط بالمستوى — ده محتوى تصنيف ثابت (levels)، مش بيانات مستخدم
-  const levelTitle = levels.find((l) => l.level === (user?.level || 1))?.name || "Money Explorer";
+  const levelTitle = levels.find((l) => l.level === (user?.level || 1))?.name || t("child_profile.default_level");
 
   const settings = [
-    { icon: Briefcase, label: "Parent Dashboard", color: "#0F2D52", on: () => navigate("/parent") },
-    { icon: Bell, label: "Notifications", color: "#FFC857" },
-    { icon: Shield, label: "Security", color: "#00B894" },
-    { icon: Moon, label: "Dark Mode", color: "#0F2D52", toggle: true, value: dark, on: toggle },
-    { icon: Globe, label: "Language · English", color: "#3b82f6" },
-    { icon: Accessibility, label: "Accessibility", color: "#8b5cf6" },
-    { icon: HelpCircle, label: "Help Center", color: "#f97316" },
-    { icon: FileText, label: "Terms & Privacy", color: "#64748b" },
-    { icon: LogOut, label: "Switch Role", color: "#ef4444", on: () => navigate("/role-select") },
+    { icon: Briefcase, label: t("child_profile.parent_dash"), color: "#0F2D52", on: () => navigate("/parent") },
+    { icon: Bell, label: t("child_profile.notifications"), color: "#FFC857" },
+    { icon: Shield, label: t("child_profile.security"), color: "#00B894" },
+    { icon: Moon, label: t("child_profile.dark_mode"), color: "#0F2D52", toggle: true, value: dark, on: toggle },
+    { icon: Globe, label: t("child_profile.language"), color: "#3b82f6" },
+    { icon: Accessibility, label: t("child_profile.accessibility"), color: "#8b5cf6" },
+    { icon: HelpCircle, label: t("child_profile.help"), color: "#f97316" },
+    { icon: FileText, label: t("child_profile.terms"), color: "#64748b" },
+    { icon: LogOut, label: t("child_profile.switch_role"), color: "#ef4444", on: () => navigate("/role-select") },
   ];
 
   return (
@@ -57,7 +59,7 @@ export default function ChildProfile() {
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Profile</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("child_profile.title")}</h1>
         <Image src={LOGO_IMAGE} alt="FinFamily" fittingType="fit" className="w-9 h-9 object-contain ml-auto" />
       </FadeIn>
 
@@ -69,16 +71,16 @@ export default function ChildProfile() {
           <h2 className="text-xl font-extrabold font-heading">{user?.full_name}</h2>
           <div className="text-sm text-white/70">{levelTitle}</div>
           <div className="flex justify-center gap-2 mt-3">
-            <Pill className="bg-white/15 text-white">Level {user?.level ?? 1}</Pill>
+            <Pill className="bg-white/15 text-white">{t("child_profile.level", { level: user?.level ?? 1 })}</Pill>
             <Pill className="bg-white/15 text-white">🪙 {wallet ? Math.round(wallet.balance) : "···"}</Pill>
-            <Pill className="bg-white/15 text-white">{user?.xp ?? 0} XP</Pill>
+            <Pill className="bg-white/15 text-white">{t("child_profile.pts", { xp: user?.xp ?? 0 })}</Pill>
           </div>
         </div>
       </FadeIn>
 
       {/* financial score gauge */}
       <FadeIn delay={120}>
-        <SectionTitle>Financial Score</SectionTitle>
+        <SectionTitle>{t("child_profile.fin_score")}</SectionTitle>
         <GlassCard className="text-center">
           <div className="relative w-40 h-20 mx-auto overflow-hidden">
             <svg viewBox="0 0 100 50" className="w-full h-full">
@@ -96,10 +98,10 @@ export default function ChildProfile() {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
               <div className="text-3xl font-extrabold font-heading">{wallet?.financial_score ?? "···"}</div>
-              <div className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Star className="w-3 h-3" /> Live score</div>
+              <div className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Star className="w-3 h-3" /> {t("child_profile.live_score")}</div>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground mt-2">Excellent financial discipline! Keep it up. 🌟</div>
+          <div className="text-xs text-muted-foreground mt-2">{t("child_profile.score_msg")}</div>
         </GlassCard>
       </FadeIn>
 
@@ -107,7 +109,7 @@ export default function ChildProfile() {
       {/* ملحوظة: نسب الإتقان دي لسه مش متتبّعة في الـ backend (محتاجة نظام تقييم مهارات
           مستقل مش مبني لسه) — لسه محتوى ثابت زي أي حاجة تانية في finData.js */}
       <FadeIn delay={160}>
-        <SectionTitle>My Financial Journey</SectionTitle>
+        <SectionTitle>{t("child_profile.fin_journey")}</SectionTitle>
         <GlassCard>
           <div className="space-y-3">
             {skills.map((s) => (
@@ -127,7 +129,7 @@ export default function ChildProfile() {
 
       {/* adventure badges */}
       <FadeIn delay={200}>
-        <SectionTitle>Badges</SectionTitle>
+        <SectionTitle>{t("child_profile.badges")}</SectionTitle>
         <div className="grid grid-cols-4 gap-3">
           {adventureBadges.map((b) => (
             <div key={b.id} className={"text-center " + (b.earned ? "" : "opacity-30 grayscale")}>
@@ -142,26 +144,26 @@ export default function ChildProfile() {
 
       {/* missions progress — حقيقي دلوقتي، من MissionOut الفعلية (kind=chore بس) */}
       <FadeIn delay={240}>
-        <SectionTitle>My Chores</SectionTitle>
+        <SectionTitle>{t("child_profile.my_missions")}</SectionTitle>
         <div className="grid grid-cols-3 gap-3">
           <div className="glass rounded-2xl p-3 text-center shadow-premium">
             <div className="text-xl font-extrabold font-heading text-emerald-600">{missions.filter((m) => m.kind === "chore" && m.status === "approved").length}</div>
-            <div className="text-[10px] text-muted-foreground">Approved</div>
+            <div className="text-[10px] text-muted-foreground">{t("child_profile.approved")}</div>
           </div>
           <div className="glass rounded-2xl p-3 text-center shadow-premium">
             <div className="text-xl font-extrabold font-heading text-amber-500">{missions.filter((m) => m.kind === "chore" && m.status === "submitted").length}</div>
-            <div className="text-[10px] text-muted-foreground">Waiting</div>
+            <div className="text-[10px] text-muted-foreground">{t("child_profile.waiting")}</div>
           </div>
           <div className="glass rounded-2xl p-3 text-center shadow-premium">
             <div className="text-xl font-extrabold font-heading text-blue-500">{missions.filter((m) => m.kind === "chore" && m.status === "pending").length}</div>
-            <div className="text-[10px] text-muted-foreground">To Do</div>
+            <div className="text-[10px] text-muted-foreground">{t("child_profile.to_do")}</div>
           </div>
         </div>
       </FadeIn>
 
       {/* settings list */}
       <FadeIn delay={240}>
-        <SectionTitle>Settings</SectionTitle>
+        <SectionTitle>{t("child_profile.settings")}</SectionTitle>
         <div className="glass rounded-2xl shadow-premium divide-y divide-black/5">
           {settings.map((s) => {
             const Icon = s.icon;

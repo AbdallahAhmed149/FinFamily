@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Bomb, Timer } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function CoinCatcher({ onFinish }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(20);
@@ -34,10 +36,10 @@ export default function CoinCatcher({ onFinish }) {
     return (
       <div className="flex flex-col items-center justify-center text-center px-6 pt-20 max-w-md mx-auto">
         <div className="text-7xl mb-4">🪙</div>
-        <h2 className="text-2xl font-extrabold font-heading">Coin Catcher</h2>
-        <p className="text-sm text-muted-foreground mt-2 mb-6">Tap the falling coins to catch them (+2). Avoid the bombs (−5)! You have 20 seconds.</p>
+        <h2 className="text-2xl font-extrabold font-heading">{t("game_coin_catcher.title")}</h2>
+        <p className="text-sm text-muted-foreground mt-2 mb-6">{t("game_coin_catcher.desc")}</p>
         <button onClick={() => setStarted(true)} className="w-full max-w-xs h-14 rounded-2xl text-white font-bold font-heading grad-emerald shadow-glow-emerald active:scale-95 transition-all">
-          Start ▶
+          {t("game_coin_catcher.start")}
         </button>
       </div>
     );
@@ -70,12 +72,12 @@ export default function CoinCatcher({ onFinish }) {
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="text-white text-center animate-pop">
               <div className="text-5xl mb-2">🏁</div>
-              <div className="text-2xl font-extrabold">Final Score: {score}</div>
+              <div className="text-2xl font-extrabold">{t("game_coin_catcher.score", { score })}</div>
             </div>
           </div>
         )}
       </div>
-      <p className="text-center text-xs text-muted-foreground mt-3">Tap coins, dodge bombs!</p>
+      <p className="text-center text-xs text-muted-foreground mt-3">{t("game_coin_catcher.hint")}</p>
     </div>
   );
 }

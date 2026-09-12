@@ -1,7 +1,10 @@
 import React from "react";
 import { Star, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-export default function RewardScreen({ title = "Great job!", score, total, coins, xp, note, onClose }) {
+export default function RewardScreen({ title, score, total, coins, xp, note, onClose }) {
+  const { t } = useTranslation();
+  const screenTitle = title || t("shared.reward.title");
   const pct = total ? Math.round((score / total) * 100) : 100;
   const stars = pct >= 80 ? 3 : pct >= 50 ? 2 : 1;
 
@@ -22,8 +25,8 @@ export default function RewardScreen({ title = "Great job!", score, total, coins
       </div>
 
       <div className="text-5xl mb-2">{stars === 3 ? "🏆" : stars === 2 ? "🎉" : "💪"}</div>
-      <h2 className="text-2xl font-extrabold font-heading">{title}</h2>
-      <p className="text-sm text-muted-foreground mt-1">You scored {score} out of {total}</p>
+      <h2 className="text-2xl font-extrabold font-heading">{screenTitle}</h2>
+      <p className="text-sm text-muted-foreground mt-1">{score} / {total}</p>
 
       <div className="flex gap-1 my-4">
         {[1, 2, 3].map((s) => (
@@ -36,16 +39,16 @@ export default function RewardScreen({ title = "Great job!", score, total, coins
       <div className="flex gap-3 mb-6">
         <div className="grad-gold rounded-2xl px-5 py-3 text-white shadow-glow-gold">
           <div className="text-2xl font-extrabold">+{coins}</div>
-          <div className="text-xs">Coins 🪙</div>
+          <div className="text-xs">{t("shared.mission_complete.coins")} 🪙</div>
         </div>
         <div className="grad-emerald rounded-2xl px-5 py-3 text-white shadow-glow-emerald">
           <div className="text-2xl font-extrabold">+{xp}</div>
-          <div className="text-xs">XP ⭐</div>
+          <div className="text-xs">{t("shared.mission_complete.xp")} ⭐</div>
         </div>
       </div>
 
       <button onClick={onClose} className="w-full max-w-xs h-13 py-3.5 rounded-2xl text-white font-bold font-heading grad-navy shadow-premium active:scale-[0.98] transition-all">
-        Claim Reward
+        {t("shared.reward.collect")}
       </button>
     </div>
   );

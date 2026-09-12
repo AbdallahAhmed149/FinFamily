@@ -5,16 +5,18 @@ import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import MissionComplete from "@/components/fin/MissionComplete";
 import { fmtEGP } from "@/lib/finData";
 import { getMyMissions, submitMission } from "@/lib/finApi";
-
-const statusMeta = {
-  pending: { label: "To Do", color: "#3b82f6", icon: Clock },
-  submitted: { label: "Waiting for Parent", color: "#f97316", icon: Send },
-  approved: { label: "Approved & Paid", color: "#00B894", icon: Check },
-  rejected: { label: "Rejected", color: "#ef4444", icon: Award },
-};
+import { useTranslation } from "react-i18next";
 
 export default function Missions() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const statusMeta = {
+    pending: { label: t("child_missions_page.status_pending"), color: "#3b82f6", icon: Clock },
+    submitted: { label: t("child_missions_page.status_submitted"), color: "#f97316", icon: Send },
+    approved: { label: t("child_missions_page.status_approved"), color: "#00B894", icon: Check },
+    rejected: { label: t("child_missions_page.status_rejected"), color: "#ef4444", icon: Award },
+  };
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +29,7 @@ export default function Missions() {
     try {
       setMissions(await getMyMissions());
     } catch (err) {
-      setError(err.message || "تعذر تحميل المهام");
+      setError(err.message || t("child_missions_page.load_error"));
     } finally {
       setLoading(false);
     }
@@ -41,10 +43,10 @@ export default function Missions() {
     setBusyId(m.id);
     try {
       await submitMission(m.id);
-      setDone({ xp: m.reward, badge: { name: "Goal Getter", icon: "🎯", desc: "Submitted a mission for review", color: "#FFC857" }, nextMission: "Wait for parent approval" });
+      setDone({ xp: m.reward, badge: { name: t("child_missions_page.badge_name"), icon: "🎯", desc: t("child_missions_page.badge_desc"), color: "#FFC857" }, nextMission: t("child_missions_page.next_mission") });
       await load();
     } catch (err) {
-      setError(err.message || "حصل خطأ");
+      setError(err.message || t("child_missions_page.error"));
     } finally {
       setBusyId(null);
     }
@@ -57,8 +59,8 @@ export default function Missions() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-xl font-extrabold font-heading">My Missions</h1>
-          <div className="text-xs text-muted-foreground">Chores your parent assigned you · Earn coins with approval</div>
+          <h1 className="text-xl font-extrabold font-heading">{t("child_missions_page.title")}</h1>
+          <div className="text-xs text-muted-foreground">{t("child_missions_page.subtitle")}</div>
         </div>
       </FadeIn>
 
@@ -69,9 +71,9 @@ export default function Missions() {
       )}
 
       {loading ? (
-        <div className="text-center text-sm text-muted-foreground py-8">...بنحمّل</div>
+        <div className="text-center text-sm text-muted-foreground py-8">{t("child_missions_page.loading")}</div>
       ) : missions.length === 0 ? (
-        <div className="text-center text-sm text-muted-foreground py-8">مفيش مهام لسه — استنى أبوك يضيفلك واحدة 🙂</div>
+        <div className="text-center text-sm text-muted-foreground py-8">{t("child_missions_page.no_missions")}</div>
       ) : (
         <div className="space-y-3">
           {missions.map((m, idx) => {
@@ -100,17 +102,17 @@ export default function Missions() {
                       onClick={() => handleSubmit(m)}
                       className="w-full h-10 mt-3 rounded-xl text-white font-bold text-sm grad-navy flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      <Send className="w-4 h-4" /> Mark as Done
+                      <Send className="w-4 h-4" /> {t("child_missions_page.mark_done")}
                     </button>
                   )}
                   {m.status === "submitted" && (
                     <div className="w-full h-10 mt-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2" style={{ background: "#f9731615", color: "#f97316" }}>
-                      <Clock className="w-4 h-4" /> Waiting for parent to approve
+                      <Clock className="w-4 h-4" /> {t("child_missions_page.awaiting")}
                     </div>
                   )}
                   {m.status === "approved" && (
                     <div className="w-full h-10 mt-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2" style={{ background: "#00B89415", color: "#00B894" }}>
-                      <Check className="w-4 h-4" /> Approved · +{fmtEGP(m.reward)}!
+                      <Check className="w-4 h-4" /> {t("child_missions_page.approved_msg", { amount: fmtEGP(m.reward) })}
                     </div>
                   )}
                 </GlassCard>

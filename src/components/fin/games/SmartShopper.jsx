@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Check, X, Star, ArrowRight } from "lucide-react";
 import { smartShopperScenarios, fmtEGP } from "@/lib/finData";
+import { useTranslation } from "react-i18next";
 
 export default function SmartShopper({ onFinish }) {
+  const { t } = useTranslation();
   const [round, setRound] = useState(0);
   const [picked, setPicked] = useState(null);
   const [score, setScore] = useState(0);
@@ -31,8 +33,8 @@ export default function SmartShopper({ onFinish }) {
     return (
       <div className="px-6 py-12 text-center animate-pop">
         <div className="text-5xl mb-3">🛒</div>
-        <h2 className="text-xl font-extrabold font-heading">Smart Shopper Complete!</h2>
-        <p className="text-sm text-muted-foreground mt-1">You made {score} smart choice{score !== 1 ? "s" : ""} out of {smartShopperScenarios.length}</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("game_smart_shopper.complete")}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t("game_smart_shopper.score", { score, total: smartShopperScenarios.length })}</p>
       </div>
     );
   }
@@ -41,8 +43,8 @@ export default function SmartShopper({ onFinish }) {
     <div className="px-4 pt-8 pb-8 max-w-md mx-auto">
       <div className="text-center mb-4">
         <div className="text-5xl mb-2">🛒</div>
-        <h2 className="text-xl font-extrabold font-heading">Smart Shopper</h2>
-        <p className="text-xs text-muted-foreground">Round {round + 1} of {smartShopperScenarios.length} · Compare value, not just price</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("game_smart_shopper.title")}</h2>
+        <p className="text-xs text-muted-foreground">{t("game_smart_shopper.desc", { current: round + 1, total: smartShopperScenarios.length })}</p>
       </div>
 
       <div className="flex gap-1.5 mb-4">
@@ -86,11 +88,11 @@ export default function SmartShopper({ onFinish }) {
 
       {picked !== null && (
         <div className="mt-4 rounded-2xl p-4 animate-pop" style={{ background: isCorrect ? "#00B89415" : "#ef444415" }}>
-          <div className="font-bold text-sm mb-1">{isCorrect ? "🎉 Smart choice!" : "💡 Let's learn"}</div>
+          <div className="font-bold text-sm mb-1">{isCorrect ? t("game_smart_shopper.correct_choice") : t("game_smart_shopper.learn")}</div>
           <p className="text-xs text-muted-foreground leading-relaxed">{sc.explain}</p>
-          {!isCorrect && <p className="text-xs font-semibold text-amber-600 mt-2">Try another option to see the smartest one!</p>}
+          {!isCorrect && <p className="text-xs font-semibold text-amber-600 mt-2">{t("game_smart_shopper.try_again")}</p>}
           <button onClick={next} className="w-full h-11 mt-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 grad-navy active:scale-[0.98] transition-all">
-            {round + 1 >= smartShopperScenarios.length ? "Finish" : "Next"} <ArrowRight className="w-4 h-4" />
+            {round + 1 >= smartShopperScenarios.length ? t("game_smart_shopper.finish") : t("game_smart_shopper.next")} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       )}

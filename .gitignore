@@ -31,3 +31,16 @@ dist-ssr
 .env
 .vite
 base44/.app.jsonc
+
+# Python & FastAPI specific
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Database & local storage
+*.sqlite3
+*.db
+
+# OS specific
+Thumbs.db

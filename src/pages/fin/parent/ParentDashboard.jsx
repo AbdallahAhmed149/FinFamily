@@ -11,6 +11,7 @@ import { fmtEGP, timeAgo } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getChildWallet, getChildTransactions, getFamilyMissions, getFamilyInsights, getFamilyActivity } from "@/lib/finApi";
 import { Image } from "@/components/ui/image";
+import { useTranslation } from "react-i18next";
 
 const iconEmoji = { utensils: "🍽️", "piggy-bank": "🐷", "trending-down": "📉", "shield-alert": "🚨", wallet: "👛", sparkles: "✨", "trending-up": "📈" };
 const sevColor = { alert: "#ef4444", warn: "#FFC857", good: "#00B894", info: "#3b82f6" };
@@ -24,6 +25,7 @@ function startOfWeek() {
 }
 
 export default function ParentDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, getFamilyChildren } = useAuth(); // اليوزر الحقيقي بتاع الأب الداخل دلوقتي
 
@@ -128,12 +130,12 @@ export default function ParentDashboard() {
           <Image src={LOGO_IMAGE} alt="FinFamily" fittingType="fit" className="w-10 h-10 object-contain" />
         </button>
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-muted-foreground">Welcome back</div>
+          <div className="text-sm text-muted-foreground">{t("parent_dashboard.welcome")}</div>
           <h1 className="text-lg font-extrabold font-heading truncate">{user?.full_name}</h1>
         </div>
         <button onClick={() => navigate("/child")} className="glass rounded-full px-3 h-10 flex items-center gap-1.5 shadow-premium active:scale-95 transition-all">
           <Repeat2 className="w-4 h-4 text-emerald-600" />
-          <span className="text-xs font-bold">Child Mode</span>
+          <span className="text-xs font-bold">{t("parent_dashboard.child_mode")}</span>
         </button>
         <button onClick={() => navigate("/parent/approvals")} className="relative w-10 h-10 rounded-full glass flex items-center justify-center shadow-premium shrink-0">
           <Bell className="w-5 h-5" />
@@ -155,7 +157,7 @@ export default function ParentDashboard() {
             <div className="text-xs text-white/70">{parent.role}</div>
             <div className="text-xs text-white/50 truncate">{parent.phone}</div>
           </div>
-          <Pill className="bg-emerald-400/20 text-emerald-200">Verified ✓</Pill>
+          <Pill className="bg-emerald-400/20 text-emerald-200">{t("parent_dashboard.verified")}</Pill>
         </div>
       </FadeIn>
 
@@ -163,33 +165,33 @@ export default function ParentDashboard() {
       {/* Fin. Score دلوقتي حقيقي (متوسط أطفال العيلة، كل واحد بيتحسب Live في الباك اند) */}
       <FadeIn delay={60} className="grid grid-cols-2 gap-3">
         <StatCard
-          label="Total Spending"
+          label={t("parent_dashboard.total_spending")}
           value={summaryLoading ? "…" : fmtEGP(familySummary.totalSpending)}
-          trend="this month"
+          trend={t("parent_dashboard.this_month")}
           up={false}
           icon={TrendingDown}
           color="#ef4444"
         />
         <StatCard
-          label="Total Savings"
+          label={t("parent_dashboard.total_savings")}
           value={summaryLoading ? "…" : fmtEGP(familySummary.totalSavings)}
-          trend="across kids"
+          trend={t("parent_dashboard.all_kids")}
           up={true}
           icon={TrendingUp}
           color="#00B894"
         />
         <StatCard
-          label="Goals Completed"
+          label={t("parent_dashboard.completed_goals")}
           value={summaryLoading ? "…" : familySummary.goalsCompleted}
-          trend="this month"
+          trend={t("parent_dashboard.this_month")}
           up={true}
           icon={Target}
           color="#FFC857"
         />
         <StatCard
-          label="Fin. Score"
+          label={t("parent_dashboard.financial_score")}
           value={summaryLoading || familySummary.avgScore === null ? "…" : `${familySummary.avgScore}/100`}
-          trend="family avg"
+          trend={t("parent_dashboard.family_avg")}
           up={true}
           icon={Wallet}
           color="#0F2D52"
@@ -200,7 +202,7 @@ export default function ParentDashboard() {
           أسبوع بأسبوع لحد دلوقتي (محتاج snapshot job دوري)، فمينفعش نرسم trend حقيقي. */}
       <FadeIn delay={120} className="mt-4">
         <GlassCard>
-          <SectionTitle action={<Pill color="#94a3b8">Sample data</Pill>}>Financial Score Trend</SectionTitle>
+          <SectionTitle action={<Pill color="#94a3b8">{t("parent_dashboard.demo_data")}</Pill>}>{t("parent_dashboard.score_trend")}</SectionTitle>
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={scoreHistory.map((v, i) => ({ week: `W${i+1}`, score: v }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="#0001" vertical={false} />
@@ -215,10 +217,10 @@ export default function ParentDashboard() {
       {/* category breakdown */}
       <FadeIn delay={180} className="mt-4">
         <GlassCard>
-          <SectionTitle>Spending by Category</SectionTitle>
+          <SectionTitle>{t("parent_dashboard.category_spend")}</SectionTitle>
           {!summaryLoading && realSpendingCategories.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-6">
-              لسه مفيش مصاريف حقيقية (redemptions موافق عليها) نقدر نجمّعها حسب الفئة.
+              {t("parent_dashboard.no_spend")}
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -247,7 +249,7 @@ export default function ParentDashboard() {
       {/* weekly spending bar */}
       <FadeIn delay={240} className="mt-4">
         <GlassCard>
-          <SectionTitle>Weekly Spending</SectionTitle>
+          <SectionTitle>{t("parent_dashboard.weekly_spend")}</SectionTitle>
           <ResponsiveContainer width="100%" height={130}>
             <BarChart data={realWeeklySpending}>
               <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -260,7 +262,7 @@ export default function ParentDashboard() {
 
       {/* AI alerts — تنبيهات حقيقية مبنية على قواعد (rule-based) من بيانات العيلة الفعلية */}
       <FadeIn delay={260} className="mt-4">
-        <SectionTitle action={<button onClick={() => navigate("/parent/coach")} className="text-xs font-bold text-emerald-600 flex items-center gap-1"><Bot className="w-4 h-4" /> Ask Coach</button>}>AI Alerts & Suggestions</SectionTitle>
+        <SectionTitle action={<button onClick={() => navigate("/parent/coach")} className="text-xs font-bold text-emerald-600 flex items-center gap-1"><Bot className="w-4 h-4" /> {t("parent_dashboard.ask_coach")}</button>}>{t("parent_dashboard.alerts")}</SectionTitle>
         <div className="space-y-2">
           {insights.slice(0, 4).map((ins) => (
             <button key={ins.id} onClick={() => navigate("/parent/coach")} className="w-full glass rounded-2xl p-3 flex items-center gap-3 text-left shadow-premium active:scale-[0.99] transition-all">
@@ -279,15 +281,15 @@ export default function ParentDashboard() {
 
       {/* family management hub */}
       <FadeIn delay={300} className="mt-4">
-        <SectionTitle>Family Management</SectionTitle>
+        <SectionTitle>{t("parent_dashboard.family_mgmt")}</SectionTitle>
         <div className="grid grid-cols-3 gap-3">
-          <MgmtTile icon={Users} color="#0F2D52" label="Members" sub={`${childrenCount} kids`} onClick={() => navigate("/parent/members")} />
-          <MgmtTile icon={ListChecks} color="#8b5cf6" label="Chores" sub="Assign tasks" onClick={() => navigate("/parent/chores")} />
-          <MgmtTile icon={SlidersHorizontal} color="#3b82f6" label="Limits" sub="Spend caps" onClick={() => navigate("/parent/limits")} />
-          <MgmtTile icon={CreditCard} color="#00B894" label="Cards" sub="Freeze / replace" onClick={() => navigate("/parent/cards")} />
-          <MgmtTile icon={Gift} color="#FFC857" label="Rewards" sub="Approve" onClick={() => navigate("/parent/rewards")} />
-          <MgmtTile icon={Bot} color="#ef4444" label="AI Coach" sub="Family analyst" onClick={() => navigate("/parent/coach")} />
-          <MgmtTile icon={Target} color="#10b981" label="Missions" sub="Approve tasks" onClick={() => navigate("/parent/child-missions")} />
+          <MgmtTile icon={Users} color="#0F2D52" label={t("parent_dashboard.mgmt.members")} sub={t("parent_dashboard.mgmt.members_sub", { count: childrenCount })} onClick={() => navigate("/parent/members")} />
+          <MgmtTile icon={ListChecks} color="#8b5cf6" label={t("parent_dashboard.mgmt.chores")} sub={t("parent_dashboard.mgmt.chores_sub")} onClick={() => navigate("/parent/chores")} />
+          <MgmtTile icon={SlidersHorizontal} color="#3b82f6" label={t("parent_dashboard.mgmt.limits")} sub={t("parent_dashboard.mgmt.limits_sub")} onClick={() => navigate("/parent/limits")} />
+          <MgmtTile icon={CreditCard} color="#00B894" label={t("parent_dashboard.mgmt.cards")} sub={t("parent_dashboard.mgmt.cards_sub")} onClick={() => navigate("/parent/cards")} />
+          <MgmtTile icon={Gift} color="#FFC857" label={t("parent_dashboard.mgmt.rewards")} sub={t("parent_dashboard.mgmt.rewards_sub")} onClick={() => navigate("/parent/rewards")} />
+          <MgmtTile icon={Bot} color="#ef4444" label={t("parent_dashboard.mgmt.coach")} sub={t("parent_dashboard.mgmt.coach_sub")} onClick={() => navigate("/parent/coach")} />
+          <MgmtTile icon={Target} color="#10b981" label={t("parent_dashboard.mgmt.missions")} sub={t("parent_dashboard.mgmt.missions_sub")} onClick={() => navigate("/parent/child-missions")} />
         </div>
       </FadeIn>
 
@@ -295,21 +297,21 @@ export default function ParentDashboard() {
       <FadeIn delay={340} className="grid grid-cols-2 gap-3 mt-4">
         <button onClick={() => navigate("/parent/allowance")} className="glass rounded-2xl p-4 text-left shadow-premium active:scale-95 transition-all">
           <Wallet className="w-6 h-6 text-emerald-600 mb-2" />
-          <div className="font-bold text-sm">Send Allowance</div>
-          <div className="text-xs text-muted-foreground">Schedule or send now</div>
+          <div className="font-bold text-sm">{t("parent_dashboard.quick_actions.send_allowance")}</div>
+          <div className="text-xs text-muted-foreground">{t("parent_dashboard.quick_actions.send_allowance_sub")}</div>
         </button>
         <button onClick={() => navigate("/parent/insights")} className="glass rounded-2xl p-4 text-left shadow-premium active:scale-95 transition-all">
           <TrendingUp className="w-6 h-6 text-blue-500 mb-2" />
-          <div className="font-bold text-sm">AI Insights</div>
-          <div className="text-xs text-muted-foreground">Weekly report ready</div>
+          <div className="font-bold text-sm">{t("parent_dashboard.quick_actions.insights")}</div>
+          <div className="text-xs text-muted-foreground">{t("parent_dashboard.quick_actions.insights_sub")}</div>
         </button>
       </FadeIn>
 
       <FadeIn delay={360} className="mt-4">
-        <SectionTitle>Recent Activity</SectionTitle>
+        <SectionTitle>{t("parent_dashboard.recent_activity")}</SectionTitle>
         <div className="space-y-2">
           {activity.length === 0 && !summaryLoading && (
-            <div className="text-center text-sm text-muted-foreground py-4">No activity yet — assign a chore or send an allowance to get started.</div>
+            <div className="text-center text-sm text-muted-foreground py-4">{t("parent_dashboard.no_activity")}</div>
           )}
           {activity.slice(0, 5).map((n) => (
             <div key={n.id} className="glass rounded-2xl p-3 flex items-center gap-3 shadow-premium">

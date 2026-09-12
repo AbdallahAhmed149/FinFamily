@@ -4,8 +4,10 @@ import { ChevronLeft, Check, X, Coins, Gift } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle, Pill } from "@/components/fin/ui";
 import { useAuth } from "@/lib/AuthContext";
 import { getFamilyMissions, reviewMission, getChildWallet } from "@/lib/finApi";
+import { useTranslation, Trans } from "react-i18next";
 
 export default function RewardApprovals() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getFamilyChildren } = useAuth();
 
@@ -31,7 +33,7 @@ export default function RewardApprovals() {
       const wallets = await Promise.all(uniqueChildIds.map((id) => getChildWallet(id).catch(() => null)));
       setBalances(Object.fromEntries(uniqueChildIds.map((id, i) => [id, wallets[i]?.balance ?? 0])));
     } catch (err) {
-      setError(err.message || "تعذر تحميل طلبات الصرف");
+      setError(err.message || t("reward_approvals.load_error"));
     } finally {
       setLoading(false);
     }
@@ -47,7 +49,7 @@ export default function RewardApprovals() {
       await reviewMission(id, decision);
       await load();
     } catch (err) {
-      setError(err.message || "حصل خطأ في الموافقة — يمكن الطفل معندوش رصيد كافي");
+      setError(err.message || t("reward_approvals.review_error"));
     } finally {
       setBusyId(null);
     }
@@ -62,8 +64,8 @@ export default function RewardApprovals() {
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Reward Requests</h1>
-        <Pill color="#FFC857" className="ml-auto"><Gift className="w-3 h-3" /> {pending.length} pending</Pill>
+        <h1 className="text-xl font-extrabold font-heading">{t("reward_approvals.title")}</h1>
+        <Pill color="#FFC857" className="ml-auto"><Gift className="w-3 h-3" /> {t("reward_approvals.pending_count", { count: pending.length })}</Pill>
       </FadeIn>
 
       {error && (
@@ -76,16 +78,16 @@ export default function RewardApprovals() {
         <div className="grad-gold rounded-3xl p-4 text-white shadow-glow-gold flex items-center gap-3">
           <span className="text-2xl">🎁</span>
           <div>
-            <div className="font-bold text-sm">Children want to redeem coins</div>
-            <div className="text-xs text-white/80">Approve or reject their reward requests</div>
+            <div className="font-bold text-sm">{t("reward_approvals.header_title")}</div>
+            <div className="text-xs text-white/80">{t("reward_approvals.header_desc")}</div>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn delay={120} className="mt-4">
-        <SectionTitle>Pending Requests</SectionTitle>
+        <SectionTitle>{t("reward_approvals.pending_requests")}</SectionTitle>
         {loading ? (
-          <div className="text-center text-sm text-muted-foreground py-8">...بنحمّل</div>
+          <div className="text-center text-sm text-muted-foreground py-8">{t("reward_approvals.loading")}</div>
         ) : (
           <div className="space-y-3">
             {pending.map((r, i) => (
@@ -95,32 +97,36 @@ export default function RewardApprovals() {
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "#FFC85718" }}>{r.icon}</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-bold">{r.title}</div>
-                      <div className="text-xs text-muted-foreground">Requested by <span className="font-semibold text-foreground">{childrenById[r.assigned_to_id] || "—"}</span></div>
+                      <div className="text-xs text-muted-foreground">
+                        <Trans i18nKey="reward_approvals.requested_by" values={{ name: childrenById[r.assigned_to_id] || "—" }}>
+                          Requested by <span className="font-semibold text-foreground">{{name: childrenById[r.assigned_to_id] || "—"}}</span>
+                        </Trans>
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="font-extrabold font-heading text-amber-600 flex items-center gap-1 justify-end"><Coins className="w-3.5 h-3.5" /> {r.reward}</div>
-                      <div className="text-[10px] text-muted-foreground">of {balances[r.assigned_to_id] ?? "…"} coins</div>
+                      <div className="text-[10px] text-muted-foreground">{t("reward_approvals.from_balance", { balance: balances[r.assigned_to_id] ?? "…" })}</div>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
                     <button disabled={busyId === r.id} onClick={() => decide(r.id, "reject")} className="flex-1 h-11 rounded-xl font-bold text-sm flex items-center justify-center gap-1 disabled:opacity-50" style={{ background: "#ef444318", color: "#ef4444" }}>
-                      <X className="w-4 h-4" /> Reject
+                      <X className="w-4 h-4" /> {t("reward_approvals.reject")}
                     </button>
                     <button disabled={busyId === r.id} onClick={() => decide(r.id, "approve")} className="flex-1 h-11 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-1 grad-emerald active:scale-95 transition-all disabled:opacity-50">
-                      <Check className="w-4 h-4" /> Approve & Fulfill
+                      <Check className="w-4 h-4" /> {t("reward_approvals.approve_execute")}
                     </button>
                   </div>
                 </GlassCard>
               </FadeIn>
             ))}
-            {pending.length === 0 && <div className="text-center text-sm text-muted-foreground py-8">No pending reward requests 🎉</div>}
+            {pending.length === 0 && <div className="text-center text-sm text-muted-foreground py-8">{t("reward_approvals.no_pending")}</div>}
           </div>
         )}
       </FadeIn>
 
       {!loading && (
         <FadeIn delay={160} className="mt-5">
-          <SectionTitle>History</SectionTitle>
+          <SectionTitle>{t("reward_approvals.history")}</SectionTitle>
           <div className="space-y-2">
             {history.map((r) => (
               <GlassCard key={r.id} className="flex items-center gap-3 py-3 opacity-80">
@@ -128,10 +134,10 @@ export default function RewardApprovals() {
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm">{r.title} · {childrenById[r.assigned_to_id] || "—"}</div>
                 </div>
-                <Pill color={r.status === "approved" ? "#00B894" : "#ef4444"} className="text-[10px] py-0">{r.status}</Pill>
+                <Pill color={r.status === "approved" ? "#00B894" : "#ef4444"} className="text-[10px] py-0">{r.status === "approved" ? t("reward_approvals.approved") : t("reward_approvals.rejected")}</Pill>
               </GlassCard>
             ))}
-            {history.length === 0 && <div className="text-center text-sm text-muted-foreground py-4">No history yet</div>}
+            {history.length === 0 && <div className="text-center text-sm text-muted-foreground py-4">{t("reward_approvals.no_history")}</div>}
           </div>
         </FadeIn>
       )}

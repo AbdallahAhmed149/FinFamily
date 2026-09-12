@@ -194,3 +194,29 @@
   100% { transform: translateY(60vh); opacity: 1; }
 }
 .animate-fall { animation: fall 2.4s linear forwards; }
+
+/* RTL Support */
+[dir="rtl"] {
+  font-family: 'Cairo', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+[dir="rtl"] .pl-10 { padding-left: 0.5rem; padding-right: 2.5rem; }
+[dir="rtl"] .pr-10 { padding-right: 0.5rem; padding-left: 2.5rem; }
+[dir="rtl"] .left-3  { left: auto; right: 0.75rem; }
+[dir="rtl"] .right-3 { right: auto; left: 0.75rem; }
+[dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .mr-2   { margin-right: 0; margin-left: 0.5rem; }
+[dir="rtl"] .text-left  { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+[dir="rtl"] .rounded-l-full { border-radius: 0 9999px 9999px 0; }
+[dir="rtl"] .rounded-r-full { border-radius: 9999px 0 0 9999px; }
+
+/* إخفاء شريط جوجل للترجمة بالكامل */
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
+.skiptranslate iframe,
+#goog-gt-tt {
+  display: none !important;
+}
+body {
+  top: 0 !important;
+}

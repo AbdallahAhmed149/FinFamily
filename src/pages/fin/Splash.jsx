@@ -1,10 +1,12 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LOGO_IMAGE } from "@/lib/finData";
 import { Image } from "@/components/ui/image";
 
 export default function Splash() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const t = setTimeout(() => navigate("/onboarding"), 4200);
@@ -40,7 +42,7 @@ export default function Splash() {
           />
         </div>
         <p className="mt-4 text-sm text-white/70 font-medium animate-slide-up" style={{ animationDelay: "1.4s" }}>
-          Growing Financially Together.
+          {t('splash.subtitle')}
         </p>
       </div>
 

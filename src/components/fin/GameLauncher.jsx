@@ -11,6 +11,7 @@ import ScamDetective from "@/components/fin/games/ScamDetective";
 import FutureInvestor from "@/components/fin/games/FutureInvestor";
 import SavingHero from "@/components/fin/games/SavingHero";
 import { completeGame } from "@/lib/finApi";
+import { useTranslation } from "react-i18next";
 
 const registry = {
   gm1: BudgetBuilder, gm2: BudgetBuilder, gm3: NeedsVsWants, gm4: GuessPrice,
@@ -19,6 +20,7 @@ const registry = {
 };
 
 export default function GameLauncher({ game, onClose }) {
+  const { t } = useTranslation();
   const [reward, setReward] = useState(null);
   const [error, setError] = useState(null);
   const G = registry[game.id] || SmartShopper;
@@ -44,12 +46,12 @@ export default function GameLauncher({ game, onClose }) {
     <GameOverlay title={game.title} icon={game.icon} onClose={abort}>
       {reward ? (
         <RewardScreen
-          title={reward.leveledUp ? "Level Up! 🎉" : "Mission Complete!"}
+          title={reward.leveledUp ? "مستوى جديد! 🎉" : t("shared.mission_complete.title")}
           score={reward.score}
           total={reward.total}
           coins={reward.coins}
           xp={reward.xp}
-          note={reward.alreadyToday ? "You already earned coins for this game today — nice practice run though! 💪" : error || undefined}
+          note={reward.alreadyToday ? "لقد كسبت عملات لهذه اللعبة اليوم بالفعل — لكن تمرين رائع! 💪" : error || undefined}
           onClose={complete}
         />
       ) : (

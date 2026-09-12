@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { Check, X } from "lucide-react";
 import { priceGuessItems } from "@/lib/finData";
 import { fmtEGP } from "@/lib/finData";
+import { useTranslation } from "react-i18next";
 
 export default function GuessPrice({ onFinish }) {
+  const { t } = useTranslation();
   const rounds = priceGuessItems.slice(0, 5);
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState(null);
@@ -25,7 +27,7 @@ export default function GuessPrice({ onFinish }) {
   return (
     <div className="px-4 pt-8 pb-8 max-w-md mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <span className="text-xs font-bold text-muted-foreground">Round {i + 1}/{rounds.length}</span>
+        <span className="text-xs font-bold text-muted-foreground">{t("game_guess_price.round", { current: i + 1, total: rounds.length })}</span>
         <div className="flex-1 h-2 rounded-full bg-black/5 overflow-hidden">
           <div className="h-full grad-emerald rounded-full transition-all" style={{ width: `${(i / rounds.length) * 100}%` }} />
         </div>
@@ -35,7 +37,7 @@ export default function GuessPrice({ onFinish }) {
       <div className="text-center mb-6">
         <div className="text-7xl mb-3">{item.emoji}</div>
         <div className="text-lg font-extrabold font-heading">{item.name}</div>
-        <div className="text-sm text-muted-foreground">Guess the real price</div>
+        <div className="text-sm text-muted-foreground">{t("game_guess_price.guess")}</div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -64,7 +66,7 @@ export default function GuessPrice({ onFinish }) {
 
       {picked !== null && (
         <div className="mt-4 text-center text-sm animate-pop">
-          <span className="font-bold">{picked === item.price ? "🎉 Perfect guess!" : "The real price is " + fmtEGP(item.price)}</span>
+          <span className="font-bold">{picked === item.price ? t("game_guess_price.win") : t("game_guess_price.real_price", { price: fmtEGP(item.price) })}</span>
         </div>
       )}
     </div>

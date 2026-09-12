@@ -5,10 +5,12 @@ import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { useAuth } from "@/lib/AuthContext";
 import { getChildWallet, sendAllowance } from "@/lib/finApi";
 import { allowanceTypes, fmtEGP } from "@/lib/finData";
+import { useTranslation } from "react-i18next";
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
 export default function Allowance() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { getFamilyChildren } = useAuth();
@@ -40,7 +42,7 @@ export default function Allowance() {
       kids.forEach((k, i) => { balanceMap[k.id] = wallets[i]?.balance ?? 0; });
       setBalances(balanceMap);
     } catch (err) {
-      setLoadError(err.message || "تعذر تحميل بيانات العيلة");
+      setLoadError(err.message || t("allowance.load_error"));
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,7 @@ export default function Allowance() {
       setSent(true);
       setTimeout(() => { setSent(false); setSelected(null); setAmount(0); }, 2200);
     } catch (err) {
-      setSendError(err.message || "حصل خطأ وإحنا بنبعت المصروف");
+      setSendError(err.message || t("allowance.send_error"));
     } finally {
       setSending(false);
     }
@@ -76,7 +78,7 @@ export default function Allowance() {
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Allowance</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("allowance.title")}</h1>
       </FadeIn>
 
       {loadError && (
@@ -87,7 +89,7 @@ export default function Allowance() {
 
       {!loading && children.length === 0 && !loadError && (
         <div className="text-center text-sm text-muted-foreground py-8">
-          مفيش أطفال متضافين لسه — ضيف طفل الأول من صفحة Family Members.
+          {t("allowance.no_kids")}
         </div>
       )}
 
@@ -113,15 +115,15 @@ export default function Allowance() {
             {activeChild ? AVATARS[children.findIndex((c) => c.id === activeId) % AVATARS.length] : "👤"}
           </div>
           <div>
-            <div className="text-sm text-white/70">Send to</div>
+            <div className="text-sm text-white/70">{t("allowance.send_to")}</div>
             <div className="text-lg font-bold">{loading ? "..." : activeChild?.full_name || "—"}</div>
-            <div className="text-xs text-white/60">Balance: {loading ? "…" : fmtEGP(activeBalance)}</div>
+            <div className="text-xs text-white/60">{t("allowance.balance")}{loading ? "…" : fmtEGP(activeBalance)}</div>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn delay={120}>
-        <SectionTitle>Allowance Type</SectionTitle>
+        <SectionTitle>{t("allowance.type")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3">
           {allowanceTypes.map((a) => (
             <button
@@ -139,14 +141,14 @@ export default function Allowance() {
           ))}
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          مصروف يدوي فوري دلوقتي — الجدولة الدورية (يومي/أسبوعي تلقائي) لسه مش متاحة.
+          {t("allowance.manual_note")}
         </p>
       </FadeIn>
 
       {selected && (
         <FadeIn className="mt-4">
           <GlassCard>
-            <div className="text-sm text-muted-foreground mb-2">Amount (EGP)</div>
+            <div className="text-sm text-muted-foreground mb-2">{t("allowance.amount_egp")}</div>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -154,7 +156,7 @@ export default function Allowance() {
                 onChange={(e) => setAmount(Number(e.target.value))}
                 className="flex-1 text-3xl font-extrabold font-heading bg-transparent outline-none"
               />
-              <span className="text-sm font-semibold text-muted-foreground">EGP</span>
+              <span className="text-sm font-semibold text-muted-foreground">{t("allowance.egp")}</span>
             </div>
             <div className="flex gap-2 mt-3">
               {[25, 50, 100].map((v) => (
@@ -179,9 +181,9 @@ export default function Allowance() {
             className="w-full h-14 rounded-2xl text-white font-bold font-heading shadow-premium active:scale-[0.98] transition-all grad-emerald flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {sent ? (
-              <><Check className="w-5 h-5" /> Sent to {activeChild?.full_name}! 🎉</>
+              <><Check className="w-5 h-5" /> {t("allowance.sent_to", { name: activeChild?.full_name })}</>
             ) : (
-              <><Send className="w-5 h-5" /> {sending ? "Sending..." : `Send ${amount > 0 ? fmtEGP(amount) : ""} to ${activeChild?.full_name || ""}`}</>
+              <><Send className="w-5 h-5" /> {sending ? t("allowance.sending") : t("allowance.send", { amount: amount > 0 ? fmtEGP(amount) : "", name: activeChild?.full_name || "" })}</>
             )}
           </button>
         </FadeIn>
@@ -194,7 +196,7 @@ export default function Allowance() {
               <span key={i} className="absolute text-2xl animate-float" style={{ left: `${30+i*5}%`, top: "20%", ["--tx"]: `${(i%2?1:-1)*30}px`, animationDelay: `${i*0.08}s` }}>🪙</span>
             ))}
           </div>
-          <div className="text-sm text-muted-foreground">Coins flying toward {activeChild?.full_name}... Balance updated!</div>
+          <div className="text-sm text-muted-foreground">{t("allowance.updating", { name: activeChild?.full_name })}</div>
         </FadeIn>
       )}
       <div className="h-4" />

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, Delete, Loader2 } from "lucide-react";
 import Lotfy from "@/components/fin/Lotfy";
 import { FadeIn } from "@/components/fin/ui";
@@ -58,6 +59,7 @@ function Keypad({ onDigit, onBackspace, disabled }) {
 
 export default function ChildLogin() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { lookupFamilyChildren, loginChild } = useAuth();
 
   const [step, setStep] = useState("code"); // "code" | "children" | "pin"
@@ -79,7 +81,7 @@ export default function ChildLogin() {
       setChildren(res.children || []);
       setStep("children");
     } catch (err) {
-      setError(err.message || "Family code not found");
+      setError(err.message || t('auth.child.family_not_found'));
     } finally {
       setLoading(false);
     }
@@ -99,7 +101,7 @@ export default function ChildLogin() {
       await loginChild(familyCode.toUpperCase(), selectedChild.id, fullPin);
       navigate("/child");
     } catch (err) {
-      setError(err.message || "Wrong PIN, try again");
+      setError(err.message || t('auth.child.wrong_pin'));
       setPin("");
     } finally {
       setLoading(false);
@@ -137,7 +139,7 @@ export default function ChildLogin() {
           }}
           className="relative z-10 flex items-center gap-1 text-sm text-white/80 mb-2 active:scale-95 transition-all"
         >
-          <ChevronLeft className="w-4 h-4" /> Back
+          <ChevronLeft className="w-4 h-4" /> {t('auth.child.back')}
         </button>
       )}
 
@@ -145,9 +147,9 @@ export default function ChildLogin() {
         {step === "code" && (
           <FadeIn className="w-full max-w-sm text-center">
             <Lotfy size={88} />
-            <h1 className="text-2xl font-extrabold font-heading mt-4">Hey Explorer! 🦁</h1>
+            <h1 className="text-2xl font-extrabold font-heading mt-4">{t('auth.child.hey_explorer')}</h1>
             <p className="text-sm text-white/75 mt-1 mb-8">
-              Ask your parent for your Family Code to join
+              {t('auth.child.ask_parent')}
             </p>
 
             {error && (
@@ -163,7 +165,7 @@ export default function ChildLogin() {
                 autoCapitalize="characters"
                 autoFocus
                 maxLength={6}
-                placeholder="FAMILY CODE"
+                placeholder={t('auth.child.family_code')}
                 value={familyCode}
                 onChange={(e) => setFamilyCode(e.target.value.toUpperCase())}
                 className="w-full h-16 rounded-2xl bg-white/15 text-center text-2xl font-extrabold font-heading tracking-[0.3em] text-white placeholder:text-white/40 placeholder:tracking-normal placeholder:text-sm outline-none focus:bg-white/20 transition-all"
@@ -177,18 +179,18 @@ export default function ChildLogin() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Searching...
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t('auth.child.searching')}
                   </>
                 ) : (
-                  "Find My Family →"
+                  t('auth.child.find_family')
                 )}
               </button>
             </form>
 
             <p className="text-xs text-white/60 mt-8">
-              Are you a parent?{" "}
+              {t('auth.child.are_you_parent')}{" "}
               <Link to="/login" className="font-semibold underline">
-                Log in here
+                {t('auth.child.login_here')}
               </Link>
             </p>
           </FadeIn>
@@ -197,9 +199,9 @@ export default function ChildLogin() {
         {step === "children" && (
           <FadeIn className="w-full max-w-sm text-center">
             <h1 className="text-xl font-extrabold font-heading">
-              Welcome to the {familyName} family! 👋
+              {t('auth.child.welcome_family', { family: familyName })}
             </h1>
-            <p className="text-sm text-white/75 mt-1 mb-6">Which one is you?</p>
+            <p className="text-sm text-white/75 mt-1 mb-6">{t('auth.child.which_one')}</p>
 
             {error && (
               <div className="mb-4 p-3 rounded-xl bg-white/15 text-white text-sm">
@@ -224,7 +226,7 @@ export default function ChildLogin() {
 
             {children.length === 0 && (
               <p className="text-sm text-white/70 mt-4">
-                No kids added to this family yet — ask your parent to add you first.
+                {t('auth.child.no_kids')}
               </p>
             )}
           </FadeIn>
@@ -236,9 +238,9 @@ export default function ChildLogin() {
               🦁
             </div>
             <h1 className="text-xl font-extrabold font-heading">
-              Hi {selectedChild.full_name}!
+              {t('auth.child.hi_kid', { name: selectedChild.full_name })}
             </h1>
-            <p className="text-sm text-white/75 mt-1">Enter your secret PIN</p>
+            <p className="text-sm text-white/75 mt-1">{t('auth.child.enter_pin')}</p>
 
             <PinDots length={PIN_LENGTH} filled={pin.length} />
 
@@ -252,7 +254,7 @@ export default function ChildLogin() {
 
             {loading && (
               <div className="flex items-center justify-center gap-2 text-sm text-white/80 mt-4">
-                <Loader2 className="w-4 h-4 animate-spin" /> Checking...
+                <Loader2 className="w-4 h-4 animate-spin" /> {t('auth.child.checking')}
               </div>
             )}
           </FadeIn>

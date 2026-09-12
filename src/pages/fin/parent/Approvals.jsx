@@ -4,10 +4,12 @@ import { ChevronLeft, Check, X, MapPin, Clock, FileText, Loader2 } from "lucide-
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { fmtEGP, timeAgo } from "@/lib/finData";
 import { getFamilyCardPurchases, reviewCardPurchase } from "@/lib/finApi";
+import { useTranslation } from "react-i18next";
 
 const categoryIcon = { Shopping: "🛍️", Entertainment: "🎬", Food: "🍔", Games: "🎮", Other: "🛒" };
 
 export default function Approvals() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,26 +50,26 @@ export default function Approvals() {
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Purchase Approvals</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("approvals.title")}</h1>
       </FadeIn>
 
       <FadeIn delay={60}>
         <div className="grad-gold rounded-3xl p-4 text-white shadow-glow-gold flex items-center gap-3">
           <span className="text-2xl">🔔</span>
           <div>
-            <div className="font-bold text-sm">{loading ? "···" : pendingCount} pending request{pendingCount === 1 ? "" : "s"}</div>
-            <div className="text-xs text-white/80">Purchases that went over a spending limit</div>
+            <div className="font-bold text-sm">{loading ? "···" : pendingCount} {pendingCount === 1 ? t("approvals.pending_single") : t("approvals.pending_plural")}</div>
+            <div className="text-xs text-white/80">{t("approvals.over_limit")}</div>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn delay={120} className="mt-4">
-        <SectionTitle>Requests</SectionTitle>
+        <SectionTitle>{t("approvals.requests")}</SectionTitle>
 
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : items.length === 0 ? (
-          <div className="text-center text-sm text-muted-foreground py-8">No card purchases yet.</div>
+          <div className="text-center text-sm text-muted-foreground py-8">{t("approvals.no_purchases")}</div>
         ) : (
           <div className="space-y-3">
             {items.map((a, i) => (
@@ -82,7 +84,7 @@ export default function Approvals() {
                       <div className="text-lg font-extrabold font-heading" style={{ color: "#0F2D52" }}>{fmtEGP(a.amount)}</div>
                     </div>
                     {a.status !== "pending" && (
-                      <Pill color={a.status === "completed" ? "#00B894" : "#ef4444"}>{a.status === "completed" ? "approved" : "rejected"}</Pill>
+                      <Pill color={a.status === "completed" ? "#00B894" : "#ef4444"}>{a.status === "completed" ? t("approvals.approved") : t("approvals.rejected")}</Pill>
                     )}
                   </div>
 
@@ -100,19 +102,19 @@ export default function Approvals() {
                         className="flex-1 h-11 rounded-xl font-bold text-sm flex items-center justify-center gap-1 disabled:opacity-50"
                         style={{ background: "#ef444318", color: "#ef4444" }}
                       >
-                        <X className="w-4 h-4" /> Reject
+                        <X className="w-4 h-4" /> {t("approvals.reject")}
                       </button>
                       <button
                         onClick={() => decide(a.id, "approve")}
                         disabled={busyId === a.id}
                         className="flex-1 h-11 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-1 grad-emerald disabled:opacity-50"
                       >
-                        <Check className="w-4 h-4" /> Approve
+                        <Check className="w-4 h-4" /> {t("approvals.approve")}
                       </button>
                     </div>
                   ) : (
                     <div className={"mt-3 text-xs font-semibold flex items-center gap-1 " + (a.status === "completed" ? "text-emerald-600" : "text-red-500")}>
-                      {a.status === "completed" ? "✓ Approved and paid from wallet" : `✕ Declined${a.decline_reason ? ` — ${a.decline_reason}` : ""}`}
+                      {a.status === "completed" ? t("approvals.approved_paid") : `${t("approvals.rejected_reason")}${a.decline_reason ? ` — ${a.decline_reason}` : ""}`}
                     </div>
                   )}
                 </GlassCard>

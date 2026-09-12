@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { PiggyBank, ArrowRight, Sparkles } from "lucide-react";
 import { savingHeroGoal, fmtEGP } from "@/lib/finData";
+import { useTranslation } from "react-i18next";
 
 export default function SavingHero({ onFinish }) {
+  const { t } = useTranslation();
   const [current, setCurrent] = useState(savingHeroGoal.current);
   const [weekly, setWeekly] = useState(savingHeroGoal.weeklyOptions[1]);
   const [burst, setBurst] = useState(false);
@@ -33,8 +35,8 @@ export default function SavingHero({ onFinish }) {
 
       <div className="text-center mb-5">
         <div className="text-5xl mb-2">{savingHeroGoal.icon}</div>
-        <h2 className="text-xl font-extrabold font-heading">Saving Hero</h2>
-        <p className="text-xs text-muted-foreground">Goal: {savingHeroGoal.name} · {fmtEGP(target)}</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("game_saving_hero.title")}</h2>
+        <p className="text-xs text-muted-foreground">{t("game_saving_hero.goal", { name: savingHeroGoal.name, target: fmtEGP(target) })}</p>
       </div>
 
       {/* progress ring */}
@@ -50,18 +52,18 @@ export default function SavingHero({ onFinish }) {
             <div className="text-xs text-muted-foreground">{fmtEGP(current)} / {fmtEGP(target)}</div>
           </div>
         </div>
-        {!complete && <div className="text-xs text-muted-foreground mt-2">Remaining: <b>{fmtEGP(remaining)}</b> · About {weeks} week{weeks !== 1 ? "s" : ""} to go</div>}
+        {!complete && <div className="text-xs text-muted-foreground mt-2">{t("game_saving_hero.remaining", { amount: fmtEGP(remaining), weeks })}</div>}
       </div>
 
       {complete ? (
         <div className="rounded-2xl p-5 text-center animate-pop" style={{ background: "#00B89415" }}>
           <div className="text-4xl mb-2">🎉</div>
-          <div className="font-bold">Goal reached! You're a Saving Hero!</div>
-          <div className="text-xs text-muted-foreground mt-1">Consistent saving turns small coins into big dreams.</div>
+          <div className="font-bold">{t("game_saving_hero.complete")}</div>
+          <div className="text-xs text-muted-foreground mt-1">{t("game_saving_hero.complete_desc")}</div>
         </div>
       ) : (
         <>
-          <div className="text-sm font-semibold mb-2">Choose how much to save each week:</div>
+          <div className="text-sm font-semibold mb-2">{t("game_saving_hero.choose_weekly")}</div>
           <div className="grid grid-cols-3 gap-3 mb-4">
             {savingHeroGoal.weeklyOptions.map((w) => (
               <button key={w} onClick={() => setWeekly(w)} className={"h-14 rounded-2xl font-bold text-sm shadow-premium border-2 transition-all active:scale-95 " + (weekly === w ? "text-white border-transparent" : "glass border-transparent text-foreground")} style={weekly === w ? { background: savingHeroGoal.color } : {}}>
@@ -71,9 +73,9 @@ export default function SavingHero({ onFinish }) {
           </div>
 
           <button onClick={save} className="w-full h-13 py-3.5 rounded-2xl text-white font-bold font-heading flex items-center justify-center gap-2 shadow-premium active:scale-[0.98] transition-all" style={{ background: savingHeroGoal.color }}>
-            <Sparkles className="w-4 h-4" /> Save {fmtEGP(weekly)} this week
+            <Sparkles className="w-4 h-4" /> {t("game_saving_hero.save_now", { amount: fmtEGP(weekly) })}
           </button>
-          <p className="text-[11px] text-muted-foreground text-center mt-3">Tip: Saving a little every week beats saving a lot once. Consistency is the superpower! 💪</p>
+          <p className="text-[11px] text-muted-foreground text-center mt-3">{t("game_saving_hero.tip")}</p>
         </>
       )}
     </div>

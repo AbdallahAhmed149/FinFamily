@@ -2,45 +2,56 @@ import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Wallet, Sparkles, Bell, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const nav = [
-  { to: "/parent", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/parent/allowance", label: "Allowance", icon: Wallet },
-  { to: "/parent/insights", label: "AI Insights", icon: Sparkles },
-  { to: "/parent/approvals", label: "Approvals", icon: Bell },
-  { to: "/parent/child-missions", label: "Missions", icon: Target },
-];
+import LanguageToggle from "@/components/LanguageToggle";
+import ThemeToggle from "@/components/ThemeToggle";
+import { useTranslation } from "react-i18next";
 
 export default function ParentLayout() {
-  const { pathname } = useLocation();
+  const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const nav = [
+    { to: "/parent", label: t("nav.dashboard"), icon: LayoutDashboard, exact: true },
+    { to: "/parent/allowance", label: t("nav.allowance"), icon: Wallet },
+    { to: "/parent/insights", label: t("nav.insights"), icon: Sparkles },
+    { to: "/parent/approvals", label: t("nav.approvals"), icon: Bell },
+    { to: "/parent/child-missions", label: t("nav.child_missions"), icon: Target },
+  ];
+
   return (
     <div className="min-h-screen bg-background pb-28">
+      {/* زر تحويل اللغة أعالي الشاشة */}
+      <div className="max-w-md mx-auto flex justify-end gap-2 px-4 pt-3">
+        <ThemeToggle />
+        <LanguageToggle />
+      </div>
+
       <div className="max-w-md mx-auto">
         <Outlet />
       </div>
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 px-4 pb-4">
-        <div className="glass rounded-3xl flex items-center justify-around p-2 shadow-premium">
+
+      {/* الشريط السفلي للتنقل */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md">
+        <div className="max-w-md mx-auto flex justify-around p-2">
           {nav.map((item) => {
-            const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
             const Icon = item.icon;
+            const active = item.exact
+              ? location.pathname === item.to
+              : location.pathname.startsWith(item.to);
             return (
               <button
                 key={item.to}
                 onClick={() => navigate(item.to)}
-                className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all"
+                className={cn(
+                  "flex flex-col items-center py-2 px-3 rounded-2xl transition-all text-xs font-medium gap-1",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
               >
-                <div
-                  className={cn(
-                    "w-11 h-11 rounded-2xl flex items-center justify-center transition-all",
-                    active ? "grad-navy shadow-premium scale-105" : "bg-black/5"
-                  )}
-                >
-                  <Icon className={cn("w-5 h-5", active ? "text-white" : "text-navy/50")} style={{ color: active ? "white" : "hsl(var(--muted-foreground))" }} />
-                </div>
-                <span className={cn("text-[10px] font-semibold", active ? "text-navy" : "text-muted-foreground")} style={{ color: active ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}>
-                  {item.label}
-                </span>
+                <Icon className="w-5 h-5" />
+                <span>{item.label}</span>
               </button>
             );
           })}

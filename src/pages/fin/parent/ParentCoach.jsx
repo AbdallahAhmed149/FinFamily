@@ -1,22 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Send, Sparkles, AlertTriangle, TrendingUp, ShieldCheck } from "lucide-react";
-import { GlassCard, FadeIn, Pill } from "@/components/fin/ui";
-import { familyMembers, fmtEGP } from "@/lib/finData";
+import { Pill, FadeIn } from "@/components/fin/ui";
+import { familyMembers } from "@/lib/finData";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from "react-i18next";
 
-const SUGGESTIONS = [
-  "How is each child doing this week?",
-  "Any spending risks I should know about?",
-  "Suggest a better allowance for Lotfy",
-  "How do I protect the family from scams?",
-  "Who is the most disciplined saver?",
-];
+
 
 export default function ParentCoach() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  
+  const SUGGESTIONS = t("parent_coach.suggestions", { returnObjects: true });
+
   const [messages, setMessages] = useState([
-    { role: "ai", text: "Hello Ahmed 👋 I'm Coach Nour, your family finance analyst. I monitor all 3 children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.", icon: "🤖" },
+    { role: "ai", text: t("parent_coach.welcome"), icon: "🤖" },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,10 +34,10 @@ export default function ParentCoach() {
       const res = await base44.post("/functions/aiCoach", { message: msg, mode: "parent" });
       
       // التعديل هنا: الـ Backend بتاعنا بيرجع { reply: "..." } مباشرة
-      setMessages((m) => [...m, { role: "ai", text: res?.reply || "Let me check the family data and get back to you.", icon: "🤖" }]);
+      setMessages((m) => [...m, { role: "ai", text: res?.reply || t("parent_coach.fallback_reply"), icon: "🤖" }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages((m) => [...m, { role: "ai", text: "I couldn't reach the AI service right now. Please try again in a moment.", icon: "🤖" }]);
+      setMessages((m) => [...m, { role: "ai", text: t("parent_coach.error_reply"), icon: "🤖" }]);
     }
     setLoading(false);
   };
@@ -49,8 +48,8 @@ export default function ParentCoach() {
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">AI Family Coach</h1>
-        <Pill color="#00B894" className="ml-auto"><Sparkles className="w-3 h-3" /> Pro</Pill>
+        <h1 className="text-xl font-extrabold font-heading">{t("parent_coach.title")}</h1>
+        <Pill color="#00B894" className="ml-auto"><Sparkles className="w-3 h-3" /> {t("parent_coach.pro")}</Pill>
       </FadeIn>
 
       {/* family snapshot */}
@@ -59,7 +58,7 @@ export default function ParentCoach() {
           <div key={m.id} className="glass rounded-2xl p-2.5 text-center">
             <div className="text-lg">{m.avatar}</div>
             <div className="text-[10px] font-bold">{m.name}</div>
-            <div className="text-[10px] font-semibold" style={{ color: m.financialScore >= 75 ? "#00B894" : "#FFC857" }}>{m.financialScore} score</div>
+            <div className="text-[10px] font-semibold" style={{ color: m.financialScore >= 75 ? "#00B894" : "#FFC857" }}>{t("parent_coach.score", { score: m.financialScore })}</div>
           </div>
         ))}
       </FadeIn>
@@ -98,7 +97,7 @@ export default function ParentCoach() {
 
       {/* input */}
       <div className="glass rounded-2xl p-2 flex items-center gap-2 shadow-premium">
-        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Ask about your family's finances..." className="flex-1 bg-transparent outline-none px-3 text-sm font-medium" />
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("parent_coach.input_placeholder")} className="flex-1 bg-transparent outline-none px-3 text-sm font-medium" />
         <button onClick={() => send()} disabled={loading} className="w-10 h-10 rounded-xl grad-emerald text-white flex items-center justify-center active:scale-95 transition-all disabled:opacity-50">
           <Send className="w-4 h-4" />
         </button>

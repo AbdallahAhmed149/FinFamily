@@ -1,16 +1,18 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Briefcase, Gamepad2 } from "lucide-react";
 import { LOGO_IMAGE } from "@/lib/finData";
 import { Image } from "@/components/ui/image";
 
 export default function RoleSelect() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       <div className="text-center mb-8 animate-slide-up">
         <Image src={LOGO_IMAGE} alt="FinFamily" fittingType="fit" className="w-40 h-24 object-contain mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">Who's using the app right now?</p>
+        <p className="text-sm text-muted-foreground">اختر دورك</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
@@ -23,8 +25,8 @@ export default function RoleSelect() {
           <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center mb-4">
             <Briefcase className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold font-heading">I'm a Parent</h3>
-          <p className="text-sm text-white/70 mt-1 max-w-[70%]">Log in for the full banking dashboard & controls.</p>
+          <h3 className="text-xl font-bold font-heading">الوالدين</h3>
+          <p className="text-sm text-white/70 mt-1 max-w-[70%]">إدارة مصروف أطفالك ومتابعة تقدمهم</p>
         </button>
 
         <button
@@ -37,8 +39,8 @@ export default function RoleSelect() {
           <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center mb-4">
             <Gamepad2 className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold font-heading">I'm a Kid</h3>
-          <p className="text-sm text-white/70 mt-1 max-w-[75%]">Enter your Family Code and PIN to jump in with Lotfy.</p>
+          <h3 className="text-xl font-bold font-heading">الأطفال</h3>
+          <p className="text-sm text-white/70 mt-1 max-w-[75%]">العب وتعلم وادخر واكسب مكافآت</p>
         </button>
       </div>
     </div>

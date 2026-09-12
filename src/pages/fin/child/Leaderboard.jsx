@@ -5,10 +5,12 @@ import { GlassCard, FadeIn, SectionTitle, Pill } from "@/components/fin/ui";
 import { fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet } from "@/lib/finApi";
+import { useTranslation } from "react-i18next";
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
 export default function Leaderboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getFamilyChildren, user } = useAuth();
 
@@ -25,7 +27,7 @@ export default function Leaderboard() {
       setSiblings([...children].sort((a, b) => (b.xp || 0) - (a.xp || 0)));
       setBalance(wallet.balance || 0);
     } catch (err) {
-      setError(err.message || "تعذر تحميل الترتيب");
+      setError(err.message || t("child_leaderboard.load_error"));
     } finally {
       setLoading(false);
     }
@@ -45,8 +47,8 @@ export default function Leaderboard() {
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Family Leaderboard</h1>
-        {myRank > 0 && <Pill color="#FFC857" className="ml-auto"><Flame className="w-3 h-3" /> Rank #{myRank}</Pill>}
+        <h1 className="text-xl font-extrabold font-heading">{t("child_leaderboard.title")}</h1>
+        {myRank > 0 && <Pill color="#FFC857" className="ml-auto"><Flame className="w-3 h-3" /> {t("child_leaderboard.rank_pill", { rank: myRank })}</Pill>}
       </FadeIn>
 
       {error && (
@@ -62,24 +64,24 @@ export default function Leaderboard() {
             <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/20" />
             <div className="text-4xl">🦁</div>
             <div className="flex-1">
-              <div className="text-xs text-white/80">Your position</div>
-              <div className="text-2xl font-extrabold font-heading">#{myRank} of {siblings.length}</div>
-              <div className="text-xs text-white/80">{user?.xp ?? 0} XP · Level {user?.level ?? 1}</div>
+              <div className="text-xs text-white/80">{t("child_leaderboard.your_rank")}</div>
+              <div className="text-2xl font-extrabold font-heading">{t("child_leaderboard.rank_of", { rank: myRank, total: siblings.length })}</div>
+              <div className="text-xs text-white/80">{t("child_leaderboard.level", { xp: user?.xp ?? 0, level: user?.level ?? 1 })}</div>
             </div>
             <div className="text-right">
               <div className="text-2xl font-extrabold">{fmtEGP(balance)}</div>
-              <div className="text-xs text-white/80">wallet</div>
+              <div className="text-xs text-white/80">{t("child_leaderboard.wallet")}</div>
             </div>
           </div>
         </FadeIn>
       )}
 
       {loading ? (
-        <div className="text-center text-sm text-muted-foreground py-10">...بنحمّل</div>
+        <div className="text-center text-sm text-muted-foreground py-10">{t("child_leaderboard.loading")}</div>
       ) : siblings.length <= 1 ? (
         <FadeIn delay={80} className="mt-6">
           <div className="text-center text-sm text-muted-foreground py-10">
-            الترتيب بيظهر لما يبقى فيه أكتر من طفل في العيلة — دلوقتي إنت الوحيد المسجل. 🦁
+            {t("child_leaderboard.no_siblings")}
           </div>
         </FadeIn>
       ) : (
@@ -114,7 +116,7 @@ export default function Leaderboard() {
 
           {/* full ranking */}
           <FadeIn delay={160} className="mt-3">
-            <SectionTitle>Full Ranking</SectionTitle>
+            <SectionTitle>{t("child_leaderboard.full_ranking")}</SectionTitle>
             <div className="space-y-2">
               {siblings.map((s, i) => {
                 const isMe = s.id === user?.id;
@@ -128,13 +130,13 @@ export default function Leaderboard() {
                       <div className="text-2xl">{avatar}</div>
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-sm flex items-center gap-1">
-                          {s.full_name} {isMe && <Pill color="#FFC857" className="text-[10px] py-0">You</Pill>}
+                          {s.full_name} {isMe && <Pill color="#FFC857" className="text-[10px] py-0">{t("child_leaderboard.you")}</Pill>}
                         </div>
-                        <div className="text-[11px] text-muted-foreground">{s.streak}-day streak</div>
+                        <div className="text-[11px] text-muted-foreground">{t("child_leaderboard.streak", { count: s.streak })}</div>
                       </div>
                       <div className="text-right">
                         <div className="font-extrabold text-sm font-heading">{s.xp}</div>
-                        <div className="text-[10px] text-muted-foreground">XP · Lvl {s.level}</div>
+                        <div className="text-[10px] text-muted-foreground">{t("child_leaderboard.pts_level", { level: s.level })}</div>
                       </div>
                     </GlassCard>
                   </FadeIn>
