@@ -104,6 +104,11 @@ class User(Base):
     level = Column(Integer, default=1)
     streak = Column(Integer, default=0)
 
+    # MFA (الأب بس) — TOTP زي Google/Microsoft Authenticator
+    mfa_enabled = Column(Boolean, default=False, nullable=False)
+    mfa_secret = Column(String, nullable=True)          # السيكريت الفعلي بعد ما يتفعّل
+    mfa_pending_secret = Column(String, nullable=True)  # سيكريت مؤقت وقت setup لحد ما يتأكد بكود صحيح
+
     wallet = relationship("Wallet", back_populates="owner", uselist=False, cascade="all, delete-orphan")
 
     created_date = Column(DateTime, default=datetime.utcnow)
@@ -253,3 +258,28 @@ class GameCompletion(Base):
     was_rewarded = Column(Boolean, default=True)  # False لو ده تكرار نفس اللعبة في نفس اليوم
 
     created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class AuditLog(Base):
+    """
+    'مين عمل إيه، وإمتى' — سجل تدقيق لكل حدث حساس (دخول، تغيير صلاحيات،
+    قرارات مالية). مفيش أي secret (password/pin/token/mfa secret) بيتسجل
+    هنا أبدًا، الـ detail عمود عام بس للسياق (زي أرقام أو أسماء غير حساسة).
+    """
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+
+    # nullable لأن محاولة دخول فاشلة ممكن نعرفهاش تابعة لعيلة/يوزر مين أصلاً
+    family_id = Column(String, ForeignKey("families.id"), nullable=True, index=True)
+    actor_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
+    actor_role = Column(String, nullable=True)  # "parent" / "child" / None لو الدخول فشل قبل ما نعرف مين
+
+    action = Column(String, nullable=False, index=True)  # e.g. "login_failed", "card_status_changed"
+    target_type = Column(String, nullable=True)  # e.g. "user", "wallet", "mission", "card_purchase"
+    target_id = Column(String, nullable=True)
+
+    detail = Column(JSON, nullable=True)
+    ip_address = Column(String, nullable=True)
+
+    created_date = Column(DateTime, default=datetime.utcnow, index=True)

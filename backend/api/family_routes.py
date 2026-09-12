@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -9,14 +9,16 @@ from db.models import (
     User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
     Transaction, TransactionType, TransactionDirection,
     CardStatus, CardPurchase, PurchaseStatus, _generate_card_number,
-    GameCompletion,
+    GameCompletion, AuditLog,
 )
 from core.deps import get_current_user, require_parent, require_child
+from core.audit import log_action
 from services.scoring import compute_financial_score, _debit_spend_since
 from services.insights import build_family_insights, build_family_activity
 from services.leveling import apply_xp
 from services.games import compute_reward
 from schemas.insights import InsightOut, ActivityOut
+from schemas.audit import AuditLogOut
 from schemas.games import GameCompleteRequest, GameCompleteResponse
 from schemas.wallet import (
     WalletOut, WalletLimitsUpdate, WalletCardStatusUpdate, CardThemeUpdate,
@@ -103,6 +105,7 @@ def get_child_wallet(child_id: str, parent: User = Depends(require_parent), db: 
 def update_child_limits(
     child_id: str,
     payload: WalletLimitsUpdate,
+    request: Request,
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
@@ -118,6 +121,19 @@ def update_child_limits(
     if payload.blocked_categories is not None:
         wallet.blocked_categories = payload.blocked_categories
 
+    log_action(
+        db, request=request, action="wallet_limits_updated",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="wallet", target_id=wallet.id,
+        detail={
+            "child_id": child.id,
+            "daily_limit": wallet.daily_limit,
+            "weekly_limit": wallet.weekly_limit,
+            "monthly_limit": wallet.monthly_limit,
+            "blocked_categories": wallet.blocked_categories,
+        },
+    )
+
     db.commit()
     db.refresh(wallet)
     return _wallet_out(db, wallet, child)
@@ -127,6 +143,7 @@ def update_child_limits(
 def update_card_status(
     child_id: str,
     payload: WalletCardStatusUpdate,
+    request: Request,
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
@@ -134,7 +151,16 @@ def update_card_status(
     # الطفل معندوش تحكم في كارته من صفحته، غير إنه يشوف الحالة الحالية.
     child = _get_family_child(db, parent.family_id, child_id)
     wallet = _get_wallet_for(db, child)
+    old_status = wallet.card_status.value
     wallet.card_status = payload.card_status
+
+    log_action(
+        db, request=request, action="card_status_changed",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="wallet", target_id=wallet.id,
+        detail={"child_id": child.id, "old_status": old_status, "new_status": payload.card_status.value},
+    )
+
     db.commit()
     db.refresh(wallet)
     return _wallet_out(db, wallet, child)
@@ -143,6 +169,7 @@ def update_card_status(
 @router.post("/wallet/child/{child_id}/card/replace", response_model=WalletOut)
 def replace_card(
     child_id: str,
+    request: Request,
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
@@ -151,6 +178,14 @@ def replace_card(
     wallet = _get_wallet_for(db, child)
     wallet.card_number = _generate_card_number()
     wallet.card_status = CardStatus.active
+
+    log_action(
+        db, request=request, action="card_replaced",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="wallet", target_id=wallet.id,
+        detail={"child_id": child.id},
+    )
+
     db.commit()
     db.refresh(wallet)
     return _wallet_out(db, wallet, child)
@@ -174,6 +209,7 @@ def update_my_card_theme(
 def send_allowance(
     child_id: str,
     payload: AllowanceSend,
+    request: Request,
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
@@ -186,6 +222,13 @@ def send_allowance(
         db, wallet, parent.family_id,
         TransactionType.allowance, TransactionDirection.credit,
         payload.amount, payload.label,
+    )
+
+    log_action(
+        db, request=request, action="allowance_sent",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="wallet", target_id=wallet.id,
+        detail={"child_id": child.id, "amount": payload.amount, "label": payload.label},
     )
 
     db.commit()
@@ -315,6 +358,7 @@ def submit_mission(mission_id: str, child: User = Depends(require_child), db: Se
 def review_mission(
     mission_id: str,
     payload: MissionReview,
+    request: Request,
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
@@ -352,6 +396,19 @@ def review_mission(
     mission.reviewed_by_id = parent.id
     mission.reviewed_date = datetime.utcnow()
     mission.review_note = payload.note
+
+    log_action(
+        db, request=request, action="mission_reviewed",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="mission", target_id=mission.id,
+        detail={
+            "child_id": child.id,
+            "kind": mission.kind.value,
+            "decision": payload.decision,
+            "title": mission.title,
+            "reward": mission.reward,
+        },
+    )
 
     db.commit()
     db.refresh(mission)
@@ -441,6 +498,7 @@ def make_purchase(payload: CardPurchaseCreate, child: User = Depends(require_chi
 def review_purchase(
     purchase_id: str,
     payload: CardPurchaseReview,
+    request: Request,
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
@@ -467,6 +525,18 @@ def review_purchase(
 
     purchase.reviewed_by_id = parent.id
     purchase.reviewed_date = datetime.utcnow()
+
+    log_action(
+        db, request=request, action="purchase_reviewed",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="card_purchase", target_id=purchase.id,
+        detail={
+            "child_id": purchase.child_id,
+            "decision": payload.decision,
+            "merchant": purchase.merchant,
+            "amount": purchase.amount,
+        },
+    )
 
     db.commit()
     db.refresh(purchase)
@@ -535,6 +605,29 @@ def family_insights(parent: User = Depends(require_parent), db: Session = Depend
 @router.get("/family/activity", response_model=List[ActivityOut])
 def family_activity(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
     return build_family_activity(db, parent)
+
+
+# ---------------------------------------------------------------------------
+# Audit log: "مين عمل إيه، وإمتى" — للأب بس، ومحصور بعيلته هو
+# ---------------------------------------------------------------------------
+
+@router.get("/audit-logs", response_model=List[AuditLogOut])
+def list_audit_logs(
+    action: Optional[str] = Query(None, description="فلترة بنوع الحدث، مثلاً card_status_changed"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    q = db.query(AuditLog).filter(AuditLog.family_id == parent.family_id)
+    if action:
+        q = q.filter(AuditLog.action == action)
+    return (
+        q.order_by(AuditLog.created_date.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -40,6 +40,38 @@ class ParentRegister(BaseModel):
 class ParentLogin(BaseModel):
     email: EmailStr
     password: str
+    otp_code: Optional[str] = None  # مطلوب بس لو الأب مفعّل MFA
+
+
+class ParentLoginResult(BaseModel):
+    """
+    رد /login: إما mfa_required=True (لسه محتاج الكود، مفيش token)،
+    أو access_token+user زي أي login عادي (لو MFA مش مفعّل، أو الكود اتبعت وصح).
+    """
+    mfa_required: bool = False
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    user: Optional[UserResponse] = None
+
+
+# ---------- MFA (الأب بس) ----------
+
+class MfaStatus(BaseModel):
+    enabled: bool
+
+
+class MfaSetupResponse(BaseModel):
+    secret: str              # للإدخال اليدوي لو الـ QR ماشتغلش
+    otpauth_url: str
+    qr_code_data_uri: str    # data:image/png;base64,... يتحط مباشرة في <img>
+
+
+class MfaEnableRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class MfaDisableRequest(BaseModel):
+    password: str  # تأكيد بالباسورد الحالي قبل ما نقفل MFA
 
 
 # ---------- Child management (done by the parent) ----------
