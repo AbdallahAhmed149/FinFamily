@@ -9,6 +9,7 @@ import { GlassCard, ProgressBar, Pill, FadeIn, SectionTitle } from "@/components
 import { LOGO_IMAGE, skills, levels } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyMissions, getMyBadges } from "@/lib/finApi";
+import BadgesGrid from "@/components/fin/BadgesGrid";
 import { useTheme } from "@/lib/useTheme";
 import { Image } from "@/components/ui/image";
 
@@ -127,19 +128,10 @@ export default function ChildProfile() {
         </GlassCard>
       </FadeIn>
 
-      {/* badges — حقيقية دلوقتي من /badges/mine، مش mock */}
+      {/* badges — حقيقية دلوقتي من /badges/mine، بشكل hexagon زي Kaggle (اضغط تشوف تفاصيل) */}
       <FadeIn delay={200}>
         <SectionTitle>Badges</SectionTitle>
-        <div className="grid grid-cols-4 gap-3">
-          {badges.map((b) => (
-            <div key={b.id} className={"text-center " + (b.unlocked ? "" : "opacity-30 grayscale")}>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-premium" style={{ background: b.unlocked ? "linear-gradient(135deg, #FFC857, #f5a623)" : "#0001" }}>
-                {b.unlocked ? b.icon : "🔒"}
-              </div>
-              <div className="text-[9px] font-semibold mt-1 leading-tight">{b.name}</div>
-            </div>
-          ))}
-        </div>
+        <BadgesGrid badges={badges} />
       </FadeIn>
 
       {/* missions progress — حقيقي دلوقتي، من MissionOut الفعلية (kind=chore بس) */}
