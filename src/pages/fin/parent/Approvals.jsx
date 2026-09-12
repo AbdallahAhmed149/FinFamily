@@ -2,10 +2,10 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Check, X, MapPin, Clock, FileText, Loader2 } from "lucide-react";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { fmtEGP, timeAgo } from "@/lib/finData";
+import { fmtEGP, timeAgo, blockableCategories } from "@/lib/finData";
 import { getFamilyCardPurchases, reviewCardPurchase } from "@/lib/finApi";
 
-const categoryIcon = { Shopping: "🛍️", Entertainment: "🎬", Food: "🍔", Games: "🎮", Other: "🛒" };
+const categoryIcon = Object.fromEntries(blockableCategories.map((c) => [c.name, c.icon]));
 
 export default function Approvals() {
   const navigate = useNavigate();

@@ -324,6 +324,11 @@ def create_mission(payload: MissionCreate, parent: User = Depends(require_parent
 @router.post("/missions/redeem", response_model=MissionOut)
 def request_redemption(payload: MissionCreate, child: User = Depends(require_child), db: Session = Depends(get_db)):
     # الطفل بيطلب يصرف كوينز على حاجة — بتروح مباشرة "submitted" مستنية موافقة الأب
+    # لو الفئة محظورة من الأب (نفس القايمة اللي بتمنع مشتريات الكارت)، بترفض فورًا من غير ما تتسجل أصلاً
+    wallet = _get_wallet_for(db, child)
+    if payload.category in (wallet.blocked_categories or []):
+        raise HTTPException(status_code=400, detail=f"{payload.category} is a blocked category")
+
     mission = Mission(
         family_id=child.family_id,
         assigned_to_id=child.id,
