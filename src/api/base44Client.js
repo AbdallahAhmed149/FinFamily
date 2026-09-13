@@ -1,4 +1,8 @@
-const API_BASE_URL = "http://localhost:8000/api";
+// مسار نسبي مش absolute URL — في التطوير Vite بيعمل proxy لـ /api على localhost:8000
+// (شوف vite.config.js)، وفي الإنتاج nginx هو اللي بيعمل proxy لنفس المسار على
+// الباك اند جوه الشبكة الداخلية. بالطريقة دي المتصفح شايف origin واحد بس دايمًا
+// (نفس الدومين)، فمحتاجناش CORS خالص ولا نغيّر أي حاجة بين البيئتين.
+const API_BASE_URL = "/api";
 const TOKEN_KEY = "finfamily_token";
 
 export function getToken() {
