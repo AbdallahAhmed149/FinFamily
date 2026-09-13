@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ShieldCheck, ShieldOff, Loader2, KeyRound } from "lucide-react";
+import { ChevronLeft, ShieldCheck, ShieldOff, Loader2, KeyRound, Copy, Check, RefreshCw } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getMfaStatus, setupMfa, enableMfa, disableMfa } from "@/lib/finApi";
+import { getMfaStatus, setupMfa, enableMfa, disableMfa, getRecoveryCodesStatus, regenerateRecoveryCodes } from "@/lib/finApi";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Security() {
@@ -26,11 +26,22 @@ export default function Security() {
   const [showDisable, setShowDisable] = useState(false);
   const [password, setPassword] = useState("");
 
+  // أكواد الاسترجاع — بتتعرض مرة واحدة بس (وقت التفعيل، أو بعد إعادة التوليد)
+  const [freshCodes, setFreshCodes] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [codesStatus, setCodesStatus] = useState(null); // { total, remaining }
+  const [showRegenerate, setShowRegenerate] = useState(false);
+  const [regenPassword, setRegenPassword] = useState("");
+
   useEffect(() => {
     let cancelled = false;
     getMfaStatus()
       .then((res) => {
-        if (!cancelled) setEnabled(res.enabled);
+        if (cancelled) return;
+        setEnabled(res.enabled);
+        if (res.enabled) {
+          getRecoveryCodesStatus().then((s) => !cancelled && setCodesStatus(s)).catch(() => {});
+        }
       })
       .catch(() => {})
       .finally(() => {
@@ -59,14 +70,48 @@ export default function Security() {
     setError("");
     setBusy(true);
     try {
-      await enableMfa(code);
+      const res = await enableMfa(code);
       setEnabled(true);
       setSetupData(null);
       setCode("");
+      setFreshCodes(res.codes); // لازم الأب يشوفهم ويحفظهم قبل ما يكمل — مش هيتعرضوا تاني
+      setCodesStatus({ total: res.codes.length, remaining: res.codes.length });
       await refreshUser(); // يحدّث user.mfa_enabled في الـ context عشان الـ Route Guard يفتح الطريق
-      if (mfaRequired) navigate("/parent"); // كان إجباري وخلص — يكمل على طول للداشبورد
     } catch (err) {
       setError(err.message || "Invalid code");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const finishViewingCodes = () => {
+    setFreshCodes(null);
+    setCopied(false);
+    if (mfaRequired) navigate("/parent"); // كان إجباري وخلص — يكمل على طول للداشبورد
+  };
+
+  const copyCodes = async () => {
+    try {
+      await navigator.clipboard.writeText(freshCodes.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard API ممكن ترفض — مش حاجة نوقف عليها، الأكواد لسه ظاهرة يقدر ينسخها يدوي
+    }
+  };
+
+  const confirmRegenerate = async (e) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      const res = await regenerateRecoveryCodes(regenPassword);
+      setFreshCodes(res.codes);
+      setCodesStatus({ total: res.codes.length, remaining: res.codes.length });
+      setShowRegenerate(false);
+      setRegenPassword("");
+    } catch (err) {
+      setError(err.message || "Incorrect password");
     } finally {
       setBusy(false);
     }
@@ -118,6 +163,26 @@ export default function Security() {
           {loadingStatus ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" /> Checking status...
+            </div>
+          ) : freshCodes ? (
+            // ---------------- أكواد الاسترجاع — بتتعرض مرة واحدة بس ----------------
+            <div className="space-y-4">
+              <div className="rounded-2xl p-3 bg-amber-500/10 text-amber-700 text-xs font-medium">
+                Save these 10 codes somewhere safe (password manager, printed paper). Each one works only
+                once, and you won't be able to see them again after leaving this screen. Use one instead of
+                your authenticator code if you ever lose access to your phone.
+              </div>
+              <div className="grid grid-cols-2 gap-2 font-mono text-sm">
+                {freshCodes.map((c) => (
+                  <div key={c} className="rounded-lg bg-black/5 py-2 text-center font-semibold">{c}</div>
+                ))}
+              </div>
+              <Button variant="outline" className="w-full h-11" onClick={copyCodes}>
+                {copied ? <><Check className="w-4 h-4 mr-2" /> Copied</> : <><Copy className="w-4 h-4 mr-2" /> Copy all codes</>}
+              </Button>
+              <Button className="w-full h-11" onClick={finishViewingCodes}>
+                I've saved these codes
+              </Button>
             </div>
           ) : setupData ? (
             // ---------------- Enrollment: امسح الـ QR وأكد بالكود ----------------
@@ -248,6 +313,55 @@ export default function Security() {
           )}
         </GlassCard>
       </FadeIn>
+
+      {enabled && !freshCodes && !setupData && (
+        <FadeIn delay={80}>
+          <SectionTitle>Recovery codes</SectionTitle>
+          <GlassCard>
+            <p className="text-sm text-muted-foreground mb-3">
+              One-time codes you can use instead of your authenticator app if you ever lose access to it.
+            </p>
+            {codesStatus && (
+              <div className="text-sm font-semibold mb-3">
+                {codesStatus.remaining} of {codesStatus.total} unused
+              </div>
+            )}
+            {!showRegenerate ? (
+              <Button variant="outline" className="w-full h-11" onClick={() => setShowRegenerate(true)}>
+                <RefreshCw className="w-4 h-4 mr-2" /> Generate new codes
+              </Button>
+            ) : (
+              <form onSubmit={confirmRegenerate} className="space-y-3">
+                <div className="rounded-xl p-3 bg-amber-500/10 text-amber-700 text-xs">
+                  This replaces all your existing codes — old ones (even unused) will stop working.
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="regen-password">Confirm your password</Label>
+                  <Input
+                    id="regen-password"
+                    type="password"
+                    autoFocus
+                    value={regenPassword}
+                    onChange={(e) => setRegenPassword(e.target.value)}
+                    className="h-11"
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full h-11" disabled={busy}>
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate new codes"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => { setShowRegenerate(false); setRegenPassword(""); setError(""); }}
+                  className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Never mind
+                </button>
+              </form>
+            )}
+          </GlassCard>
+        </FadeIn>
+      )}
     </div>
   );
 }

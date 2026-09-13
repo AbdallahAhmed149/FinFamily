@@ -41,7 +41,8 @@ class ParentRegister(BaseModel):
 class ParentLogin(BaseModel):
     email: EmailStr
     password: str
-    otp_code: Optional[str] = None  # مطلوب بس لو الأب مفعّل MFA
+    otp_code: Optional[str] = None       # كود TOTP عادي من تطبيق الـ Authenticator
+    recovery_code: Optional[str] = None  # بديل لو فقد جهاز الـ Authenticator (زي "7K4M-QX2P")
 
 
 class ParentLoginResult(BaseModel):
@@ -53,6 +54,7 @@ class ParentLoginResult(BaseModel):
     access_token: Optional[str] = None
     token_type: Optional[str] = None
     user: Optional[UserResponse] = None
+    used_recovery_code: bool = False  # لو دخل بكود استرجاع — الفرونت لازم ينبهه يولّد أكواد جديدة
 
 
 # ---------- MFA (الأب بس) ----------
@@ -73,6 +75,15 @@ class MfaEnableRequest(BaseModel):
 
 class MfaDisableRequest(BaseModel):
     password: str  # تأكيد بالباسورد الحالي قبل ما نقفل MFA
+
+
+class RecoveryCodesResponse(BaseModel):
+    codes: List[str]  # بترجع مرة واحدة بس وقت التوليد — بعد كده مفيش رجوع نشوفها تاني
+
+
+class RecoveryCodesStatus(BaseModel):
+    total: int
+    remaining: int
 
 
 # ---------- Forgot / reset password (الأب بس) ----------

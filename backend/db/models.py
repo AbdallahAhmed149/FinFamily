@@ -315,3 +315,21 @@ class PasswordResetToken(Base):
     used = Column(Boolean, default=False)
 
     created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class MfaRecoveryCode(Base):
+    """
+    كود استرجاع لمرة واحدة — بيتولّد سيت منه (10 أكواد) وقت ما الأب يفعّل الـ MFA.
+    كل كود بيتستخدم مرة واحدة بس (used=True بعد الاستخدام)، وبيدخل بيه بدل كود
+    الـ TOTP العادي لو الأب فقد جهاز الـ Authenticator بتاعه.
+    """
+    __tablename__ = "mfa_recovery_codes"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+
+    code_hash = Column(String, nullable=False)
+    used = Column(Boolean, default=False)
+    used_date = Column(DateTime, nullable=True)
+
+    created_date = Column(DateTime, default=datetime.utcnow)

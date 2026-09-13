@@ -48,17 +48,21 @@ export const AuthProvider = ({ children }) => {
   // ---------------------------------------------------------------------
 
   // otp_code اختياري: أول مرة (من غير كود) لو الأب مفعّل MFA هيرجع mfa_required=true
-  // من غير token، والفرونت هيسأله عن الكود ويبعت نفس الدالة تاني بالكود.
-  const loginParent = async (email, password, otpCode) => {
+  // من غير token، والفرونت هيسأله عن الكود ويبعت نفس الدالة تاني بالكود (أو بكود استرجاع بدالها).
+  const loginParent = async (email, password, otpCode, recoveryCode) => {
     setAuthError(null);
-    const res = await base44.post('/auth/login', { email, password, otp_code: otpCode || undefined });
+    const res = await base44.post('/auth/login', {
+      email, password,
+      otp_code: otpCode || undefined,
+      recovery_code: recoveryCode || undefined,
+    });
     if (res.mfa_required) {
       return { mfaRequired: true };
     }
     setToken(res.access_token);
     setUser(res.user);
     setIsAuthenticated(true);
-    return { mfaRequired: false, user: res.user };
+    return { mfaRequired: false, user: res.user, usedRecoveryCode: res.used_recovery_code };
   };
 
   const registerParent = async ({ family_name, full_name, email, password }) => {

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from db.database import get_db
-from db.models import User, Family, UserRole, Wallet, PasswordResetToken
+from db.models import User, Family, UserRole, Wallet, PasswordResetToken, MfaRecoveryCode
 from core.security import (
     hash_password,
     verify_password,
@@ -37,6 +37,8 @@ from schemas.auth import (
     ForgotPasswordRequest,
     ForgotPasswordResponse,
     ResetPasswordRequest,
+    RecoveryCodesResponse,
+    RecoveryCodesStatus,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -96,13 +98,36 @@ def login_parent(request: Request, payload: ParentLogin, db: Session = Depends(g
         db.commit()
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    used_recovery_code = False
+
     # الباسورد صح. لو الأب مفعّل MFA، الخطوة دي مش كفاية لوحدها.
     if user.mfa_enabled:
-        if not payload.otp_code:
+        if payload.recovery_code:
+            # بديل TOTP — لو فقد جهاز الـ Authenticator بتاعه
+            normalized = mfa.normalize_recovery_code(payload.recovery_code)
+            candidates = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == user.id, MfaRecoveryCode.used == False).all()  # noqa: E712
+            match = next((c for c in candidates if verify_password(normalized, c.code_hash)), None)
+            if not match:
+                log_action(
+                    db, request=request, action="mfa_recovery_failed",
+                    actor_id=user.id, actor_role="parent", family_id=user.family_id,
+                )
+                db.commit()
+                raise HTTPException(status_code=401, detail="Invalid or already-used recovery code")
+
+            match.used = True
+            match.used_date = datetime.utcnow()
+            used_recovery_code = True
+            log_action(
+                db, request=request, action="mfa_recovery_used",
+                actor_id=user.id, actor_role="parent", family_id=user.family_id,
+            )
+
+        elif not payload.otp_code:
             # مش خطأ — ده رد طبيعي بيقول للفرونت "اطلب الكود دلوقتي" من غير ما نرفض الطلب أو نديله token
             return ParentLoginResult(mfa_required=True)
 
-        if not mfa.verify_totp(user.mfa_secret, payload.otp_code):
+        elif not mfa.verify_totp(user.mfa_secret, payload.otp_code):
             log_action(
                 db, request=request, action="mfa_failed",
                 actor_id=user.id, actor_role="parent", family_id=user.family_id,
@@ -113,12 +138,12 @@ def login_parent(request: Request, payload: ParentLogin, db: Session = Depends(g
     log_action(
         db, request=request, action="login_success",
         actor_id=user.id, actor_role="parent", family_id=user.family_id,
-        detail={"mfa_used": user.mfa_enabled},
+        detail={"mfa_used": user.mfa_enabled, "used_recovery_code": used_recovery_code},
     )
     db.commit()
 
     token = create_access_token(user_id=user.id, family_id=user.family_id, role="parent")
-    return ParentLoginResult(access_token=token, token_type="bearer", user=UserResponse.model_validate(user))
+    return ParentLoginResult(access_token=token, token_type="bearer", user=UserResponse.model_validate(user), used_recovery_code=used_recovery_code)
 
 
 # ---------------------------------------------------------------------------
@@ -297,6 +322,16 @@ def reset_password(request: Request, payload: ResetPasswordRequest, db: Session 
 # Parent: MFA (TOTP — Google/Microsoft Authenticator)
 # ---------------------------------------------------------------------------
 
+def _issue_recovery_codes(db: Session, parent: User) -> list:
+    """بتمسح أي أكواد استرجاع قديمة (مستخدمة أو لأ) وتولّد سيت جديد بالكامل — بترجع النسخة الأصلية (plain) مرة واحدة بس."""
+    db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id).delete()
+    codes = mfa.generate_recovery_codes()
+    for code in codes:
+        normalized = mfa.normalize_recovery_code(code)
+        db.add(MfaRecoveryCode(user_id=parent.id, code_hash=hash_password(normalized)))
+    return codes
+
+
 @router.get("/mfa/status", response_model=MfaStatus)
 def mfa_status(parent: User = Depends(require_parent)):
     return MfaStatus(enabled=parent.mfa_enabled)
@@ -328,7 +363,7 @@ def mfa_setup(
     )
 
 
-@router.post("/mfa/enable", response_model=MfaStatus)
+@router.post("/mfa/enable", response_model=RecoveryCodesResponse)
 @limiter.limit("10/minute")
 def mfa_enable(
     request: Request,
@@ -346,13 +381,15 @@ def mfa_enable(
     parent.mfa_pending_secret = None
     parent.mfa_enabled = True
 
+    codes = _issue_recovery_codes(db, parent)
+
     log_action(
         db, request=request, action="mfa_enabled",
         actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
     )
     db.commit()
 
-    return MfaStatus(enabled=True)
+    return RecoveryCodesResponse(codes=codes)
 
 
 @router.post("/mfa/disable", response_model=MfaStatus)
@@ -370,6 +407,7 @@ def mfa_disable(
     parent.mfa_enabled = False
     parent.mfa_secret = None
     parent.mfa_pending_secret = None
+    db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id).delete()
 
     log_action(
         db, request=request, action="mfa_disabled",
@@ -378,6 +416,39 @@ def mfa_disable(
     db.commit()
 
     return MfaStatus(enabled=False)
+
+
+@router.get("/mfa/recovery-codes/status", response_model=RecoveryCodesStatus)
+def recovery_codes_status(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
+    if not parent.mfa_enabled:
+        raise HTTPException(status_code=400, detail="MFA is not enabled")
+    total = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id).count()
+    remaining = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id, MfaRecoveryCode.used == False).count()  # noqa: E712
+    return RecoveryCodesStatus(total=total, remaining=remaining)
+
+
+@router.post("/mfa/recovery-codes/regenerate", response_model=RecoveryCodesResponse)
+def regenerate_recovery_codes(
+    request: Request,
+    payload: MfaDisableRequest,  # نفس شكل الطلب (باسورد بس) — بنعيد استخدامه هنا
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    """بيلغي كل الأكواد القديمة (المستخدمة وغير المستخدمة) ويولّد سيت جديد — مفيد لو الأب قرّب يخلّص أكواده."""
+    if not parent.mfa_enabled:
+        raise HTTPException(status_code=400, detail="MFA is not enabled")
+    if not verify_password(payload.password, parent.password_hash):
+        raise HTTPException(status_code=401, detail="Incorrect password")
+
+    codes = _issue_recovery_codes(db, parent)
+
+    log_action(
+        db, request=request, action="mfa_recovery_codes_regenerated",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+    )
+    db.commit()
+
+    return RecoveryCodesResponse(codes=codes)
 
 
 # ---------------------------------------------------------------------------

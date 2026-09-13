@@ -13,6 +13,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [useRecovery, setUseRecovery] = useState(false); // بديل الكود العادي لو فقد جهاز الـ Authenticator
   const [mfaStep, setMfaStep] = useState(false); // لو true يبقى الباسورد صح والمطلوب دلوقتي كود الـ Authenticator بس
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,14 +24,18 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const result = await loginParent(email, password, mfaStep ? otpCode : undefined);
+      const result = await loginParent(
+        email, password,
+        mfaStep && !useRecovery ? otpCode : undefined,
+        mfaStep && useRecovery ? recoveryCode : undefined,
+      );
       if (result.mfaRequired) {
         setMfaStep(true); // نعرض حقل الكود، من غير ما نعتبر ده خطأ
       } else {
         navigate("/parent");
       }
     } catch (err) {
-      setError(err.message || (mfaStep ? "Invalid authentication code" : "Invalid email or password"));
+      setError(err.message || (mfaStep ? "Invalid code" : "Invalid email or password"));
     } finally {
       setLoading(false);
     }
@@ -38,6 +44,8 @@ export default function Login() {
   const backToPassword = () => {
     setMfaStep(false);
     setOtpCode("");
+    setRecoveryCode("");
+    setUseRecovery(false);
     setError("");
   };
 
@@ -116,23 +124,47 @@ export default function Login() {
         </form>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="otp">Authentication code</Label>
-            <Input
-              id="otp"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              autoFocus
-              maxLength={6}
-              placeholder="123456"
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className="h-12 text-center text-lg tracking-[0.4em] font-mono"
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full h-12 font-medium" disabled={loading || otpCode.length !== 6}>
+          {!useRecovery ? (
+            <div className="space-y-2">
+              <Label htmlFor="otp">Authentication code</Label>
+              <Input
+                id="otp"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                maxLength={6}
+                placeholder="123456"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="h-12 text-center text-lg tracking-[0.4em] font-mono"
+                required
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="recovery">Recovery code</Label>
+              <Input
+                id="recovery"
+                type="text"
+                autoComplete="off"
+                autoFocus
+                placeholder="XXXX-XXXX"
+                value={recoveryCode}
+                onChange={(e) => setRecoveryCode(e.target.value.toUpperCase().slice(0, 9))}
+                className="h-12 text-center text-lg tracking-widest font-mono"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Use one of the one-time recovery codes you saved when you set up two-factor authentication.
+              </p>
+            </div>
+          )}
+          <Button
+            type="submit"
+            className="w-full h-12 font-medium"
+            disabled={loading || (useRecovery ? recoveryCode.length < 8 : otpCode.length !== 6)}
+          >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -142,6 +174,13 @@ export default function Login() {
               "Verify"
             )}
           </Button>
+          <button
+            type="button"
+            onClick={() => { setUseRecovery((v) => !v); setOtpCode(""); setRecoveryCode(""); setError(""); }}
+            className="w-full text-sm text-primary hover:underline transition-colors"
+          >
+            {useRecovery ? "Use authenticator code instead" : "Lost your authenticator? Use a recovery code"}
+          </button>
           <button
             type="button"
             onClick={backToPassword}
