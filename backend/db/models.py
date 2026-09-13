@@ -105,6 +105,11 @@ class User(Base):
     streak = Column(Integer, default=0)
     last_active_date = Column(DateTime, nullable=True)  # آخر يوم اتحسب فيه نشاط للـ streak
 
+    # قفل مؤقت ضد تخمين الـ PIN (الطفل بس) — منفصل عن rate limiting بالـ IP،
+    # عشان يحمي حتى لو حد جرب من أجهزة/شبكات مختلفة على نفس الطفل بالظبط
+    failed_pin_attempts = Column(Integer, default=0)
+    pin_locked_until = Column(DateTime, nullable=True)
+
     # MFA (الأب بس) — TOTP زي Google/Microsoft Authenticator
     mfa_enabled = Column(Boolean, default=False, nullable=False)
     mfa_secret = Column(String, nullable=True)          # السيكريت الفعلي بعد ما يتفعّل

@@ -37,8 +37,21 @@ async function request(method, endpoint, data) {
   }
 
   if (!response.ok) {
-    // FastAPI بيرجع {"detail": "..."} في الأخطاء، فبنستخدمها كرسالة الخطأ
-    const message = body?.detail || response.statusText || "Request failed";
+    // FastAPI بيرجع {"detail": "..."} لأخطاء عادية، لكن لأخطاء الـ validation (422)
+    // بيرجع {"detail": [{"msg": "...", "loc": [...]}]} — سطر لكل حقل غلط. من غير
+    // المعالجة دي، new Error(array) كان بيطلع "[object Object]" مش رسالة مفهومة.
+    let message = response.statusText || "Request failed";
+    if (typeof body?.detail === "string") {
+      message = body.detail;
+    } else if (Array.isArray(body?.detail)) {
+      message = body.detail
+        .map((e) => {
+          const field = Array.isArray(e.loc) ? e.loc[e.loc.length - 1] : null;
+          return field ? `${field}: ${e.msg}` : e.msg;
+        })
+        .join(" · ");
+    }
+
     const error = new Error(message);
     error.status = response.status;
     error.data = body;

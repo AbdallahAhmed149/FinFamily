@@ -56,7 +56,7 @@ def build_family_context(db: Session, parent: User) -> str:
                 .filter(
                     Transaction.wallet_id == wallet.id,
                     Transaction.direction == TransactionDirection.debit,
-                    Transaction.type == TransactionType.redemption,  # صرف فعلي بس، مش تحويل لادخار
+                    Transaction.type.in_([TransactionType.redemption, TransactionType.card_purchase]),  # صرف فعلي بس، مش تحويل لادخار
                     Transaction.created_date >= since,
                 )
                 .all()

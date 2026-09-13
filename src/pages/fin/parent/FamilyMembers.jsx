@@ -80,8 +80,8 @@ export default function FamilyMembers() {
       setAddError("اكتب اسم الطفل");
       return;
     }
-    if (!/^\d{4,6}$/.test(form.pin)) {
-      setAddError("الـ PIN لازم يكون من 4 لـ 6 أرقام");
+    if (!/^\d{6}$/.test(form.pin)) {
+      setAddError("الـ PIN لازم يكون 6 أرقام بالظبط");
       return;
     }
     setSubmitting(true);
@@ -223,11 +223,11 @@ export default function FamilyMembers() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">PIN (4-6 digits) — the child uses this to log in</label>
+                <label className="text-xs font-semibold text-muted-foreground">PIN (6 digits) — the child uses this to log in</label>
                 <input
                   value={form.pin}
                   onChange={(e) => setForm({ ...form, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
-                  placeholder="1234"
+                  placeholder="123456"
                   inputMode="numeric"
                   className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold tracking-[0.3em]"
                 />

@@ -225,7 +225,17 @@ def child_login(request: Request, payload: ChildLogin, db: Session = Depends(get
         .filter(User.id == payload.child_id, User.family_id == family.id, User.role == UserRole.child)
         .first()
     )
+
+    # قفل مؤقت لو فيه محاولات فاشلة كتير على الطفل ده تحديدًا — بغض النظر عن الـ IP
+    if child and child.pin_locked_until and child.pin_locked_until > datetime.utcnow():
+        remaining = int((child.pin_locked_until - datetime.utcnow()).total_seconds() / 60) + 1
+        raise HTTPException(status_code=429, detail=f"Too many attempts. Try again in {remaining} minute(s).")
+
     if not child or not child.pin_hash or not verify_pin(payload.pin, child.pin_hash):
+        if child:
+            child.failed_pin_attempts = (child.failed_pin_attempts or 0) + 1
+            if child.failed_pin_attempts >= 5:
+                child.pin_locked_until = datetime.utcnow() + timedelta(minutes=15)
         log_action(
             db, request=request, action="login_failed",
             family_id=family.id,
@@ -233,6 +243,9 @@ def child_login(request: Request, payload: ChildLogin, db: Session = Depends(get
         )
         db.commit()
         raise HTTPException(status_code=401, detail="Invalid PIN")
+
+    child.failed_pin_attempts = 0
+    child.pin_locked_until = None
 
     log_action(
         db, request=request, action="login_success",

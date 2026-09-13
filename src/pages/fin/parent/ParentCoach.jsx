@@ -2,9 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Send, Sparkles, AlertTriangle, TrendingUp, ShieldCheck } from "lucide-react";
 import { GlassCard, FadeIn, Pill } from "@/components/fin/ui";
-import { familyMembers, fmtEGP } from "@/lib/finData";
+import { fmtEGP } from "@/lib/finData";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { getChildWallet } from "@/lib/finApi";
+
+const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
 const SUGGESTIONS = [
   "How is each child doing this week?",
@@ -16,7 +19,8 @@ const SUGGESTIONS = [
 
 export default function ParentCoach() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, getFamilyChildren } = useAuth();
+  const [snapshot, setSnapshot] = useState([]);
   const [messages, setMessages] = useState([
     { role: "ai", text: `Hello ${user?.full_name || "there"} 👋 I'm Coach Nour, your family finance analyst. I monitor your children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.`, icon: "🤖" },
   ]);
@@ -25,6 +29,22 @@ export default function ParentCoach() {
   const scrollRef = useRef(null);
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { children } = await getFamilyChildren();
+        const wallets = await Promise.all(children.map((c) => getChildWallet(c.id).catch(() => null)));
+        if (!cancelled) {
+          setSnapshot(children.map((c, i) => ({ id: c.id, name: c.full_name, avatar: AVATARS[i % AVATARS.length], score: wallets[i]?.financial_score ?? 50 })));
+        }
+      } catch {
+        // فشل التحميل هنا مش critical — الصفحة بتفضل تشتغل من غير الـ snapshot
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [getFamilyChildren]);
 
   const send = async (text) => {
     const msg = text || input;
@@ -57,11 +77,11 @@ export default function ParentCoach() {
 
       {/* family snapshot */}
       <FadeIn delay={40} className="grid grid-cols-3 gap-2 mb-4">
-        {familyMembers.map((m) => (
+        {snapshot.map((m) => (
           <div key={m.id} className="glass rounded-2xl p-2.5 text-center">
             <div className="text-lg">{m.avatar}</div>
             <div className="text-[10px] font-bold">{m.name}</div>
-            <div className="text-[10px] font-semibold" style={{ color: m.financialScore >= 75 ? "#00B894" : "#FFC857" }}>{m.financialScore} score</div>
+            <div className="text-[10px] font-semibold" style={{ color: m.score >= 75 ? "#00B894" : "#FFC857" }}>{m.score} score</div>
           </div>
         ))}
       </FadeIn>

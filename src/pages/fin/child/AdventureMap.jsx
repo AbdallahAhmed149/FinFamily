@@ -4,12 +4,16 @@ import { ChevronLeft, Lock, Check, Play, MapPin } from "lucide-react";
 import { GlassCard, ProgressBar, FadeIn, SectionTitle } from "@/components/fin/ui";
 import GameLauncher from "@/components/fin/GameLauncher";
 import { adventureWorlds, child, levels, fmtEGP } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function AdventureMap() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // level/xp الحقيقيين بدل الموك
   const [activeGame, setActiveGame] = useState(null);
 
-  const level = levels.find((l) => l.level === child.level);
+  const myLevel = user?.level ?? child.level;
+  const myXp = user?.xp ?? child.xp;
+  const level = levels.find((l) => l.level === myLevel) || levels[0];
 
   const launch = (w) => {
     if (w.status !== "unlocked") return;
@@ -24,7 +28,7 @@ export default function AdventureMap() {
         </button>
         <div>
           <h1 className="text-xl font-extrabold font-heading">Financial Adventure</h1>
-          <div className="text-xs text-muted-foreground">Level {child.level} · {level.name} · {child.xp} XP</div>
+          <div className="text-xs text-muted-foreground">Level {myLevel} · {level.name} · {myXp} XP</div>
         </div>
       </FadeIn>
 

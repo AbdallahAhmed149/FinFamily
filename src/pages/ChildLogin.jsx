@@ -5,7 +5,7 @@ import Lotfy from "@/components/fin/Lotfy";
 import { FadeIn } from "@/components/fin/ui";
 import { useAuth } from "@/lib/AuthContext";
 
-const PIN_LENGTH = 4;
+const PIN_LENGTH = 6;
 
 function PinDots({ length, filled }) {
   return (

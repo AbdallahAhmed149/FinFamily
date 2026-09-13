@@ -107,7 +107,7 @@ class ResetPasswordRequest(BaseModel):
 
 class ChildCreate(BaseModel):
     full_name: str = Field(min_length=1)
-    pin: str = Field(min_length=4, max_length=6, pattern=r"^\d+$")
+    pin: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")  # 6 أرقام بالظبط — 4 كانت ضعيفة لتطبيق فيه فلوس
 
 
 class ChildSummary(BaseModel):

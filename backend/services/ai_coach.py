@@ -51,7 +51,7 @@ def get_ai_response(chat_data: ChatMessage, context: str, child_name: str = "the
     
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo", # أو gpt-4o-mini
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": f"{user_prefix}{chat_data.message}"}
