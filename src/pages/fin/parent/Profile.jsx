@@ -10,13 +10,14 @@ import { LOGO_IMAGE, PARENT_IMAGE } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { useTheme } from "@/lib/useTheme";
 import { Image } from "@/components/ui/image";
+import { AvatarUpload } from "@/components/fin/AvatarUpload";
 
 export default function ParentProfile() {
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
   
   // 2. DESTRUCTURED getFamilyChildren HERE
-  const { user, logout, getFamilyChildren } = useAuth(); 
+  const { user, logout, getFamilyChildren, updateAvatar } = useAuth(); 
 
   // 3. ADDED STATE FOR CHILDREN COUNT
   const [childrenCount, setChildrenCount] = useState("...");
@@ -61,10 +62,14 @@ export default function ParentProfile() {
         <div className="grad-navy rounded-3xl p-5 text-white shadow-premium text-center relative overflow-hidden mb-6">
           <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
           
-          {/* 5. REPLACED THE INITIAL WITH THE ACTUAL PARENT_IMAGE */}
-          <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-white/20 overflow-hidden border-2 border-white/50 shadow-inner">
-            <Image src={PARENT_IMAGE} alt={user?.full_name || "Parent"} className="w-full h-full object-cover" fittingType="fill" />
-          </div>
+          {/* 5. REPLACED THE INITIAL WITH THE ACTUAL PARENT_IMAGE — now changeable */}
+          <AvatarUpload
+            src={user?.avatar_url || PARENT_IMAGE}
+            alt={user?.full_name || "Parent"}
+            onUpload={updateAvatar}
+            size="w-20 h-20"
+            className="mx-auto mb-3 rounded-full border-2 border-white/50 shadow-inner bg-white/20"
+          />
           
           <h2 className="text-xl font-extrabold font-heading">{user?.full_name || "Parent User"}</h2>
           <div className="text-sm text-white/70 mb-3">{user?.email || "parent@family.com"}</div>

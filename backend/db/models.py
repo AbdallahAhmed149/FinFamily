@@ -4,7 +4,7 @@ import string
 from datetime import datetime
 import enum
 
-from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Float, Integer, JSON, Boolean
+from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Float, Integer, JSON, Boolean, Text
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -91,6 +91,10 @@ class User(Base):
 
     role = Column(Enum(UserRole), nullable=False)
     full_name = Column(String, nullable=False)
+
+    # صورة البروفايل — بتتخزن كـ data URI (data:image/...;base64,...) عشان
+    # نستغنى عن أي تخزين ملفات/S3 دلوقتي. الأب والطفل بيستخدموا نفس العمود.
+    avatar_url = Column(Text, nullable=True)
 
     # بيانات الأب بس (الطفل معندوش إيميل ولا باسورد أصلاً)
     email = Column(String, unique=True, index=True, nullable=True)

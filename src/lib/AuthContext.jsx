@@ -126,6 +126,14 @@ export const AuthProvider = ({ children }) => {
   // مشترك
   // ---------------------------------------------------------------------
 
+  // بيشتغل للأب والطفل الاتنين — كل واحد بيغيّر صورته بس. الصورة بتوصل
+  // جاهزة كـ data URI (اتقرأت من الجهاز في الفرونت أصلاً).
+  const updateAvatar = async (avatarDataUrl) => {
+    const updatedUser = await base44.patch('/auth/me/avatar', { avatar_url: avatarDataUrl });
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -152,6 +160,7 @@ export const AuthProvider = ({ children }) => {
         getFamilyCode,
         getFamilyChildren,
         createChild,
+        updateAvatar,
         logout,
         refreshUser: loadCurrentUser,
       }}
