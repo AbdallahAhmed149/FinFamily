@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Wallet, Sparkles, Bell, Target } from "lucide-react";
+import { LayoutDashboard, Wallet, Sparkles, Bell, Target, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -10,6 +10,7 @@ const nav = [
   { to: "/parent/insights", label: "AI Insights", icon: Sparkles },
   { to: "/parent/approvals", label: "Approvals", icon: Bell },
   { to: "/parent/child-missions", label: "Missions", icon: Target },
+  { to: "/parent/profile", label: "Profile", icon: User },
 ];
 
 export default function ParentLayout() {
