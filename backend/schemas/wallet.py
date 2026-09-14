@@ -149,3 +149,17 @@ class CardPurchaseOut(BaseModel):
     created_date: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class FundingSourceCreate(BaseModel):
+    bank_name: str
+    account_last4: str = Field(min_length=4, max_length=4)
+    is_primary: bool = False
+
+class FundingSourceOut(BaseModel):
+    id: str
+    bank_name: str
+    account_last4: str
+    is_primary: bool
+    created_date: datetime
+
+    model_config = ConfigDict(from_attributes=True)

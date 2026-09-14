@@ -9,7 +9,7 @@ from db.models import (
     User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
     Transaction, TransactionType, TransactionDirection,
     CardStatus, CardPurchase, PurchaseStatus, _generate_card_number,
-    GameCompletion, AuditLog, UserBadge,
+    GameCompletion, AuditLog, UserBadge, FundingSource,
 )
 from core.deps import get_current_user, require_parent, require_child
 from core.audit import log_action
@@ -29,6 +29,7 @@ from schemas.wallet import (
     MissionCreate, MissionReview, MissionOut,
     TransactionOut, AllowanceSend,
     CardPurchaseCreate, CardPurchaseReview, CardPurchaseOut,
+    FundingSourceCreate, FundingSourceOut,
 )
 
 router = APIRouter(prefix="/api", tags=["Wallet & Missions"])
@@ -52,7 +53,6 @@ def _get_family_child(db: Session, family_id: str, child_id: str) -> User:
 def _get_wallet_for(db: Session, child: User) -> Wallet:
     wallet = db.query(Wallet).filter(Wallet.owner_id == child.id).first()
     if not wallet:
-        # ماينفعش يحصل عمليًا (بنعمل Wallet تلقائي وقت إنشاء الطفل) — بس تحسبًا
         raise HTTPException(status_code=500, detail="This child has no wallet")
     return wallet
 
@@ -78,7 +78,7 @@ def _wallet_out(db: Session, wallet: Wallet, child: User) -> WalletOut:
 
 
 def _over_any_limit(db: Session, wallet: Wallet, extra_amount: float) -> bool:
-    """هل إضافة extra_amount (طلب صرف جديد) هتخلّي الطفل يتخطى أي حد صرف حدده الأب؟"""
+    """Checks if extra_amount causes child to breach daily, weekly, or monthly limits."""
     now = datetime.utcnow()
     if wallet.daily_limit and _debit_spend_since(db, wallet.id, now.replace(hour=0, minute=0, second=0, microsecond=0)) + extra_amount > wallet.daily_limit:
         return True
@@ -150,8 +150,6 @@ def update_card_status(
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
-    # ملحوظة: تغيير حالة الكارت (freeze/unfreeze/deactivate) مسؤولية الأب بس —
-    # الطفل معندوش تحكم في كارته من صفحته، غير إنه يشوف الحالة الحالية.
     child = _get_family_child(db, parent.family_id, child_id)
     wallet = _get_wallet_for(db, child)
     old_status = wallet.card_status.value
@@ -176,7 +174,6 @@ def replace_card(
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
-    """كارت جديد (رقم جديد وهمي) وترجيع الحالة لـ active — بديل لكارت ضاع/اتسرق أو كان deactivated."""
     child = _get_family_child(db, parent.family_id, child_id)
     wallet = _get_wallet_for(db, child)
     wallet.card_number = _generate_card_number()
@@ -200,7 +197,6 @@ def update_my_card_theme(
     child: User = Depends(require_child),
     db: Session = Depends(get_db),
 ):
-    # الطفل هو اللي بيختار شكل الكارت بتاعه (تخصيص بس، مالهاش علاقة بالأمان)
     wallet = _get_wallet_for(db, child)
     wallet.card_theme = payload.theme
     db.commit()
@@ -216,7 +212,6 @@ def send_allowance(
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
-    # إرسال مصروف يدوي فوري ("Disburse Now") — مفيش جدولة/cron لسه، الأب بيدوس والفلوس بتتحط فورًا
     child = _get_family_child(db, parent.family_id, child_id)
     wallet = _get_wallet_for(db, child)
 
@@ -240,7 +235,7 @@ def send_allowance(
 
 
 # ---------------------------------------------------------------------------
-# Savings goals (بتاعة الطفل نفسه)
+# Savings goals
 # ---------------------------------------------------------------------------
 
 @router.post("/wallet/me/goals", response_model=SavingsGoalOut)
@@ -274,7 +269,6 @@ def deposit_to_goal(
     if wallet.balance < payload.amount:
         raise HTTPException(status_code=400, detail="Not enough balance in wallet")
 
-    # التحويل: من الرصيد المتاح إلى هدف الادخار
     wallet.balance -= payload.amount
     wallet.savings_balance += payload.amount
     goal.current += payload.amount
@@ -285,7 +279,7 @@ def deposit_to_goal(
         payload.amount, f"Transferred to savings goal: {goal.name}",
     )
 
-    check_and_award_badges(db, child)  # super_saver ممكن تتفتح هنا لو الهدف خلص
+    check_and_award_badges(db, child)
 
     db.commit()
     db.refresh(goal)
@@ -293,12 +287,11 @@ def deposit_to_goal(
 
 
 # ---------------------------------------------------------------------------
-# Missions (chores + reward redemptions — نفس الـ entity)
+# Missions (chores + redemptions)
 # ---------------------------------------------------------------------------
 
 @router.post("/missions", response_model=MissionOut)
 def create_mission(payload: MissionCreate, parent: User = Depends(require_parent), db: Session = Depends(get_db)):
-    # الأب مش بيعمل هنا غير chores (تسنيد مهمة) — طلبات الصرف الطفل هو اللي بيعملها في /missions/redeem
     if not payload.assigned_to_id:
         raise HTTPException(status_code=400, detail="assigned_to_id is required")
     _get_family_child(db, parent.family_id, payload.assigned_to_id)
@@ -323,8 +316,6 @@ def create_mission(payload: MissionCreate, parent: User = Depends(require_parent
 
 @router.post("/missions/redeem", response_model=MissionOut)
 def request_redemption(payload: MissionCreate, child: User = Depends(require_child), db: Session = Depends(get_db)):
-    # الطفل بيطلب يصرف كوينز على حاجة — بتروح مباشرة "submitted" مستنية موافقة الأب
-    # لو الفئة محظورة من الأب (نفس القايمة اللي بتمنع مشتريات الكارت)، بترفض فورًا من غير ما تتسجل أصلاً
     wallet = _get_wallet_for(db, child)
     if payload.category in (wallet.blocked_categories or []):
         raise HTTPException(status_code=400, detail=f"{payload.category} is a blocked category")
@@ -393,7 +384,7 @@ def review_mission(
                 TransactionType.mission_reward, TransactionDirection.credit,
                 mission.reward, mission.title, mission_id=mission.id,
             )
-        else:  # redemption
+        else:
             if wallet.balance < mission.reward:
                 raise HTTPException(status_code=400, detail="Child doesn't have enough balance for this redemption")
             wallet.balance -= mission.reward
@@ -404,7 +395,7 @@ def review_mission(
             )
         mission.status = MissionStatus.approved
         if mission.kind == MissionKind.chore:
-            check_and_award_badges(db, child)  # first_chore / big_earner ممكن تتفتح هنا
+            check_and_award_badges(db, child)
 
     mission.reviewed_by_id = parent.id
     mission.reviewed_date = datetime.utcnow()
@@ -456,17 +447,11 @@ def family_missions(
 
 
 # ---------------------------------------------------------------------------
-# Card purchases (محاكاة POS — مفيش تكامل حقيقي مع Meeza أو أي بنك)
+# Card purchases
 # ---------------------------------------------------------------------------
 
 @router.post("/card/purchases", response_model=CardPurchaseOut)
 def make_purchase(payload: CardPurchaseCreate, child: User = Depends(require_child), db: Session = Depends(get_db)):
-    """
-    الطفل بيعمل 'سحبة كارت' وهمية. القرار بيتاخد فورًا:
-    - الكارت مش active / الفئة محظورة / الرصيد مش كافي -> ترفض فورًا (rejected)
-    - جوه حدود الصرف -> بتتخصم فورًا (completed)
-    - بتخطى حد صرف حدده الأب -> بتتحط 'pending' مستنية موافقته
-    """
     wallet = _get_wallet_for(db, child)
 
     def _instant(status, decline_reason=None):
@@ -606,8 +591,7 @@ def child_transactions(child_id: str, parent: User = Depends(require_parent), db
 
 
 # ---------------------------------------------------------------------------
-# Family feed: rule-based insights + recent activity (بديل حقيقي للـ mock
-# notifications و parentAiInsights — مبنية بالكامل من Mission/Transaction/CardPurchase الفعليين)
+# Family feed: insights + activity
 # ---------------------------------------------------------------------------
 
 @router.get("/family/insights", response_model=List[InsightOut])
@@ -621,12 +605,12 @@ def family_activity(parent: User = Depends(require_parent), db: Session = Depend
 
 
 # ---------------------------------------------------------------------------
-# Audit log: "مين عمل إيه، وإمتى" — للأب بس، ومحصور بعيلته هو
+# Audit log
 # ---------------------------------------------------------------------------
 
 @router.get("/audit-logs", response_model=List[AuditLogOut])
 def list_audit_logs(
-    action: Optional[str] = Query(None, description="فلترة بنوع الحدث، مثلاً card_status_changed"),
+    action: Optional[str] = Query(None, description="Filter by event action"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     parent: User = Depends(require_parent),
@@ -644,9 +628,7 @@ def list_audit_logs(
 
 
 # ---------------------------------------------------------------------------
-# Mini-games: مكافأة حقيقية فورية (من غير موافقة الأب — عكس الشورز) لما الطفل
-# يخلّص لعبة تعليمية. الباك اند هو اللي بيحدد المكافأة (من GAME_CATALOG)، مش
-# أي رقم جاي من الفرونت — عشان محدش يقدر يعدّل الطلب ويدّي نفسه كوينز وهمية.
+# Mini-games
 # ---------------------------------------------------------------------------
 
 @router.post("/games/complete", response_model=GameCompleteResponse)
@@ -662,7 +644,7 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         .filter(
             GameCompletion.child_id == child.id,
             GameCompletion.game_id == payload.game_id,
-            GameCompletion.was_rewarded == True,  # noqa: E712
+            GameCompletion.was_rewarded == True,
             GameCompletion.created_date >= today_start,
         )
         .first()
@@ -692,10 +674,9 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         coins_awarded=coins_awarded,
         was_rewarded=not already_today,
     ))
-    db.flush()  # عشان محاولة اللعب دي تتحسب لو كانت هي آخر لعبة في تحدي "Perfect Day"
+    db.flush()
 
     touch_streak(child)
-
     newly_unlocked = check_and_award_badges(db, child)
 
     perfect_bonus_xp, perfect_bonus_coins = 0, 0
@@ -745,3 +726,51 @@ def my_badges(child: User = Depends(require_child), db: Session = Depends(get_db
         )
         for bd in BADGE_DEFS
     ]
+
+
+# ---------------------------------------------------------------------------
+# Parent Funding Sources (Bank Cards)
+# ---------------------------------------------------------------------------
+
+@router.post("/funding-sources", response_model=FundingSourceOut)
+def add_funding_source(
+    payload: FundingSourceCreate,
+    request: Request,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    existing_count = db.query(FundingSource).filter(FundingSource.family_id == parent.family_id).count()
+    is_primary = payload.is_primary if existing_count > 0 else True
+
+    if is_primary:
+        old_primary = db.query(FundingSource).filter(
+            FundingSource.family_id == parent.family_id,
+            FundingSource.is_primary == True,
+        ).first()
+        if old_primary:
+            old_primary.is_primary = False
+
+    new_source = FundingSource(
+        family_id=parent.family_id,
+        parent_id=parent.id,
+        bank_name=payload.bank_name,
+        account_last4=payload.account_last4,
+        is_primary=is_primary,
+    )
+    db.add(new_source)
+
+    log_action(
+        db, request=request, action="funding_source_added",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="funding_source", target_id=new_source.id,
+        detail={"bank_name": payload.bank_name, "last4": payload.account_last4},
+    )
+
+    db.commit()
+    db.refresh(new_source)
+    return new_source
+
+
+@router.get("/funding-sources", response_model=List[FundingSourceOut])
+def get_funding_sources(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
+    return db.query(FundingSource).filter(FundingSource.family_id == parent.family_id).all()

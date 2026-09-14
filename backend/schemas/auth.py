@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     family_id: str
     role: UserRole
     full_name: str
+    avatar_url: Optional[str] = None
     email: Optional[EmailStr] = None
     xp: int = 0
     level: int = 1
@@ -135,3 +136,36 @@ class ChildLogin(BaseModel):
     family_code: str = Field(min_length=6, max_length=6)
     child_id: str
     pin: str
+
+class PartnerInvite(BaseModel):
+    full_name: str = Field(min_length=1)
+    email: EmailStr
+    password: str = Field(min_length=8)
+
+
+class PartnerOut(BaseModel):
+    id: str
+    full_name: str
+    email: Optional[EmailStr] = None
+    created_date: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PartnerUpdate(BaseModel):
+    full_name: Optional[str] = Field(default=None, min_length=1)
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(default=None, min_length=8)
+
+
+class ChildPinReset(BaseModel):
+    new_pin: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class AvatarUpdate(BaseModel):
+    avatar_url: str  # data URI (base64) or public URL
+
+
+class ParentPasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)

@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 import os
+from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, UploadFile, File
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -39,6 +40,12 @@ from schemas.auth import (
     ResetPasswordRequest,
     RecoveryCodesResponse,
     RecoveryCodesStatus,
+    PartnerInvite,
+    PartnerOut,
+    PartnerUpdate,
+    ChildPinReset,
+    AvatarUpdate,
+    ParentPasswordChange,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -58,10 +65,9 @@ def register_parent(request: Request, payload: ParentRegister, db: Session = Dep
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # كل أب بيبدأ عيلة جديدة بيه؛ الكود ده هو اللي هيديه لابنه وقت ما يضيفه
     family = Family(name=payload.family_name)
     db.add(family)
-    db.flush()  # عشان ناخد family.id قبل الـ commit
+    db.flush()
 
     parent = User(
         family_id=family.id,
@@ -84,13 +90,216 @@ def register_parent(request: Request, payload: ParentRegister, db: Session = Dep
     token = create_access_token(user_id=parent.id, family_id=family.id, role="parent")
     return TokenResponse(access_token=token, user=UserResponse.model_validate(parent))
 
+# ---------------------------------------------------------------------------
+# Partners: invite / list / edit / delete
+# ---------------------------------------------------------------------------
+
+@router.post("/partners/invite", response_model=UserResponse)
+def invite_partner(
+    request: Request,
+    payload: PartnerInvite,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db)
+):
+    # Only count ADDITIONAL co-partners (excluding the primary parent owner)
+    co_partner_count = db.query(User).filter(
+        User.family_id == parent.family_id,
+        User.role == UserRole.parent,
+        User.id != parent.id  # <-- THIS PREVENTS COUNTING THE OWNER
+    ).count()
+
+    if co_partner_count >= 3:
+        raise HTTPException(
+            status_code=400, 
+            detail="Family workspace has reached the maximum limit of 3 partners."
+        )
+
+    existing_user = db.query(User).filter(User.email == payload.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email is already registered.")
+
+    co_partner = User(
+        family_id=parent.family_id,
+        role=UserRole.parent,
+        full_name=payload.full_name,
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+    )
+    db.add(co_partner)
+    db.commit()
+    db.refresh(co_partner)
+
+    log_action(
+        db, request=request, action="partner_invited",
+        actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+        target_type="user", target_id=co_partner.id,
+        detail={"partner_email": co_partner.email}
+    )
+    db.commit()
+    return co_partner
+@router.get("/partners", response_model=List[PartnerOut])
+def list_partners(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
+    return db.query(User).filter(User.family_id == parent.family_id, User.role == UserRole.parent).all()
+
+
+@router.patch("/partners/{partner_id}", response_model=PartnerOut)
+def update_partner(
+    partner_id: str,
+    payload: PartnerUpdate,
+    request: Request,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    partner = db.query(User).filter(
+        User.id == partner_id,
+        User.family_id == parent.family_id,
+        User.role == UserRole.parent,
+    ).first()
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found in your family")
+
+    if payload.full_name is not None:
+        partner.full_name = payload.full_name
+    if payload.email is not None:
+        conflict = db.query(User).filter(User.email == payload.email, User.id != partner_id).first()
+        if conflict:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        partner.email = payload.email
+    if payload.password is not None:
+        partner.password_hash = hash_password(payload.password)
+
+    log_action(db, request=request, action="partner_updated",
+               actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+               target_type="user", target_id=partner_id)
+    db.commit()
+    db.refresh(partner)
+    return partner
+
+
+@router.delete("/partners/{partner_id}")
+def delete_partner(
+    partner_id: str,
+    request: Request,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    if partner_id == parent.id:
+        raise HTTPException(status_code=400, detail="You cannot remove yourself")
+    partner = db.query(User).filter(
+        User.id == partner_id,
+        User.family_id == parent.family_id,
+        User.role == UserRole.parent,
+    ).first()
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found")
+    db.delete(partner)
+    log_action(db, request=request, action="partner_removed",
+               actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+               target_type="user", target_id=partner_id)
+    db.commit()
+    return {"detail": "Partner removed"}
+
+
+# ---------------------------------------------------------------------------
+# Parent: change own password
+# ---------------------------------------------------------------------------
+
+@router.patch("/me/password")
+def change_my_password(
+    request: Request,
+    payload: ParentPasswordChange,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_password, parent.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    parent.password_hash = hash_password(payload.new_password)
+    log_action(db, request=request, action="password_changed",
+               actor_id=parent.id, actor_role="parent", family_id=parent.family_id)
+    db.commit()
+    return {"detail": "Password updated"}
+
+
+# ---------------------------------------------------------------------------
+# Parent: reset a child's PIN
+# ---------------------------------------------------------------------------
+
+@router.patch("/children/{child_id}/pin", response_model=UserResponse)
+def reset_child_pin(
+    child_id: str,
+    payload: ChildPinReset,
+    request: Request,
+    parent: User = Depends(require_parent),
+    db: Session = Depends(get_db),
+):
+    child = db.query(User).filter(
+        User.id == child_id,
+        User.family_id == parent.family_id,
+        User.role == UserRole.child,
+    ).first()
+    if not child:
+        raise HTTPException(status_code=404, detail="Child not found in your family")
+    child.pin_hash = hash_pin(payload.new_pin)
+    child.failed_pin_attempts = 0
+    child.pin_locked_until = None
+    log_action(db, request=request, action="child_pin_reset",
+               actor_id=parent.id, actor_role="parent", family_id=parent.family_id,
+               target_type="user", target_id=child_id)
+    db.commit()
+    db.refresh(child)
+    return child
+
+
+# ---------------------------------------------------------------------------
+# Avatar: any user (Child or Parent) can set/clear their own profile photo
+# ---------------------------------------------------------------------------
+
+@router.patch("/me/avatar", response_model=UserResponse)
+def update_avatar_json(
+    payload: AvatarUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.avatar_url = payload.avatar_url
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/me/avatar", response_model=UserResponse)
+async def update_avatar_file(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Save file or set relative path
+    avatar_url = f"/uploads/{file.filename}"
+    current_user.avatar_url = avatar_url
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me/avatar", response_model=UserResponse)
+def delete_avatar(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.avatar_url = None
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+# ---------------------------------------------------------------------------
+# Login / MFA / Recovery / Password Reset
+# ---------------------------------------------------------------------------
 
 @router.post("/login", response_model=ParentLoginResult)
 @limiter.limit("5/minute")
 def login_parent(request: Request, payload: ParentLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email, User.role == UserRole.parent).first()
     if not user or not user.password_hash or not verify_password(payload.password, user.password_hash):
-        # رسالة واحدة عامة لإيميل غلط أو باسورد غلط — عشان محدش يعرف يستنتج إن الإيميل ده مسجل أصلاً
         log_action(
             db, request=request, action="login_failed",
             detail={"email": payload.email, "role": "parent"},
@@ -100,12 +309,10 @@ def login_parent(request: Request, payload: ParentLogin, db: Session = Depends(g
 
     used_recovery_code = False
 
-    # الباسورد صح. لو الأب مفعّل MFA، الخطوة دي مش كفاية لوحدها.
     if user.mfa_enabled:
         if payload.recovery_code:
-            # بديل TOTP — لو فقد جهاز الـ Authenticator بتاعه
             normalized = mfa.normalize_recovery_code(payload.recovery_code)
-            candidates = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == user.id, MfaRecoveryCode.used == False).all()  # noqa: E712
+            candidates = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == user.id, MfaRecoveryCode.used == False).all()
             match = next((c for c in candidates if verify_password(normalized, c.code_hash)), None)
             if not match:
                 log_action(
@@ -124,7 +331,6 @@ def login_parent(request: Request, payload: ParentLogin, db: Session = Depends(g
             )
 
         elif not payload.otp_code:
-            # مش خطأ — ده رد طبيعي بيقول للفرونت "اطلب الكود دلوقتي" من غير ما نرفض الطلب أو نديله token
             return ParentLoginResult(mfa_required=True)
 
         elif not mfa.verify_totp(user.mfa_secret, payload.otp_code):
@@ -146,10 +352,6 @@ def login_parent(request: Request, payload: ParentLogin, db: Session = Depends(g
     return ParentLoginResult(access_token=token, token_type="bearer", user=UserResponse.model_validate(user), used_recovery_code=used_recovery_code)
 
 
-# ---------------------------------------------------------------------------
-# Parent: manage children
-# ---------------------------------------------------------------------------
-
 @router.post("/children", response_model=UserResponse)
 def create_child(
     request: Request,
@@ -164,7 +366,7 @@ def create_child(
         pin_hash=hash_pin(payload.pin),
     )
     db.add(child)
-    db.flush()  # عشان ناخد child.id قبل ما نعمل الـ Wallet بتاعته
+    db.flush()
 
     wallet = Wallet(owner_id=child.id)
     db.add(wallet)
@@ -191,16 +393,10 @@ def get_family_code(parent: User = Depends(require_parent), db: Session = Depend
 
 @router.get("/family/children", response_model=FamilyChildrenResponse)
 def list_my_children(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # مفتوح للأب والطفل الاتنين — الاستعلام أصلاً محصور بـ family_id بتاع اللي بيطلب،
-    # يعني الطفل بيشوف بس إخواته في نفس عيلته، مش أي عيلة تانية.
     family = db.query(Family).filter(Family.id == user.family_id).first()
     children = db.query(User).filter(User.family_id == family.id, User.role == UserRole.child).all()
     return FamilyChildrenResponse(family_name=family.name, children=children)
 
-
-# ---------------------------------------------------------------------------
-# Child: lookup family by code, then log in with PIN
-# ---------------------------------------------------------------------------
 
 @router.post("/children/lookup", response_model=FamilyChildrenResponse)
 @limiter.limit("20/minute")
@@ -226,7 +422,6 @@ def child_login(request: Request, payload: ChildLogin, db: Session = Depends(get
         .first()
     )
 
-    # قفل مؤقت لو فيه محاولات فاشلة كتير على الطفل ده تحديدًا — بغض النظر عن الـ IP
     if child and child.pin_locked_until and child.pin_locked_until > datetime.utcnow():
         remaining = int((child.pin_locked_until - datetime.utcnow()).total_seconds() / 60) + 1
         raise HTTPException(status_code=429, detail=f"Too many attempts. Try again in {remaining} minute(s).")
@@ -257,10 +452,6 @@ def child_login(request: Request, payload: ChildLogin, db: Session = Depends(get
     return TokenResponse(access_token=token, user=UserResponse.model_validate(child))
 
 
-# ---------------------------------------------------------------------------
-# Parent: forgot / reset password
-# ---------------------------------------------------------------------------
-
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
 @limiter.limit("3/hour")
 def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
@@ -268,7 +459,6 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
 
     user = db.query(User).filter(User.email == payload.email, User.role == UserRole.parent).first()
     if not user:
-        # نفس الرد بالظبط لو الإيميل مش موجود — عشان محدش يعرف يستنتج إن الإيميل ده مسجل ولا لأ
         return generic_response
 
     raw_token = generate_reset_token()
@@ -289,8 +479,6 @@ def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Sessio
     try:
         send_password_reset_email(user.email, reset_url)
     except Exception:
-        # ماينفعش نفشل الطلب ونوري للمستخدم إن الإيميل فشل — هيسرّب إن الإيميل ده
-        # فعلاً مسجل (لو مش موجود، مكناش هنوصل للسطر ده أصلاً). نرجّع نفس الرد العام دايمًا.
         pass
 
     return generic_response
@@ -312,11 +500,9 @@ def reset_password(request: Request, payload: ResetPasswordRequest, db: Session 
     user.password_hash = hash_password(payload.new_password)
     reset.used = True
 
-    # أي روابط تانية لسه صالحة لنفس الأب (لو طلب أكتر من مرة) — تتقفل كمان،
-    # عشان محدش يقدر يستخدم لينك قديم بعد ما الباسورد اتغيّرت فعلاً
     other_tokens = (
         db.query(PasswordResetToken)
-        .filter(PasswordResetToken.user_id == user.id, PasswordResetToken.used == False)  # noqa: E712
+        .filter(PasswordResetToken.user_id == user.id, PasswordResetToken.used == False)
         .all()
     )
     for t in other_tokens:
@@ -331,12 +517,7 @@ def reset_password(request: Request, payload: ResetPasswordRequest, db: Session 
     return ForgotPasswordResponse(message="Your password has been reset. You can log in now.")
 
 
-# ---------------------------------------------------------------------------
-# Parent: MFA (TOTP — Google/Microsoft Authenticator)
-# ---------------------------------------------------------------------------
-
 def _issue_recovery_codes(db: Session, parent: User) -> list:
-    """بتمسح أي أكواد استرجاع قديمة (مستخدمة أو لأ) وتولّد سيت جديد بالكامل — بترجع النسخة الأصلية (plain) مرة واحدة بس."""
     db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id).delete()
     codes = mfa.generate_recovery_codes()
     for code in codes:
@@ -356,11 +537,6 @@ def mfa_setup(
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
-    """
-    بيولّد سيكريت جديد و QR code يتمسح بتطبيق الـ Authenticator.
-    السيكريت بيتخزن كـ "pending" بس — مش هيتفعّل غير لما الأب يأكّد بكود
-    صحيح عن طريق /mfa/enable، عشان محدش يقفل نفسه برة حسابه بغلط.
-    """
     if parent.mfa_enabled:
         raise HTTPException(status_code=400, detail="MFA is already enabled. Disable it first to re-setup.")
 
@@ -413,7 +589,6 @@ def mfa_disable(
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
-    # تأكيد بالباسورد الحالي — عشان لو حد سرق جلسة الأب (token) مايقدرش يقفل MFA بسهولة
     if not verify_password(payload.password, parent.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect password")
 
@@ -436,18 +611,17 @@ def recovery_codes_status(parent: User = Depends(require_parent), db: Session = 
     if not parent.mfa_enabled:
         raise HTTPException(status_code=400, detail="MFA is not enabled")
     total = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id).count()
-    remaining = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id, MfaRecoveryCode.used == False).count()  # noqa: E712
+    remaining = db.query(MfaRecoveryCode).filter(MfaRecoveryCode.user_id == parent.id, MfaRecoveryCode.used == False).count()
     return RecoveryCodesStatus(total=total, remaining=remaining)
 
 
 @router.post("/mfa/recovery-codes/regenerate", response_model=RecoveryCodesResponse)
 def regenerate_recovery_codes(
     request: Request,
-    payload: MfaDisableRequest,  # نفس شكل الطلب (باسورد بس) — بنعيد استخدامه هنا
+    payload: MfaDisableRequest,
     parent: User = Depends(require_parent),
     db: Session = Depends(get_db),
 ):
-    """بيلغي كل الأكواد القديمة (المستخدمة وغير المستخدمة) ويولّد سيت جديد — مفيد لو الأب قرّب يخلّص أكواده."""
     if not parent.mfa_enabled:
         raise HTTPException(status_code=400, detail="MFA is not enabled")
     if not verify_password(payload.password, parent.password_hash):
@@ -463,10 +637,6 @@ def regenerate_recovery_codes(
 
     return RecoveryCodesResponse(codes=codes)
 
-
-# ---------------------------------------------------------------------------
-# Shared: who am I
-# ---------------------------------------------------------------------------
 
 @router.get("/me", response_model=UserResponse)
 def me(user: User = Depends(get_current_user)):

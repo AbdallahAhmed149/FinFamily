@@ -98,6 +98,7 @@ class User(Base):
 
     # بيانات الطفل بس
     pin_hash = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)  # صورة البروفايل (اختيارية — URL أو base64 data URI)
 
     # gamification (الطفل بس — بتتحدث تلقائي مع كل mission يتوافق عليها أو لعبة يخلّصها)
     xp = Column(Integer, default=0)
@@ -336,5 +337,20 @@ class MfaRecoveryCode(Base):
     code_hash = Column(String, nullable=False)
     used = Column(Boolean, default=False)
     used_date = Column(DateTime, nullable=True)
+
+    created_date = Column(DateTime, default=datetime.utcnow)
+class FundingSource(Base):
+    """
+    مصادر تمويل الأب (كارت بنكي أو حساب) اللي بيسحب منها عشان يدي فلوس/مصروف للأطفال.
+    """
+    __tablename__ = "funding_sources"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    family_id = Column(String, ForeignKey("families.id"), nullable=False, index=True)
+    parent_id = Column(String, ForeignKey("users.id"), nullable=False)
+    
+    bank_name = Column(String, nullable=False)
+    account_last4 = Column(String, nullable=False)
+    is_primary = Column(Boolean, default=False)
 
     created_date = Column(DateTime, default=datetime.utcnow)

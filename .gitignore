@@ -35,3 +35,8 @@ base44/.app.jsonc
 # Python cache & environments
 __pycache__
 *.pyc
+
+__pycache__/
+*.pyc
+*.db
+.venv/

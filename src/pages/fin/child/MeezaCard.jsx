@@ -5,6 +5,7 @@ import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { cardThemes, blockableCategories, fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyCardPurchases, makeCardPurchase, updateMyCardTheme } from "@/lib/finApi";
+import Lotfy from "@/components/fin/Lotfy";
 
 const statusMeta = {
   completed: { label: null, color: "#0F2D52" },
@@ -22,7 +23,7 @@ export default function MeezaCard() {
   const [showBuy, setShowBuy] = useState(false);
   const [form, setForm] = useState({ merchant: "", category: blockableCategories[0].name, amount: "", location: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null); // {status, decline_reason}
+  const [result, setResult] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -97,27 +98,48 @@ export default function MeezaCard() {
           onClick={() => setFlipped((f) => !f)}
         >
           <div
-            className="absolute inset-0 rounded-3xl p-5 text-white shadow-premium [backface-visibility:hidden] flex flex-col justify-between cursor-pointer"
+            className="absolute inset-0 rounded-3xl p-5 text-white shadow-premium [backface-visibility:hidden] flex flex-col justify-between cursor-pointer overflow-hidden"
             style={{ background: theme.gradient, filter: frozen || deactivated ? "grayscale(0.7) brightness(0.8)" : "none" }}
           >
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="text-xs text-white/70">FinFamily Meeza</div>
-                <div className="text-lg font-bold font-heading">{user?.full_name}</div>
-              </div>
-              <div className="w-10 h-8 rounded-md bg-gradient-to-br from-yellow-300 to-amber-500" />
+            {/* Cartoonish watermark/mascot */}
+            <div className="absolute -right-4 -bottom-4 opacity-50 mix-blend-overlay">
+              <Lotfy size={140} />
             </div>
-            <div className="text-xl font-mono tracking-widest">{loading ? "•••• •••• •••• ····" : wallet?.card_number}</div>
-            <div className="flex justify-between items-end">
+
+            <div className="relative z-10 flex justify-between items-start">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 border-white/40 bg-white/10 flex items-center justify-center">
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Lotfy size={26} />
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs text-white/90 font-bold tracking-widest uppercase">FinFamily</div>
+                  <div className="text-lg font-bold font-heading">{user?.full_name}</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="w-10 h-8 rounded-md bg-gradient-to-br from-yellow-300 to-amber-500 shadow-sm" />
+              </div>
+            </div>
+            
+            <div className="relative z-10 text-xl font-mono tracking-widest mt-4">
+              {loading ? "•••• •••• •••• ····" : wallet?.card_number}
+            </div>
+            
+            <div className="relative z-10 flex justify-between items-end mt-4">
               <div>
-                <div className="text-[10px] text-white/60">STATUS</div>
+                <div className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Status</div>
                 <div className="text-sm font-semibold">{deactivated ? "Deactivated" : frozen ? "Frozen" : "Active"}</div>
               </div>
               <div className="text-right">
-                <div className="text-[10px] text-white/60">BALANCE</div>
-                <div className="text-sm font-bold">{loading ? "···" : fmtEGP(wallet?.balance ?? 0)}</div>
+                <div className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Balance</div>
+                <div className="text-sm font-bold bg-black/20 px-2 py-1 rounded-lg backdrop-blur-sm">
+                  {loading ? "···" : fmtEGP(wallet?.balance ?? 0)}
+                </div>
               </div>
-              <div className="text-2xl">🌳</div>
             </div>
           </div>
           <div

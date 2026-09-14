@@ -2,7 +2,7 @@
 // (شوف vite.config.js)، وفي الإنتاج nginx هو اللي بيعمل proxy لنفس المسار على
 // الباك اند جوه الشبكة الداخلية. بالطريقة دي المتصفح شايف origin واحد بس دايمًا
 // (نفس الدومين)، فمحتاجناش CORS خالص ولا نغيّر أي حاجة بين البيئتين.
-const API_BASE_URL = "/api";
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 const TOKEN_KEY = "finfamily_token";
 
 export function getToken() {
@@ -70,5 +70,8 @@ export const base44 = {
   },
   patch(endpoint, data) {
     return request("PATCH", endpoint, data);
+  },
+  delete(endpoint) {
+    return request("DELETE", endpoint);
   },
 };

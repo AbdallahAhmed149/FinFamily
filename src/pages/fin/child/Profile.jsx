@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft, Gauge, Award, Bell, Shield, Moon, Globe, Accessibility,
-  HelpCircle, FileText, LogOut, Settings, Star, Briefcase
+  HelpCircle, FileText, LogOut, Settings, Star, Briefcase, Camera, Trash2
 } from "lucide-react";
 import Lotfy from "@/components/fin/Lotfy";
 import { GlassCard, ProgressBar, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { LOGO_IMAGE, skills, levels } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyMissions, getMyBadges } from "@/lib/finApi";
+import { base44 } from "@/api/base44Client";
 import BadgesGrid from "@/components/fin/BadgesGrid";
 import { useTheme } from "@/lib/useTheme";
 import { Image } from "@/components/ui/image";
@@ -16,28 +17,49 @@ import { Image } from "@/components/ui/image";
 export default function ChildProfile() {
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
-  const { user } = useAuth(); // اليوزر الحقيقي بتاع الطفل الداخل دلوقتي
+  const { user, refreshUser } = useAuth();
 
   const [wallet, setWallet] = useState(null);
   const [missions, setMissions] = useState([]);
   const [badges, setBadges] = useState([]);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const [w, m, b] = await Promise.all([getMyWallet(), getMyMissions(), getMyBadges()]);
-        if (!cancelled) {
-          setWallet(w);
-          setMissions(m);
-          setBadges(b);
-        }
-      } catch {
-        // فشل التحميل هنا مش critical — الصفحة بتفضل تشتغل بالقيم الافتراضية
-      }
+        if (!cancelled) { setWallet(w); setMissions(m); setBadges(b); }
+      } catch { /* not critical */ }
     })();
     return () => { cancelled = true; };
   }, []);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert("Image must be under 2 MB"); return; }
+    setAvatarUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          await base44.patch("/auth/me/avatar", { avatar_url: ev.target.result });
+          if (refreshUser) await refreshUser();
+        } catch (err) { alert(err.message || "Upload failed"); }
+        setAvatarUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch { setAvatarUploading(false); }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!window.confirm("Remove your profile photo?")) return;
+    try {
+      await base44.delete("/auth/me/avatar");
+      if (refreshUser) await refreshUser();
+    } catch (err) { alert(err.message || "Failed to remove photo"); }
+  };
 
   // اسم اللقب مرتبط بالمستوى — ده محتوى تصنيف ثابت (levels)، مش بيانات مستخدم
   const levelTitle = levels.find((l) => l.level === (user?.level || 1))?.name || "Money Explorer";
@@ -68,7 +90,26 @@ export default function ChildProfile() {
       <FadeIn delay={60}>
         <div className="grad-navy rounded-3xl p-5 text-white shadow-premium text-center relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
-          <Lotfy size={88} className="mx-auto mb-3" />
+
+          {/* Avatar — tappable for upload */}
+          <div className="relative w-24 h-24 mx-auto mb-3">
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="avatar" className="w-24 h-24 rounded-full object-cover border-4 border-white/30" />
+            ) : (
+              <Lotfy size={88} className="mx-auto" />
+            )}
+            {/* camera overlay */}
+            <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white flex items-center justify-center cursor-pointer shadow" title="Change photo">
+              {avatarUploading ? <span className="text-[10px] animate-spin">⏳</span> : <Camera className="w-3.5 h-3.5 text-gray-700" />}
+            </label>
+            <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            {user?.avatar_url && (
+              <button onClick={handleDeleteAvatar} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center" title="Remove photo">
+                <Trash2 className="w-3 h-3 text-white" />
+              </button>
+            )}
+          </div>
+
           <h2 className="text-xl font-extrabold font-heading">{user?.full_name}</h2>
           <div className="text-sm text-white/70">{levelTitle}</div>
           <div className="flex justify-center gap-2 mt-3">

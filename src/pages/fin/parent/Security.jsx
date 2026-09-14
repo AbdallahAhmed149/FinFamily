@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getMfaStatus, setupMfa, enableMfa, disableMfa, getRecoveryCodesStatus, regenerateRecoveryCodes } from "@/lib/finApi";
 import { useAuth } from "@/lib/AuthContext";
+import { base44 } from "@/api/base44Client";
 
 export default function Security() {
   const navigate = useNavigate();
@@ -26,12 +27,32 @@ export default function Security() {
   const [showDisable, setShowDisable] = useState(false);
   const [password, setPassword] = useState("");
 
-  // أكواد الاسترجاع — بتتعرض مرة واحدة بس (وقت التفعيل، أو بعد إعادة التوليد)
+  // أكواد الاسترجاع
   const [freshCodes, setFreshCodes] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [codesStatus, setCodesStatus] = useState(null); // { total, remaining }
+  const [codesStatus, setCodesStatus] = useState(null);
   const [showRegenerate, setShowRegenerate] = useState(false);
   const [regenPassword, setRegenPassword] = useState("");
+
+  // Change own password
+  const [cpCurrent, setCpCurrent] = useState("");
+  const [cpNew, setCpNew] = useState("");
+  const [cpMsg, setCpMsg] = useState("");
+  const [cpErr, setCpErr] = useState("");
+  const [cpBusy, setCpBusy] = useState(false);
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setCpMsg(""); setCpErr("");
+    if (cpNew.length < 8) { setCpErr("New password must be at least 8 characters"); return; }
+    setCpBusy(true);
+    try {
+      await base44.patch("/auth/me/password", { current_password: cpCurrent, new_password: cpNew });
+      setCpMsg("✅ Password changed successfully!");
+      setCpCurrent(""); setCpNew("");
+    } catch (err) { setCpErr(err.message || "Failed to change password"); }
+    finally { setCpBusy(false); }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -362,6 +383,29 @@ export default function Security() {
           </GlassCard>
         </FadeIn>
       )}
+      {/* ── Change Password ─────────────────────────────────────── */}
+      <FadeIn delay={240} className="mt-4">
+        <SectionTitle>Change Your Password</SectionTitle>
+        <GlassCard>
+          <form onSubmit={handleChangePassword} className="space-y-3">
+            <div>
+              <Label className="text-xs">Current Password</Label>
+              <Input type="password" value={cpCurrent} onChange={(e) => setCpCurrent(e.target.value)} placeholder="Enter current password" className="mt-1" required />
+            </div>
+            <div>
+              <Label className="text-xs">New Password (min 8 chars)</Label>
+              <Input type="password" value={cpNew} onChange={(e) => setCpNew(e.target.value)} placeholder="Enter new password" className="mt-1" required minLength={8} />
+            </div>
+            {cpErr && <p className="text-xs text-destructive font-semibold">{cpErr}</p>}
+            {cpMsg && <p className="text-xs text-emerald-600 font-semibold">{cpMsg}</p>}
+            <Button type="submit" className="w-full h-11" disabled={cpBusy}>
+              {cpBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update Password"}
+            </Button>
+          </form>
+        </GlassCard>
+      </FadeIn>
+
+      <div className="h-8" />
     </div>
   );
 }
