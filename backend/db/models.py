@@ -99,12 +99,24 @@ class User(Base):
     # بيانات الطفل بس
     pin_hash = Column(String, nullable=True)
 
-    # gamification (الطفل بس — بتتحدث تلقائي مع كل mission يتوافق عليها)
+    # gamification (الطفل بس — بتتحدث تلقائي مع كل mission يتوافق عليها أو لعبة يخلّصها)
     xp = Column(Integer, default=0)
     level = Column(Integer, default=1)
     streak = Column(Integer, default=0)
+    last_active_date = Column(DateTime, nullable=True)  # آخر يوم اتحسب فيه نشاط للـ streak
+
+    # قفل مؤقت ضد تخمين الـ PIN (الطفل بس) — منفصل عن rate limiting بالـ IP،
+    # عشان يحمي حتى لو حد جرب من أجهزة/شبكات مختلفة على نفس الطفل بالظبط
+    failed_pin_attempts = Column(Integer, default=0)
+    pin_locked_until = Column(DateTime, nullable=True)
+
+    # MFA (الأب بس) — TOTP زي Google/Microsoft Authenticator
+    mfa_enabled = Column(Boolean, default=False, nullable=False)
+    mfa_secret = Column(String, nullable=True)          # السيكريت الفعلي بعد ما يتفعّل
+    mfa_pending_secret = Column(String, nullable=True)  # سيكريت مؤقت وقت setup لحد ما يتأكد بكود صحيح
 
     wallet = relationship("Wallet", back_populates="owner", uselist=False, cascade="all, delete-orphan")
+    badges = relationship("UserBadge", back_populates="user", cascade="all, delete-orphan")
 
     created_date = Column(DateTime, default=datetime.utcnow)
     updated_date = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -251,5 +263,78 @@ class GameCompletion(Base):
     xp_awarded = Column(Integer, default=0)
     coins_awarded = Column(Float, default=0)
     was_rewarded = Column(Boolean, default=True)  # False لو ده تكرار نفس اللعبة في نفس اليوم
+
+    created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class AuditLog(Base):
+    """
+    'مين عمل إيه، وإمتى' — سجل تدقيق لكل حدث حساس (دخول، تغيير صلاحيات،
+    قرارات مالية). مفيش أي secret (password/pin/token/mfa secret) بيتسجل
+    هنا أبدًا، الـ detail عمود عام بس للسياق (زي أرقام أو أسماء غير حساسة).
+    """
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+
+    # nullable لأن محاولة دخول فاشلة ممكن نعرفهاش تابعة لعيلة/يوزر مين أصلاً
+    family_id = Column(String, ForeignKey("families.id"), nullable=True, index=True)
+    actor_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
+    actor_role = Column(String, nullable=True)  # "parent" / "child" / None لو الدخول فشل قبل ما نعرف مين
+
+    action = Column(String, nullable=False, index=True)  # e.g. "login_failed", "card_status_changed"
+    target_type = Column(String, nullable=True)  # e.g. "user", "wallet", "mission", "card_purchase"
+    target_id = Column(String, nullable=True)
+
+    detail = Column(JSON, nullable=True)
+    ip_address = Column(String, nullable=True)
+
+    created_date = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class UserBadge(Base):
+    """شارة اتفتحت فعليًا لطفل معيّن — التعريفات نفسها (الاسم/الوصف/شرط الفتح) في services/badges.py"""
+    __tablename__ = "user_badges"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    user = relationship("User", back_populates="badges")
+
+    badge_id = Column(String, nullable=False)  # مفتاح من BADGE_DEFS، زي "first_chore"
+    unlocked_date = Column(DateTime, default=datetime.utcnow)
+
+
+class PasswordResetToken(Base):
+    """
+    توكن استعادة الباسورد (الأب بس). بنخزّن الـ hash بتاعه مش القيمة الخام —
+    لو الداتابيز اتسربت محدش يقدر يستخدمهم مباشرة. صالح لمدة محدودة
+    (RESET_TOKEN_EXPIRE_MINUTES في auth_routes.py) واستخدام واحد بس (used).
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+
+    token_hash = Column(String, nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+
+    created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class MfaRecoveryCode(Base):
+    """
+    كود استرجاع لمرة واحدة — بيتولّد سيت منه (10 أكواد) وقت ما الأب يفعّل الـ MFA.
+    كل كود بيتستخدم مرة واحدة بس (used=True بعد الاستخدام)، وبيدخل بيه بدل كود
+    الـ TOTP العادي لو الأب فقد جهاز الـ Authenticator بتاعه.
+    """
+    __tablename__ = "mfa_recovery_codes"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+
+    code_hash = Column(String, nullable=False)
+    used = Column(Boolean, default=False)
+    used_date = Column(DateTime, nullable=True)
 
     created_date = Column(DateTime, default=datetime.utcnow)

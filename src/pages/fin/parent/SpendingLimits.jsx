@@ -23,12 +23,13 @@ function periodStart(period) {
   return new Date(now.getFullYear(), now.getMonth(), 1); // monthly
 }
 
-// المصروف الحقيقي = الكوينز اللي اتصرفت فعليًا (redemption debit) داخل الفترة
+// المصروف الحقيقي = الكوينز اللي اتصرفت فعليًا (redemption + card_purchase، مش الادخار) داخل الفترة
+// نفس التعريف بالظبط المستخدم في الباك اند (_debit_spend_since) عشان الرقم المعروض هنا يطابق قرارات الموافقة الفعلية
 function computeSpent(transactions) {
   const result = { daily: 0, weekly: 0, monthly: 0 };
   const bounds = { daily: periodStart("daily"), weekly: periodStart("weekly"), monthly: periodStart("monthly") };
   for (const txn of transactions) {
-    if (txn.type !== "redemption" || txn.direction !== "debit") continue;
+    if (!["redemption", "card_purchase"].includes(txn.type) || txn.direction !== "debit") continue;
     const txnDate = new Date(txn.created_date);
     if (txnDate >= bounds.daily) result.daily += txn.amount;
     if (txnDate >= bounds.weekly) result.weekly += txn.amount;

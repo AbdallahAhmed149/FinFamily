@@ -12,6 +12,8 @@ import RoleSelect from './pages/fin/RoleSelect';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ChildLogin from './pages/ChildLogin';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import ChildLayout from './components/fin/ChildLayout';
 import ParentLayout from './components/fin/ParentLayout';
 import ChildHome from './pages/fin/child/ChildHome';
@@ -36,6 +38,7 @@ import Leaderboard from './pages/fin/child/Leaderboard';
 import AdventureMap from './pages/fin/child/AdventureMap';
 import Missions from './pages/fin/child/Missions';
 import ChildMissions from './pages/fin/parent/ChildMissions';
+import Security from './pages/fin/parent/Security';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
@@ -58,6 +61,8 @@ const AuthenticatedApp = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/child-login" element={<ChildLogin />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Protected: child */}
       <Route element={<ProtectedRoute role="child"><ChildLayout /></ProtectedRoute>}>
@@ -87,6 +92,7 @@ const AuthenticatedApp = () => {
         <Route path="/parent/rewards" element={<RewardApprovals />} />
         <Route path="/parent/coach" element={<ParentCoach />} />
         <Route path="/parent/child-missions" element={<ChildMissions />} />
+        <Route path="/parent/security" element={<Security />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

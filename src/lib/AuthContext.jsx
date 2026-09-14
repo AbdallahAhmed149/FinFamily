@@ -47,13 +47,22 @@ export const AuthProvider = ({ children }) => {
   // الأب: تسجيل دخول / تسجيل حساب جديد
   // ---------------------------------------------------------------------
 
-  const loginParent = async (email, password) => {
+  // otp_code اختياري: أول مرة (من غير كود) لو الأب مفعّل MFA هيرجع mfa_required=true
+  // من غير token، والفرونت هيسأله عن الكود ويبعت نفس الدالة تاني بالكود (أو بكود استرجاع بدالها).
+  const loginParent = async (email, password, otpCode, recoveryCode) => {
     setAuthError(null);
-    const res = await base44.post('/auth/login', { email, password });
+    const res = await base44.post('/auth/login', {
+      email, password,
+      otp_code: otpCode || undefined,
+      recovery_code: recoveryCode || undefined,
+    });
+    if (res.mfa_required) {
+      return { mfaRequired: true };
+    }
     setToken(res.access_token);
     setUser(res.user);
     setIsAuthenticated(true);
-    return res.user;
+    return { mfaRequired: false, user: res.user, usedRecoveryCode: res.used_recovery_code };
   };
 
   const registerParent = async ({ family_name, full_name, email, password }) => {
@@ -63,6 +72,16 @@ export const AuthProvider = ({ children }) => {
     setUser(res.user);
     setIsAuthenticated(true);
     return res.user;
+  };
+
+  // مفيهاش auth (الأب لسه مش داخل، ده أصلاً الغرض منها) — نفس الرد سواء الإيميل
+  // مسجل أو لأ، عشان محدش يعرف يستنتج مين عنده حساب
+  const forgotPassword = async (email) => {
+    return base44.post('/auth/forgot-password', { email });
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    return base44.post('/auth/reset-password', { token, new_password: newPassword });
   };
 
   // ---------------------------------------------------------------------
@@ -126,6 +145,8 @@ export const AuthProvider = ({ children }) => {
         isChild: user?.role === 'child',
         loginParent,
         registerParent,
+        forgotPassword,
+        resetPassword,
         lookupFamilyChildren,
         loginChild,
         getFamilyCode,

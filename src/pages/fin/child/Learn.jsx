@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Lock, Check, Award, Play, Gamepad2, GraduationCap } from "lucide-react";
 import { GlassCard, ProgressBar, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { lessons, games, child } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
 import QuizPlayer from "@/components/fin/QuizPlayer";
 import GameOverlay from "@/components/fin/GameOverlay";
 import RewardScreen from "@/components/fin/RewardScreen";
@@ -34,6 +35,7 @@ const gameComponents = {
 
 export default function Learn() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // XP/Level الحقيقيين بدل الموك
   const [tab, setTab] = useState("lessons");
   const [openLesson, setOpenLesson] = useState(null);
   const [quiz, setQuiz] = useState(null);
@@ -60,7 +62,7 @@ export default function Learn() {
           <div className="text-3xl">🎓</div>
           <div className="flex-1">
             <div className="text-sm text-white/70">Learning Path</div>
-            <div className="font-bold">{child.xp} XP · Level {child.level}</div>
+            <div className="font-bold">{user?.xp ?? child.xp} XP · Level {user?.level ?? child.level}</div>
           </div>
           <div className="text-right">
             <div className="text-2xl font-extrabold">3/10</div>

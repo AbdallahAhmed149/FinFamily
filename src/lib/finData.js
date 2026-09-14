@@ -106,11 +106,11 @@ export const games = [
 ];
 
 export const rewardsStore = [
-  { id: "r1", name: "Movie Ticket", cost: 200, icon: "🎬", category: "Fun" },
+  { id: "r1", name: "Movie Ticket", cost: 200, icon: "🎬", category: "Entertainment" },
   { id: "r2", name: "Football", cost: 350, icon: "⚽", category: "Toys" },
-  { id: "r3", name: "Ice Cream", cost: 60, icon: "🍦", category: "Treats" },
+  { id: "r3", name: "Ice Cream", cost: 60, icon: "🍦", category: "Sweets & Snacks" },
   { id: "r4", name: "Book", cost: 150, icon: "📚", category: "Learning" },
-  { id: "r5", name: "Gift Card", cost: 250, icon: "🎁", category: "Gift" },
+  { id: "r5", name: "Gift Card", cost: 250, icon: "🎁", category: "Shopping" },
   { id: "r6", name: "School Supplies", cost: 120, icon: "✏️", category: "Learning" },
   { id: "r7", name: "Avatar: Gold Cap", cost: 300, icon: "🧢", category: "Avatar" },
   { id: "r8", name: "Card Theme: Gold", cost: 400, icon: "💳", category: "Card" },

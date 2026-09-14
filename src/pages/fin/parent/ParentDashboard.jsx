@@ -131,10 +131,10 @@ export default function ParentDashboard() {
           <div className="text-sm text-muted-foreground">Welcome back</div>
           <h1 className="text-lg font-extrabold font-heading truncate">{user?.full_name}</h1>
         </div>
-        <button onClick={() => navigate("/child")} className="glass rounded-full px-3 h-10 flex items-center gap-1.5 shadow-premium active:scale-95 transition-all">
+        {/* <button onClick={() => navigate("/child")} className="glass rounded-full px-3 h-10 flex items-center gap-1.5 shadow-premium active:scale-95 transition-all">
           <Repeat2 className="w-4 h-4 text-emerald-600" />
           <span className="text-xs font-bold">Child Mode</span>
-        </button>
+        </button> */}
         <button onClick={() => navigate("/parent/approvals")} className="relative w-10 h-10 rounded-full glass flex items-center justify-center shadow-premium shrink-0">
           <Bell className="w-5 h-5" />
           {pendingApprovals > 0 && (

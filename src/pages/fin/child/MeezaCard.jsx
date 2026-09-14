@@ -2,17 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, CreditCard, Check, Palette, Zap, Loader2 } from "lucide-react";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { cardThemes, fmtEGP } from "@/lib/finData";
+import { cardThemes, blockableCategories, fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyCardPurchases, makeCardPurchase, updateMyCardTheme } from "@/lib/finApi";
-
-const PURCHASE_CATEGORIES = [
-  { id: "Shopping", icon: "🛍️" },
-  { id: "Entertainment", icon: "🎬" },
-  { id: "Food", icon: "🍔" },
-  { id: "Games", icon: "🎮" },
-  { id: "Other", icon: "🛒" },
-];
 
 const statusMeta = {
   completed: { label: null, color: "#0F2D52" },
@@ -28,7 +20,7 @@ export default function MeezaCard() {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showBuy, setShowBuy] = useState(false);
-  const [form, setForm] = useState({ merchant: "", category: "Shopping", amount: "", location: "" });
+  const [form, setForm] = useState({ merchant: "", category: blockableCategories[0].name, amount: "", location: "" });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null); // {status, decline_reason}
 
@@ -76,7 +68,7 @@ export default function MeezaCard() {
         location: form.location || undefined,
       });
       setResult(purchase);
-      setForm({ merchant: "", category: "Shopping", amount: "", location: "" });
+      setForm({ merchant: "", category: blockableCategories[0].name, amount: "", location: "" });
       await load(); // نجيب الرصيد وقائمة المدفوعات المحدّثة
     } catch (err) {
       setResult({ status: "rejected", decline_reason: err.message || "Something went wrong" });
@@ -228,15 +220,16 @@ export default function MeezaCard() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground">Category</label>
-                    <div className="grid grid-cols-5 gap-2 mt-1">
-                      {PURCHASE_CATEGORIES.map((c) => (
+                    <div className="grid grid-cols-3 gap-2 mt-1">
+                      {blockableCategories.map((c) => (
                         <button
                           type="button"
                           key={c.id}
-                          onClick={() => setForm({ ...form, category: c.id })}
-                          className={"h-12 rounded-xl text-lg flex items-center justify-center " + (form.category === c.id ? "grad-navy text-white" : "bg-black/5")}
+                          onClick={() => setForm({ ...form, category: c.name })}
+                          className={"h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 " + (form.category === c.name ? "grad-navy text-white" : "bg-black/5")}
                         >
-                          {c.icon}
+                          <span className="text-lg">{c.icon}</span>
+                          <span className="text-[9px] font-semibold leading-tight">{c.name}</span>
                         </button>
                       ))}
                     </div>

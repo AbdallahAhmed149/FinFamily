@@ -57,3 +57,17 @@ export const getFamilyActivity = () => base44.get("/family/activity");
 
 export const completeGame = (gameId, score, total) =>
   base44.post("/games/complete", { game_id: gameId, score, total });
+
+// ---------------- Badges ----------------
+
+export const getMyBadges = () => base44.get("/badges/mine");
+
+// ---------------- MFA (الأب بس) ----------------
+
+export const getMfaStatus = () => base44.get("/auth/mfa/status");
+export const setupMfa = () => base44.post("/auth/mfa/setup", {});
+export const enableMfa = (code) => base44.post("/auth/mfa/enable", { code });
+export const disableMfa = (password) => base44.post("/auth/mfa/disable", { password });
+
+export const getRecoveryCodesStatus = () => base44.get("/auth/mfa/recovery-codes/status");
+export const regenerateRecoveryCodes = (password) => base44.post("/auth/mfa/recovery-codes/regenerate", { password });

@@ -1,0 +1,31 @@
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA: أي مسار مش ملف حقيقي يرجع لـ index.html، وReact Router هو اللي يتصرف فيه
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # أي حاجة لـ /api بتتحول للباك اند جوه الشبكة الداخلية — المتصفح شايف origin
+    # واحد بس طول الوقت (نفس الدومين)، فمحتاجناش CORS ولا نغيّر أي API URL
+    # بين محلي/إنتاج، بس نغيّر قيمة BACKEND_URL و BACKEND_SCHEME
+    # (محليًا: http — على Azure Container Apps: https، لأن الـ ingress الداخلي بتاعها HTTPS بس)
+    location /api/ {
+        proxy_pass ${BACKEND_SCHEME}://${BACKEND_URL}/api/;
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ملفات الـ build عند Vite أسماؤها فيها hash أصلاً، فآمن نعمل لها كاش طويل
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}

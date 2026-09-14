@@ -4,6 +4,7 @@ import { ChevronLeft, Send, Sparkles } from "lucide-react";
 import Lotfy from "@/components/fin/Lotfy";
 import { FadeIn } from "@/components/fin/ui";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 
 const suggestions = [
   "I want a football ⚽",
@@ -23,8 +24,9 @@ const fallback = (msg) => {
 
 export default function Coach() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Hi Lotfy! 👋 I'm FinBuddy 🤖, your AI money buddy. I'll help you learn money skills by thinking together. Tell me a goal or ask me anything! 💚" },
+    { role: "assistant", text: `Hi ${user?.full_name || "there"}! 👋 I'm FinBuddy 🤖, your AI money buddy. I'll help you learn money skills by thinking together. Tell me a goal or ask me anything! 💚` },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

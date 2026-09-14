@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: finfamily
+      POSTGRES_PASSWORD: finfamily_local_only
+      POSTGRES_DB: finfamily
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # اختياري — بس لو حابب توصله بـ DBeaver/pgAdmin من جهازك مباشرة
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env # هنا بيتقرا JWT_SECRET, OPENAI_API_KEY, RESEND_API_KEY بتوعك الحاليين
+    environment:
+      # دول بيتغيّروا عن قيمهم في .env عشان نتوافق مع أسامي الـ services جوه الشبكة الداخلية بتاعة Docker
+      DATABASE_URL: postgresql://finfamily:finfamily_local_only@db:5432/finfamily
+      FRONTEND_URL: http://localhost:8080
+      ALLOWED_ORIGINS: http://localhost:8080
+    depends_on:
+      - db
+    ports:
+      - "8000:8000" # اختياري — عشان تقدر توصل /docs مباشرة وقت الاختبار
+
+  frontend:
+    build: .
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: backend:8000
+      BACKEND_SCHEME: http
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:

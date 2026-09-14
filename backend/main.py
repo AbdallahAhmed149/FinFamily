@@ -1,7 +1,12 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from db.database import engine, Base
 from api.routes import functions_router
@@ -18,10 +23,17 @@ app = FastAPI(title="FinFamily API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# إعدادات الـ CORS عشان الـ Frontend يقدر يبعت Requests
+# إعدادات الـ CORS — دفاع إضافي بس (defense-in-depth)، مش أساسي، لأن في الإنتاج
+# الفرونت والباك اند بيبانوا نفس الـ origin للمتصفح (nginx بيعمل proxy لـ /api
+# على الباك اند من غير ما المتصفح يعرف). بس بنسيبها configurable لأي استخدام
+# تاني (زي حد بيضرب الـ API مباشرة من أداة API tester أو تطبيق موبايل مستقبلاً).
+# ALLOWED_ORIGINS في الـ .env: قايمة مفصولة بفواصل، زي:
+#   ALLOWED_ORIGINS=http://localhost:5173,https://finfamily.app
+allowed_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], # البورت بتاع Vite
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
