@@ -16,6 +16,7 @@ server {
     # (محليًا: http — على Azure Container Apps: https، لأن الـ ingress الداخلي بتاعها HTTPS بس)
     location /api/ {
         proxy_pass ${BACKEND_SCHEME}://${BACKEND_URL}/api/;
+        proxy_ssl_server_name on;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
