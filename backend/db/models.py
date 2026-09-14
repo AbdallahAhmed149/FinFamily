@@ -338,3 +338,25 @@ class MfaRecoveryCode(Base):
     used_date = Column(DateTime, nullable=True)
 
     created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class ChatMessage(Base):
+    """
+    سجل محادثة الـ AI Coach (FinBuddy للطفل / Coach Nour للأب). بنخزّن كل
+    رسالة (سواء من اليوزر أو رد الموديل) عشان:
+    1) الموديل يبقى فاكر آخر جزء من المحادثة بدل ما كل رسالة تتبعت له لوحدها.
+    2) المحادثة تفضل موجودة للمستخدم حتى لو قفل الصفحة ورجعلها تاني.
+
+    mode مخزّن مع إن ممكن نستنتجه من دور اليوزر، عشان لو يوم اتغيّر دور
+    اليوزر (نظريًا) الرسايل القديمة تفضل مرتبطة بالشخصية اللي اتكلم معاها فعلاً.
+    """
+    __tablename__ = "chat_messages"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    mode = Column(String, nullable=False)  # "parent" (Coach Nour) / "child" (FinBuddy)
+
+    role = Column(String, nullable=False)  # "user" / "assistant"
+    content = Column(String, nullable=False)
+
+    created_date = Column(DateTime, default=datetime.utcnow, index=True)

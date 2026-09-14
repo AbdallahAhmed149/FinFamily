@@ -71,3 +71,8 @@ export const disableMfa = (password) => base44.post("/auth/mfa/disable", { passw
 
 export const getRecoveryCodesStatus = () => base44.get("/auth/mfa/recovery-codes/status");
 export const regenerateRecoveryCodes = (password) => base44.post("/auth/mfa/recovery-codes/regenerate", { password });
+
+// ---------------- AI Coach ----------------
+
+export const getCoachHistory = () => base44.get("/functions/aiCoach/history");
+export const resetCoachHistory = () => base44.post("/functions/aiCoach/reset", {});

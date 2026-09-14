@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Send, Sparkles, AlertTriangle, TrendingUp, ShieldCheck } from "lucide-react";
+import { ChevronLeft, Send, Sparkles, RotateCcw } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { GlassCard, FadeIn, Pill } from "@/components/fin/ui";
 import { fmtEGP } from "@/lib/finData";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { getChildWallet } from "@/lib/finApi";
+import { getChildWallet, getCoachHistory, resetCoachHistory } from "@/lib/finApi";
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
@@ -17,18 +18,47 @@ const SUGGESTIONS = [
   "Who is the most disciplined saver?",
 ];
 
+const greeting = (name) => ({
+  role: "ai",
+  text: `Hello ${name || "there"} 👋 I'm Coach Nour, your family finance analyst. I monitor your children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.`,
+  icon: "🤖",
+});
+
+// bubbles are small, so Markdown gets a compact style: tight paragraph spacing,
+// and — importantly — numbered/bulleted steps actually break onto their own
+// lines instead of running together as one wall of text.
+function Bubble({ text }) {
+  return (
+    <div className="prose-chat text-sm [&_p]:my-1 first:[&_p]:mt-0 last:[&_p]:mb-0 [&_ol]:my-1 [&_ul]:my-1 [&_li]:my-1 [&_strong]:font-bold">
+      <ReactMarkdown>{text}</ReactMarkdown>
+    </div>
+  );
+}
+
 export default function ParentCoach() {
   const navigate = useNavigate();
   const { user, getFamilyChildren } = useAuth();
   const [snapshot, setSnapshot] = useState([]);
-  const [messages, setMessages] = useState([
-    { role: "ai", text: `Hello ${user?.full_name || "there"} 👋 I'm Coach Nour, your family finance analyst. I monitor your children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.`, icon: "🤖" },
-  ]);
+  const [messages, setMessages] = useState([greeting(user?.full_name)]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  // نجيب المحادثة المحفوظة أول ما نفتح الصفحة، بدل ما نرجع دايمًا للترحيب بس
+  useEffect(() => {
+    let cancelled = false;
+    getCoachHistory()
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.messages?.length) {
+          setMessages(res.messages.map((m) => ({ role: m.role === "assistant" ? "ai" : "user", text: m.content, icon: "🤖" })));
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +85,7 @@ export default function ParentCoach() {
     try {
       // التعديل هنا: استخدام دالة post اللي عملناها، وتوجيهها للـ Route بتاعنا
       const res = await base44.post("/functions/aiCoach", { message: msg, mode: "parent" });
-      
+
       // التعديل هنا: الـ Backend بتاعنا بيرجع { reply: "..." } مباشرة
       setMessages((m) => [...m, { role: "ai", text: res?.reply || "Let me check the family data and get back to you.", icon: "🤖" }]);
     } catch (error) {
@@ -65,14 +95,31 @@ export default function ParentCoach() {
     setLoading(false);
   };
 
+  const startNewChat = async () => {
+    if (loading) return;
+    try {
+      await resetCoachHistory();
+    } catch {
+      // حتى لو فشل النداء، نفضّل نصفّر الشاشة عند الأقل بدل ما نسيبه واقف
+    }
+    setMessages([greeting(user?.full_name)]);
+  };
+
   return (
     <div className="px-4 pt-12 pb-6 flex flex-col" style={{ minHeight: "calc(100vh - 7rem)" }}>
       <FadeIn className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">AI Family Coach</h1>
-        <Pill color="#00B894" className="ml-auto"><Sparkles className="w-3 h-3" /> Pro</Pill>
+        <h1 className="text-xl font-extrabold font-heading flex-1">AI Family Coach</h1>
+        <Pill color="#00B894"><Sparkles className="w-3 h-3" /> Pro</Pill>
+        <button
+          onClick={startNewChat}
+          title="Start a new chat"
+          className="w-9 h-9 rounded-full glass flex items-center justify-center shrink-0"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
       </FadeIn>
 
       {/* family snapshot */}
@@ -91,9 +138,9 @@ export default function ParentCoach() {
         {messages.map((m, i) => (
           <FadeIn key={i} delay={30}>
             <div className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              {m.role === "ai" && <div className="w-8 h-8 rounded-full grad-navy text-white flex items-center justify-center text-sm shrink-0">{m.icon}</div>}
-              <div className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "grad-emerald text-white rounded-br-sm" : "glass rounded-bl-sm"}`}>
-                {m.text}
+              {m.role === "ai" && <div className="w-8 h-8 rounded-full grad-navy text-white flex items-center justify-center text-sm shrink-0">{m.icon || "🤖"}</div>}
+              <div className={`max-w-[78%] rounded-2xl px-4 py-3 ${m.role === "user" ? "grad-emerald text-white rounded-br-sm text-sm" : "glass rounded-bl-sm"}`}>
+                {m.role === "user" ? m.text : <Bubble text={m.text} />}
               </div>
             </div>
           </FadeIn>
