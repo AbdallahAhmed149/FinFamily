@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db.models import User, ChatMessage
 from core.deps import get_current_user
-from services.ai_coach import ChatMessage as ChatMessageIn, HistoryTurn, get_ai_response
+from core.limiter import limiter
+from services.ai_coach import (
+    ChatMessage as ChatMessageIn,
+    HistoryTurn,
+    get_ai_response,
+    is_flagged_content,
+    AICoachError,
+    CHILD_SAFE_REDIRECT,
+)
 from services.ai_context import build_child_context, build_family_context
 from schemas.coach import ChatMessageOut, CoachHistoryResponse
 
@@ -48,7 +56,9 @@ def reset_coach_history(
 
 
 @functions_router.post("/aiCoach")
+@limiter.limit("20/minute")  # حماية من استهلاك تكلفة OpenAI لو حصل spam/loop من الفرونت أو استخدام مقصود سيء
 def invoke_ai_coach(
+    request: Request,
     chat: ChatMessageIn,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -59,6 +69,15 @@ def invoke_ai_coach(
     # الـ mode بيتحدد من دور اليوزر نفسه في التوكن، مش من حاجة الفرونت بيبعتها
     # (كده طفل مايقدرش يبعت mode=parent ويستني رد Coach Nour).
     chat.mode = "parent" if user.role == "parent" else "child"
+
+    # حاجز أمان: بس لرسايل الطفل، بنفحص المحتوى قبل ما يوصل لـ FinBuddy خالص.
+    # لو اتصنف كمحتوى غير مناسب، بنرجع رد ثابت آمن وميتبعتش حاجة للموديل
+    # الرئيسي (يوفر تكلفة، وبيقفل الباب قدام أي محاولة jailbreak).
+    if chat.mode == "child" and is_flagged_content(chat.message):
+        db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="user", content=chat.message))
+        db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="assistant", content=CHILD_SAFE_REDIRECT))
+        db.commit()
+        return {"reply": CHILD_SAFE_REDIRECT}
 
     # البيانات الحقيقية بتتجاب من الداتابيز هنا، مش هاردكودد جوه الـ prompt خالص
     if chat.mode == "parent":
@@ -78,7 +97,18 @@ def invoke_ai_coach(
     )
     history = [HistoryTurn(role=r.role, content=r.content) for r in reversed(history_rows)]
 
-    reply = get_ai_response(chat, context, history=history, child_name=user.full_name)
+    try:
+        reply = get_ai_response(chat, context, history=history, child_name=user.full_name)
+    except AICoachError as e:
+        # قبل كده كان بيرجع رسالة الخطأ التقنية نفسها كـ رد "assistant" حقيقي
+        # وتتخزن في الـ history. دلوقتي: بنسجلها في اللوج للمتابعة، ومنخزنش
+        # حاجة في المحادثة خالص (نفس اليوزر message كمان)، عشان لو اليوزر
+        # عاد جرب تاني تكون المحادثة سليمة من غير فجوة أو رسالة غريبة فيها.
+        print(f"[aiCoach] OpenAI call failed for user {user.id} (mode={chat.mode}): {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="The AI coach is temporarily unavailable. Please try again in a moment.",
+        )
 
     # نخزّن السؤال والرد الاتنين مع بعض عشان المرة الجاية تكون جزء من نفس المحادثة
     db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="user", content=chat.message))

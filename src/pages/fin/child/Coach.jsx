@@ -6,14 +6,42 @@ import Lotfy from "@/components/fin/Lotfy";
 import { FadeIn } from "@/components/fin/ui";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { getCoachHistory, resetCoachHistory } from "@/lib/finApi";
+import { getCoachHistory, resetCoachHistory, getMyWallet, getMyMissions } from "@/lib/finApi";
 
-const suggestions = [
+const defaultSuggestions = [
   "I want a football ⚽",
   "How do I save money?",
   "What's a budget?",
   "Is this message a scam?",
 ];
+
+// بدل ما الاقتراحات تكون نفسها لكل طفل دايمًا، بنبنيها من بيانات الطفل الحقيقية
+// (نفس الداتا اللي بتتحقن في الـ AI context بالظبط)، فتكون أقرب لحالته دلوقتي.
+function buildSuggestions(wallet, missions) {
+  const dynamic = [];
+
+  const goal = wallet?.savings_goals?.[0];
+  if (goal) {
+    const remaining = Math.max(0, (goal.target ?? 0) - (goal.current ?? 0));
+    dynamic.push(remaining > 0 ? `How much more do I need for ${goal.name}?` : `I finished my ${goal.name} goal! 🎉`);
+  }
+
+  if ((missions || []).some((m) => m.status === "submitted")) {
+    dynamic.push("When will my chore get approved?");
+  }
+  if ((missions || []).some((m) => m.status === "pending")) {
+    dynamic.push("What chores can I do today?");
+  }
+
+  // الاقتراح ده تعليمي وثابت دايمًا، مش شرط يتحط بس لو مفيش بديل شخصي أحسن
+  dynamic.push("Is this message a scam?");
+
+  for (const s of defaultSuggestions) {
+    if (dynamic.length >= 4) break;
+    if (!dynamic.includes(s)) dynamic.push(s);
+  }
+  return dynamic.slice(0, 4);
+}
 
 const greeting = (name) => ({
   role: "assistant",
@@ -38,9 +66,23 @@ export default function Coach() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [suggestions, setSuggestions] = useState(defaultSuggestions);
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  // نجيب محفظة/مهمات الطفل عشان نبني اقتراحات مخصصة له، بدون ما نوقف باقي الصفحة
+  // لو النداءين دول فشلوا لأي سبب — بنسيب الاقتراحات الثابتة كـ fallback
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getMyWallet().catch(() => null), getMyMissions().catch(() => null)])
+      .then(([wallet, missions]) => {
+        if (!cancelled && (wallet || missions)) {
+          setSuggestions(buildSuggestions(wallet, missions));
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   // نجيب المحادثة المحفوظة أول ما نفتح الصفحة، بدل ما نرجع دايمًا للترحيب بس
   useEffect(() => {

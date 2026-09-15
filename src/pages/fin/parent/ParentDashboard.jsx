@@ -144,7 +144,7 @@ export default function ParentDashboard() {
         <div className="grad-navy rounded-3xl p-4 text-white shadow-premium flex items-center gap-4 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" />
           <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30">
-            <Image src={PARENT_IMAGE} alt="Ahmed" className="w-full h-full object-cover" fittingType="fill" />
+            <Image src={user?.avatar_url || PARENT_IMAGE} alt={user?.full_name || "Parent"} className="w-full h-full object-cover" fittingType="fill" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold">{user?.full_name}</div>

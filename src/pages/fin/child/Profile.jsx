@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ChevronLeft, Gauge, Award, Bell, Shield, Moon, Globe, Accessibility,
+import { ChevronLeft, Gauge, Award, Bell, Shield, Moon, Globe, Accessibility,
   HelpCircle, FileText, LogOut, Settings, Star, Briefcase
 } from "lucide-react";
-import Lotfy from "@/components/fin/Lotfy";
 import { GlassCard, ProgressBar, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { LOGO_IMAGE, skills, levels } from "@/lib/finData";
+import { LOGO_IMAGE, LOFTY_IMAGE, skills, levels } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyMissions, getMyBadges } from "@/lib/finApi";
 import BadgesGrid from "@/components/fin/BadgesGrid";
 import { useTheme } from "@/lib/useTheme";
 import { Image } from "@/components/ui/image";
+import { AvatarUpload } from "@/components/fin/AvatarUpload";
 
 export default function ChildProfile() {
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
-  const { user } = useAuth(); // اليوزر الحقيقي بتاع الطفل الداخل دلوقتي
+  const { user, updateAvatar } = useAuth(); // اليوزر الحقيقي بتاع الطفل الداخل دلوقتي
 
   const [wallet, setWallet] = useState(null);
   const [missions, setMissions] = useState([]);
@@ -68,7 +67,13 @@ export default function ChildProfile() {
       <FadeIn delay={60}>
         <div className="grad-navy rounded-3xl p-5 text-white shadow-premium text-center relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
-          <Lotfy size={88} className="mx-auto mb-3" />
+          <AvatarUpload
+            src={user?.avatar_url || LOFTY_IMAGE}
+            alt={user?.full_name || "Kid"}
+            onUpload={updateAvatar}
+            size="w-20 h-20"
+            className="mx-auto mb-3 rounded-full border-2 border-white/50 shadow-inner bg-white/20"
+          />
           <h2 className="text-xl font-extrabold font-heading">{user?.full_name}</h2>
           <div className="text-sm text-white/70">{levelTitle}</div>
           <div className="flex justify-center gap-2 mt-3">

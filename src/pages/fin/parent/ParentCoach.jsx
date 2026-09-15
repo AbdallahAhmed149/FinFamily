@@ -10,13 +10,42 @@ import { getChildWallet, getCoachHistory, resetCoachHistory } from "@/lib/finApi
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
-const SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   "How is each child doing this week?",
   "Any spending risks I should know about?",
   "Suggest a better allowance plan",
   "How do I protect the family from scams?",
   "Who is the most disciplined saver?",
 ];
+
+// نفس فكرة FinBuddy: بدل اقتراحات ثابتة، بنبنيها من بيانات العيلة الحقيقية اللي
+// جبناها للـ snapshot، فتطلع أسئلة قريبة من اللي محتاج انتباه الأب دلوقتي فعلاً.
+function buildParentSuggestions(children, wallets) {
+  const dynamic = [];
+
+  const riskyIndex = wallets.findIndex((w) => (w?.financial_score ?? 50) < 60);
+  if (riskyIndex !== -1) {
+    dynamic.push(`Any spending risks with ${children[riskyIndex]?.full_name}?`);
+  }
+
+  const goalHit = children
+    .map((c, i) => ({ c, goal: wallets[i]?.savings_goals?.[0] }))
+    .find(({ goal }) => goal && goal.target > 0 && goal.current < goal.target && goal.current / goal.target >= 0.7);
+  if (goalHit) {
+    dynamic.push(`How close is ${goalHit.c.full_name} to their "${goalHit.goal.name}" goal?`);
+  }
+
+  const lowBalanceIndex = wallets.findIndex((w) => (w?.balance ?? 0) < 20);
+  if (lowBalanceIndex !== -1 && lowBalanceIndex !== riskyIndex) {
+    dynamic.push(`Should I send ${children[lowBalanceIndex]?.full_name} their allowance?`);
+  }
+
+  for (const s of DEFAULT_SUGGESTIONS) {
+    if (dynamic.length >= 5) break;
+    if (!dynamic.includes(s)) dynamic.push(s);
+  }
+  return dynamic.slice(0, 5);
+}
 
 const greeting = (name) => ({
   role: "ai",
@@ -39,6 +68,7 @@ export default function ParentCoach() {
   const navigate = useNavigate();
   const { user, getFamilyChildren } = useAuth();
   const [snapshot, setSnapshot] = useState([]);
+  const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
   const [messages, setMessages] = useState([greeting(user?.full_name)]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,6 +98,7 @@ export default function ParentCoach() {
         const wallets = await Promise.all(children.map((c) => getChildWallet(c.id).catch(() => null)));
         if (!cancelled) {
           setSnapshot(children.map((c, i) => ({ id: c.id, name: c.full_name, avatar: AVATARS[i % AVATARS.length], score: wallets[i]?.financial_score ?? 50 })));
+          setSuggestions(buildParentSuggestions(children, wallets));
         }
       } catch {
         // فشل التحميل هنا مش critical — الصفحة بتفضل تشتغل من غير الـ snapshot
@@ -158,7 +189,7 @@ export default function ParentCoach() {
 
       {/* suggestions */}
       <FadeIn className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
-        {SUGGESTIONS.map((s) => (
+        {suggestions.map((s) => (
           <button key={s} onClick={() => send(s)} className="whitespace-nowrap px-3 h-9 rounded-full glass text-xs font-semibold text-muted-foreground active:scale-95 transition-all">
             {s}
           </button>

@@ -17,6 +17,19 @@ api_key = raw_key.strip()
 
 client = OpenAI(api_key=api_key)
 
+# اسم الموديل وحد التوكنز بقوا configurable من الـ .env بدل ما يكونوا هاردكودد،
+# عشان أي تجربة (موديل تاني، رد أطول/أقصر) تتم من غير تعديل كود أو ريديبلوي.
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+AI_COACH_MAX_TOKENS = int(os.getenv("AI_COACH_MAX_TOKENS", "350"))
+AI_COACH_TEMPERATURE = float(os.getenv("AI_COACH_TEMPERATURE", "0.7"))
+
+
+class AICoachError(Exception):
+    """بتترفع لو نداء الـ OpenAI فشل، عشان الـ route يتعامل معاها ويرجع رد
+    واضح للفرونت من غير ما تفضل الرسالة (اللي ممكن تكون exception تقني خام)
+    تتخزن في تاريخ المحادثة وتتبعت للطفل/الأب كإنها رد حقيقي من الـ AI."""
+
+
 # كام رسالة قديمة (يوزر + موديل) نبعتها مع كل طلب جديد. رقم محدود عشان
 # نتحكم في تكلفة/عدد التوكنز، مش عشان نمنع الذاكرة — العدد ده كافي لمعظم
 # محادثات الـ Coach لأنها أصلاً قصيرة ومركزة.
@@ -51,6 +64,8 @@ PARENT_PROMPT = """You are "Coach Nour", the AI family finance analyst inside Fi
 
 Your job: analyze consumption patterns across all members, alert the parent to risks (overspending, fraud-like patterns, limit breaches), suggest spending controls (limits, category blocks), recommend allowance adjustments, and teach fintech safety (2FA, scam awareness, card security). Prioritize actionable safeguards. Flag anything that needs immediate attention.
 
+RISK FLAGS: The context below already includes a "Risk flags" section computed directly from real transaction data (spending spikes, rapid-purchase activity). Only report risks that are actually listed there — never invent or guess at a risk pattern that isn't explicitly given to you. If it says "none detected", tell the parent things look normal rather than manufacturing a concern.
+
 CONVERSATION MEMORY (very important):
 - The messages below are a REAL, ONGOING conversation with this parent — you already know everything said so far.
 - NEVER re-introduce yourself or repeat your opening greeting after the first message. Continue naturally, like a real ongoing chat.
@@ -75,6 +90,29 @@ class HistoryTurn(BaseModel):
     content: str
 
 
+# رد ثابت وآمن يترجع لو رسالة الطفل اتصنّفت كمحتوى غير مناسب، من غير ما نبعت
+# حاجة للموديل الرئيسي أصلاً (بيوفر تكلفة استدعاء زيادة، وبيمنع أي محاولة
+# jailbreak من توصل للموديل الرئيسي من الأساس).
+CHILD_SAFE_REDIRECT = (
+    "Let's keep our chat about money stuff — saving, budgeting, goals, and staying safe online! 💚 "
+    "If something's bothering you, please talk to a parent or a trusted adult about it."
+)
+
+
+def is_flagged_content(text: str) -> bool:
+    """بتستخدم OpenAI Moderation endpoint (مجاني، مش نفس الموديل الرئيسي) عشان
+    تفحص رسالة الطفل قبل ما توصل لـ FinBuddy. ده حاجز أمان حقيقي مش تعليمة
+    نصية بس في الـ prompt — لو فشل الفحص نفسه (network مثلاً)، بنسيب الرسالة
+    تعدي عادي (fail-open) عشان مشكلة في الـ moderation API نفسها متبوظش تجربة
+    الطفل بالكامل؛ الـ system prompt يفضل خط الدفاع التاني.
+    """
+    try:
+        result = client.moderations.create(model="omni-moderation-latest", input=text)
+        return bool(result.results and result.results[0].flagged)
+    except Exception:
+        return False
+
+
 def get_ai_response(
     chat_data: ChatMessage,
     context: str,
@@ -93,11 +131,16 @@ def get_ai_response(
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=OPENAI_MODEL,
             messages=messages,
-            max_tokens=350,  # اتزودت شوية عن 250 عشان ردود الخطوات المتعددة متتقطعش في النص
-            temperature=0.7,
+            max_tokens=AI_COACH_MAX_TOKENS,  # اتزودت شوية عن 250 عشان ردود الخطوات المتعددة متتقطعش في النص
+            temperature=AI_COACH_TEMPERATURE,
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"AI Service Error: {str(e)}"
+        # قبل كان هنا بيرجع "AI Service Error: ..." كـ string عادي، فده كان
+        # بيتخزن في الداتابيز كرد "assistant" حقيقي ويتبعت للمستخدم (طفل أو أب)
+        # كإنه رد فعلي من الـ AI، وكان كمان بيدخل في الـ conversation history
+        # بتاعة المرة الجاية فيلخبط الموديل. دلوقتي بترفع Exception، والـ route
+        # هو اللي بيقرر الرد المناسب وميخزنهاش في الـ history خالص.
+        raise AICoachError(str(e)) from e

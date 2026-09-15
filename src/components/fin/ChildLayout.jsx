@@ -20,7 +20,7 @@ export default function ChildLayout() {
         <Outlet />
       </div>
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 px-4 pb-4">
-        <div className="glass-dark rounded-3xl flex items-center justify-around p-2 shadow-premium">
+        <div className="glass-dark rounded-3xl grid grid-cols-5 items-center p-2 shadow-premium">
           {nav.map((item) => {
             const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
             const Icon = item.icon;
@@ -28,7 +28,7 @@ export default function ChildLayout() {
               <button
                 key={item.to}
                 onClick={() => navigate(item.to)}
-                className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all"
+                className="flex flex-col items-center gap-1 py-1.5 rounded-2xl transition-all"
               >
                 <div
                   className={cn(

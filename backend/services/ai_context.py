@@ -37,15 +37,72 @@ def build_child_context(db: Session, child: User) -> str:
     return "\n".join(lines)
 
 
+def _spend_since(db: Session, wallet_id: str, since: datetime) -> float:
+    """إجمالي الصرف الفعلي (مش تحويل لادخار) من محفظة معينة بعد تاريخ معين."""
+    debits = (
+        db.query(Transaction)
+        .filter(
+            Transaction.wallet_id == wallet_id,
+            Transaction.direction == TransactionDirection.debit,
+            Transaction.type.in_([TransactionType.redemption, TransactionType.card_purchase]),
+            Transaction.created_date >= since,
+        )
+        .all()
+    )
+    return sum(t.amount for t in debits)
+
+
+def _spending_risk_flags(db: Session, child_name: str, wallet: Wallet, now: datetime) -> list[str]:
+    """بتحسب مؤشرات خطر حقيقية بالكود (مش تخمين من الموديل من أرقام خام):
+    1) قفزة في الصرف الأسبوعي مقارنة بالأسبوع اللي قبله.
+    2) نشاط صرف سريع/متكرر في وقت قصير (ممكن يبقى إشارة لاستخدام مش طبيعي للكارت).
+    القيم دي بترجع كـ facts جاهزة تتحقن في الـ prompt، عشان Coach Nour يوصف الموجود
+    بس، من غير ما "يستنتج" احتيال أو مخاطر من عنده."""
+    flags: list[str] = []
+
+    this_week = _spend_since(db, wallet.id, now - timedelta(days=7))
+    last_week_total = _spend_since(db, wallet.id, now - timedelta(days=14))
+    last_week = last_week_total - this_week  # صرف الأسبوع اللي قبل الحالي بس
+
+    # عتبة دنيا (50 جنيه) عشان نتجنب "تضخيم" زيادة نسبية على أرقام صغيرة أوي مالها معنى
+    if last_week >= 50 and this_week > last_week * 1.5:
+        pct = ((this_week - last_week) / last_week) * 100
+        flags.append(
+            f"⚠️ {child_name}'s spending this week ({this_week:.0f} EGP) is {pct:.0f}% higher than last week ({last_week:.0f} EGP)."
+        )
+    elif last_week < 50 and this_week >= 150:
+        # مافيش صرف يذكر الأسبوع اللي فات وفجأة صرف كبير الأسبوع ده
+        flags.append(f"⚠️ {child_name} had little to no spending last week, but spent {this_week:.0f} EGP this week.")
+
+    # نشاط سريع: 3 عمليات صرف أو أكتر خلال ساعة واحدة
+    recent_debits = (
+        db.query(Transaction)
+        .filter(
+            Transaction.wallet_id == wallet.id,
+            Transaction.direction == TransactionDirection.debit,
+            Transaction.type.in_([TransactionType.redemption, TransactionType.card_purchase]),
+            Transaction.created_date >= now - timedelta(hours=1),
+        )
+        .order_by(Transaction.created_date.asc())
+        .all()
+    )
+    if len(recent_debits) >= 3:
+        flags.append(f"🚩 {child_name} made {len(recent_debits)} purchases within the last hour — worth a quick check.")
+
+    return flags
+
+
 def build_family_context(db: Session, parent: User) -> str:
     """بيرجع نص فيه ملخص العيلة كلها (كل الأطفال + إجماليات) عشان يتحط في الـ system prompt بتاع Coach Nour."""
     children = db.query(User).filter(User.family_id == parent.family_id, User.role == UserRole.child).all()
-    since = datetime.utcnow() - timedelta(days=30)
+    now = datetime.utcnow()
+    since = now - timedelta(days=30)
 
     lines = [f"- Parent: {parent.full_name}", f"- Children ({len(children)}):"]
 
     total_spending = 0.0
     total_savings = 0.0
+    risk_flags: list[str] = []
 
     for c in children:
         wallet = _wallet_of(db, c.id)
@@ -65,6 +122,9 @@ def build_family_context(db: Session, parent: User) -> str:
 
         total_spending += spend_total
         total_savings += wallet.savings_balance if wallet else 0.0
+
+        if wallet:
+            risk_flags.extend(_spending_risk_flags(db, c.full_name, wallet, now))
 
         limits = []
         if wallet:
@@ -96,5 +156,11 @@ def build_family_context(db: Session, parent: User) -> str:
 
     lines.append(f"- Family totals (last 30 days): spending {total_spending:.0f} EGP, savings {total_savings:.0f} EGP")
     lines.append(f"- Pending approvals: {pending_chores} chore(s), {pending_redemptions} reward request(s)")
+
+    if risk_flags:
+        lines.append("- Risk flags (already computed — just report these, don't invent additional ones):")
+        lines.extend(f"  {f}" for f in risk_flags)
+    else:
+        lines.append("- Risk flags: none detected right now — spending looks normal for all children.")
 
     return "\n".join(lines)
