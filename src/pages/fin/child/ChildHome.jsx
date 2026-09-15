@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import {
   Flame, Zap, Sparkles, ChevronRight, Map, Target, Trophy, Bot, Lock, Play, Star, Wallet
 } from "lucide-react";
-import Lotfy from "@/components/fin/Lotfy";
 import { GlassCard, ProgressBar, Pill, SectionTitle, FadeIn } from "@/components/fin/ui";
 import GameLauncher from "@/components/fin/GameLauncher";
 import MissionComplete from "@/components/fin/MissionComplete";
-import { child, todayMissions, playLearnCards, levels, fmtEGP } from "@/lib/finData";
+import { child, todayMissions, playLearnCards, levels, fmtEGP, LOFTY_IMAGE } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet } from "@/lib/finApi";
+import { Image } from "@/components/ui/image";
 
 const diffColor = { Easy: "#00B894", Medium: "#FFC857", Hard: "#ef4444" };
 
@@ -68,7 +68,15 @@ export default function ChildHome() {
           <div className="text-sm text-muted-foreground">{greet},</div>
           <h1 className="text-2xl font-extrabold font-heading">{user?.full_name || child.name} 👋</h1>
         </div>
-        <Lotfy size={64} />
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 rounded-full bg-emerald-400/30 blur-xl scale-110" />
+          <Image
+            src={user?.avatar_url || LOFTY_IMAGE}
+            alt={user?.full_name || "Kid"}
+            className="relative rounded-full object-cover shadow-glow-emerald border-4 border-white w-16 h-16"
+            fittingType="fill"
+          />
+        </div>
       </FadeIn>
 
       {/* hero: Financial Hero status */}

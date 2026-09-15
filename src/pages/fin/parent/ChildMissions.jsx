@@ -16,7 +16,7 @@ const statusMeta = {
 
 export default function ChildMissions() {
   const navigate = useNavigate();
-  const { getFamilyChildren } = useAuth();
+  const { user, getFamilyChildren } = useAuth();
 
   const [children, setChildren] = useState([]);
   const [missions, setMissions] = useState([]);
@@ -68,7 +68,7 @@ export default function ChildMissions() {
           <h1 className="text-xl font-extrabold font-heading">Missions</h1>
           <div className="text-xs text-muted-foreground">Chores & reward requests across the family</div>
         </div>
-        <Image src={PARENT_IMAGE} alt="Parent" fittingType="fit" className="w-9 h-9 rounded-full object-cover ml-auto" />
+        <Image src={user?.avatar_url || PARENT_IMAGE} alt={user?.full_name || "Parent"} fittingType="fit" className="w-9 h-9 rounded-full object-cover ml-auto" />
       </FadeIn>
 
       {error && (
