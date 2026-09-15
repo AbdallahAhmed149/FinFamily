@@ -152,7 +152,7 @@ export default function Allowance() {
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
-                className="flex-1 text-3xl font-extrabold font-heading bg-transparent outline-none"
+                className="flex-1 min-w-0 text-3xl font-extrabold font-heading bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="text-sm font-semibold text-muted-foreground">EGP</span>
             </div>

@@ -207,7 +207,7 @@ export default function Chores() {
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Task Title</label>
-                <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Clean the kitchen" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
+                <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Clean the kitchen" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Assign To</label>

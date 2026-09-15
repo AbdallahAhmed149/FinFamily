@@ -146,7 +146,7 @@ export default function Goals() {
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Goal Name</label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. New Bicycle" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. New Bicycle" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Target (EGP)</label>

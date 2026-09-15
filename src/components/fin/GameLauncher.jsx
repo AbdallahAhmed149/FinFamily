@@ -11,6 +11,7 @@ import ScamDetective from "@/components/fin/games/ScamDetective";
 import FutureInvestor from "@/components/fin/games/FutureInvestor";
 import SavingHero from "@/components/fin/games/SavingHero";
 import { completeGame } from "@/lib/finApi";
+import { useAuth } from "@/lib/AuthContext";
 
 const registry = {
   gm1: BudgetBuilder, gm2: BudgetBuilder, gm3: NeedsVsWants, gm4: GuessPrice,
@@ -21,6 +22,7 @@ const registry = {
 export default function GameLauncher({ game, onClose }) {
   const [reward, setReward] = useState(null);
   const [error, setError] = useState(null);
+  const { refreshUser } = useAuth();
   const G = registry[game.id] || SmartShopper;
 
   // المكافأة بتتحدد في الباك اند بس (GAME_CATALOG) — احنا هنا بس بنبعت النتيجة
@@ -36,6 +38,11 @@ export default function GameLauncher({ game, onClose }) {
         newBadges: res.newly_unlocked_badges || [],
         perfectDayCoins: res.perfect_day_bonus_coins, perfectDayXp: res.perfect_day_bonus_xp,
       });
+      // الرصيد (coins) بيتحدث لوحده لأن Home/Profile بيجيبوا الـ wallet تاني كل ما تفتحهم،
+      // لكن الـ xp/level/streak جايين من AuthContext.user اللي بيتحمّل مرة واحدة بس وقت
+      // الدخول ومبيتحدثش لوحده — من غير الاستدعاء ده هيفضلوا قيمهم القديمة لحد ما الطفل
+      // يعمل logout/login تاني، حتى لو الشاشة قدامه بتوري رقم XP جديد صح.
+      refreshUser().catch(() => {}); // ميوقفش شاشة المكافأة لو الريفريش فشل لأي سبب
     } catch (err) {
       setError(err.message || "تعذر تسجيل نتيجة اللعبة");
       // برضو نوري شاشة إنهاء (من غير مكافأة) عشان الطفل ميفضلش واقف

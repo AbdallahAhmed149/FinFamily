@@ -10,16 +10,27 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // بيتنفذ لو لقينا توكن محفوظ في localStorage — بيتأكد إنه لسه صالح ويجيب بيانات اليوزر
-  const loadCurrentUser = useCallback(async () => {
-    setIsLoadingAuth(true);
-    setAuthError(null);
+  // بيتنفذ لو لقينا توكن محفوظ في localStorage — بيتأكد إنه لسه صالح ويجيب بيانات اليوزر.
+  // silent=true بتستخدم لتحديث بيانات اليوزر في الخلفية (زي بعد ما الطفل يخلص لعبة
+  // ويكسب XP) من غير ما نلمس isLoadingAuth/authError — لو لمسناهم، ProtectedRoute
+  // هيعرض spinner ملء الشاشة فوق أي حاجة التطبيق شغال فيها في اللحظة دي (زي شاشة
+  // المكافأة)، وده تجربة مقطوعة من غير داعي لمجرد تحديث خلفي.
+  const loadCurrentUser = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoadingAuth(true);
+      setAuthError(null);
+    }
     try {
       const currentUser = await base44.get('/auth/me');
       setUser(currentUser);
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Auth check failed:', error);
+      if (silent) {
+        // تحديث خلفي فشل (مشكلة شبكة عابرة مثلاً) — منمسحش تسجيل الدخول الحالي
+        // ولا نوري أي رسالة خطأ للمستخدم عشان مانقطعش تجربته لحاجة مؤقتة كده
+        return;
+      }
       // التوكن غلط أو منتهي — نمسحه ونرجع اليوزر لحالة "مش داخل"
       setToken(null);
       setUser(null);
@@ -28,8 +39,10 @@ export const AuthProvider = ({ children }) => {
         setAuthError({ type: 'unknown', message: error.message || 'حصل خطأ غير متوقع' });
       }
     } finally {
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
+      if (!silent) {
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+      }
     }
   }, []);
 
@@ -163,7 +176,7 @@ export const AuthProvider = ({ children }) => {
         createChild,
         updateAvatar,
         logout,
-        refreshUser: loadCurrentUser,
+        refreshUser: () => loadCurrentUser(true),
       }}
     >
       {children}
