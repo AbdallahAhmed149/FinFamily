@@ -14,6 +14,7 @@ class UserResponse(BaseModel):
     role: UserRole
     full_name: str
     email: Optional[EmailStr] = None
+    avatar_url: Optional[str] = None
     xp: int = 0
     level: int = 1
     streak: int = 0
@@ -22,6 +23,11 @@ class UserResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class AvatarUpdate(BaseModel):
+    # data URI (data:image/png;base64,...) جاي من الفرونت — بنتحقق من الحجم
+    # في الـ route نفسه (validation هنا هتبقى بس على الشكل العام).
+    avatar_url: str = Field(min_length=1)
 
 class TokenResponse(BaseModel):
     access_token: str
