@@ -68,7 +68,9 @@ export default function ChildMissions() {
           <h1 className="text-xl font-extrabold font-heading">Missions</h1>
           <div className="text-xs text-muted-foreground">Chores & reward requests across the family</div>
         </div>
-        <Image src={user?.avatar_url || PARENT_IMAGE} alt={user?.full_name || "Parent"} fittingType="fit" className="w-9 h-9 rounded-full object-cover ml-auto" />
+        <div className="w-9 h-9 rounded-full overflow-hidden ml-auto shrink-0">
+          <Image src={user?.avatar_url || PARENT_IMAGE} alt={user?.full_name || "Parent"} fittingType="fill" className="w-full h-full object-cover" />
+        </div>
       </FadeIn>
 
       {error && (

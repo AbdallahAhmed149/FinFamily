@@ -70,12 +70,14 @@ export default function ChildHome() {
         </div>
         <div className="relative shrink-0">
           <div className="absolute inset-0 rounded-full bg-emerald-400/30 blur-xl scale-110" />
-          <Image
-            src={user?.avatar_url || LOFTY_IMAGE}
-            alt={user?.full_name || "Kid"}
-            className="relative rounded-full object-cover shadow-glow-emerald border-4 border-white w-16 h-16"
-            fittingType="fill"
-          />
+          <div className="relative w-16 h-16 rounded-full overflow-hidden shadow-glow-emerald border-4 border-white">
+            <Image
+              src={user?.avatar_url || LOFTY_IMAGE}
+              alt={user?.full_name || "Kid"}
+              className="w-full h-full object-cover"
+              fittingType="fill"
+            />
+          </div>
         </div>
       </FadeIn>
 

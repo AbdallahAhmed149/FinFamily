@@ -9,7 +9,12 @@ export default function RoleSelect() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       <div className="text-center mb-8 animate-slide-up">
-        <Image src={LOGO_IMAGE} alt="FinFamily" fittingType="fit" className="w-40 h-24 object-contain mx-auto mb-3" />
+        <div className="relative w-28 h-28 mx-auto mb-4">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#0F2D52] to-[#00B894] blur-xl animate-logo-glow" />
+          <div className="relative w-full h-full rounded-full bg-white shadow-premium flex items-center justify-center overflow-hidden animate-logo-float">
+            <Image src={LOGO_IMAGE} alt="FinFamily" fittingType="fit" className="w-20 h-20 object-contain" />
+          </div>
+        </div>
         <p className="text-sm text-muted-foreground">Who's using the app right now?</p>
       </div>
 

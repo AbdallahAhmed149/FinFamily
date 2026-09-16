@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="manifest" href="/manifest.json" />
     <title>FinFamily</title>
+    <script>
+      // Apply the saved theme to <html> before React mounts (and before first
+      // paint), so the app never flashes light and only "catches up" to dark
+      // once the user happens to open a page that calls useTheme() (Profile).
+      try {
+        if (localStorage.getItem("ff-theme") === "dark") {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

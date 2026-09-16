@@ -194,3 +194,16 @@
   100% { transform: translateY(60vh); opacity: 1; }
 }
 .animate-fall { animation: fall 2.4s linear forwards; }
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(1.1); }
+}
+
+.animate-logo-float { animation: logo-float 3.2s ease-in-out infinite; }
+.animate-logo-glow { animation: logo-glow-pulse 3.2s ease-in-out infinite; }
