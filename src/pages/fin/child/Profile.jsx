@@ -42,7 +42,6 @@ export default function ChildProfile() {
   const levelTitle = levels.find((l) => l.level === (user?.level || 1))?.name || "Money Explorer";
 
   const settings = [
-    { icon: Briefcase, label: "Parent Dashboard", color: "#0F2D52", on: () => navigate("/parent") },
     { icon: Bell, label: "Notifications", color: "#FFC857" },
     { icon: Shield, label: "Security", color: "#00B894" },
     { icon: Moon, label: "Dark Mode", color: "#0F2D52", toggle: true, value: dark, on: toggle },
