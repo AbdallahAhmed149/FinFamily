@@ -41,6 +41,16 @@ export default function RoleSelect() {
           <p className="text-sm text-white/70 mt-1 max-w-[75%]">Enter your Family Code and PIN to jump in with Lotfy.</p>
         </button>
       </div>
+
+      <div className="mt-8 text-center animate-fade-in">
+        <button
+          onClick={() => navigate("/admin/login")}
+          className="text-xs text-muted-foreground hover:text-primary flex items-center justify-center gap-1.5 mx-auto font-medium transition-colors"
+        >
+          <span>👑</span>
+          <span>لوحة الإدارة المركزية (Super Admin Portal)</span>
+        </button>
+      </div>
     </div>
   );
 }

@@ -40,6 +40,16 @@ import Missions from './pages/fin/child/Missions';
 import ChildMissions from './pages/fin/parent/ChildMissions';
 import Security from './pages/fin/parent/Security';
 
+// Admin Portal Imports
+import AdminProtectedRoute from '@/components/AdminProtectedRoute';
+import AdminLogin from '@/pages/admin/AdminLogin';
+import AdminDashboardLayout from '@/pages/admin/AdminDashboardLayout';
+import AdminOverview from '@/pages/admin/AdminOverview';
+import AdminTransactions from '@/pages/admin/AdminTransactions';
+import AdminCardsFleet from '@/pages/admin/AdminCardsFleet';
+import AdminDatabaseTelemetry from '@/pages/admin/AdminDatabaseTelemetry';
+import AdminSecuritySentinel from '@/pages/admin/AdminSecuritySentinel';
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth } = useAuth();
 
@@ -93,6 +103,24 @@ const AuthenticatedApp = () => {
         <Route path="/parent/coach" element={<ParentCoach />} />
         <Route path="/parent/child-missions" element={<ChildMissions />} />
         <Route path="/parent/security" element={<Security />} />
+      </Route>
+
+      {/* Admin Central Operations Portal */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route
+        path="/admin"
+        element={
+          <AdminProtectedRoute>
+            <AdminDashboardLayout />
+          </AdminProtectedRoute>
+        }
+      >
+        <Route index element={<AdminOverview />} />
+        <Route path="overview" element={<AdminOverview />} />
+        <Route path="transactions" element={<AdminTransactions />} />
+        <Route path="cards" element={<AdminCardsFleet />} />
+        <Route path="database" element={<AdminDatabaseTelemetry />} />
+        <Route path="security" element={<AdminSecuritySentinel />} />
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

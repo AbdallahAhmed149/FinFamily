@@ -12,12 +12,36 @@ from db.database import engine, Base
 from api.routes import functions_router
 from api.auth_routes import router as auth_router
 from api.family_routes import router as family_router
+from api.admin_routes import router as admin_router
 from core.limiter import limiter
 
-# بناء الجداول في الداتا بيز بناءً على الـ Models
-Base.metadata.create_all(bind=engine)
+# بناء الجداول في الداتا بيز بناءً على الـ Models مع حماية من أخطاء الـ Startup
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"[Notice] Database schema verification: {e}")
 
 app = FastAPI(title="FinFamily API")
+
+@app.get("/")
+def read_root():
+    return {
+        "status": "healthy",
+        "service": "FinFamily API",
+        "docs": "/docs",
+        "version": "1.0.0"
+    }
+
+@app.get("/api/app/version")
+@app.get("/app/version")
+def get_app_version():
+    return {
+        "latest_version": "1.0.2",
+        "build_number": 3,
+        "download_url": "https://github.com/Mahmoud-Hashim-pro/finfamily-mobile-app/releases/latest/download/app-release.apk",
+        "release_notes": "إضافة لوحة الإدارة والرقابة العليا (Super Admin Console) بالكامل داخل تطبيق الموبايل لمتابعة السيولة، أسطول كروت ميزة، العمليات الحية، ورادار الأمان.",
+        "is_mandatory": False
+    }
 
 # Rate limiting — بيحمي بالذات الـ login endpoints من Brute-force
 app.state.limiter = limiter
@@ -43,3 +67,4 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(family_router)
 app.include_router(functions_router)
+app.include_router(admin_router)

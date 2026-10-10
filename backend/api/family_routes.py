@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db.models import (
-    User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
+    Family, User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
     Transaction, TransactionType, TransactionDirection,
     CardStatus, CardPurchase, PurchaseStatus, _generate_card_number,
     GameCompletion, AuditLog, UserBadge,
@@ -745,3 +745,85 @@ def my_badges(child: User = Depends(require_child), db: Session = Depends(get_db
         )
         for bd in BADGE_DEFS
     ]
+
+
+@router.get("/family/overview")
+def get_family_overview(parent: User = Depends(require_parent), db: Session = Depends(get_db)):
+    family = db.query(Family).filter(Family.id == parent.family_id).first()
+    if not family:
+        raise HTTPException(status_code=404, detail="Family not found")
+
+    children = db.query(User).filter(
+        User.family_id == parent.family_id,
+        User.role == UserRole.child
+    ).all()
+
+    total_balance = 0.0
+    children_out = []
+    for c in children:
+        w = db.query(Wallet).filter(Wallet.owner_id == c.id).first()
+        bal = float(w.balance) if w and w.balance else 0.0
+        total_balance += bal
+        
+        card_st = "active"
+        if w and w.card_status:
+            card_st = getattr(w.card_status, "value", str(w.card_status))
+            
+        card_num = (getattr(w, "card_number", None) if w else None) or "5061 •••• •••• 0000"
+        
+        children_out.append({
+            "id": c.id,
+            "full_name": c.full_name or "طفل",
+            "avatar": "👦",
+            "balance": round(bal, 2),
+            "card_status": card_st,
+            "card_number": card_num,
+            "level": getattr(c, "level", 1) or 1,
+            "xp": getattr(c, "xp", 0) or 0,
+        })
+
+    pending_missions = db.query(Mission).filter(
+        Mission.family_id == parent.family_id,
+        Mission.status == MissionStatus.submitted
+    ).count()
+
+    pending_purchases = db.query(CardPurchase).filter(
+        CardPurchase.family_id == parent.family_id,
+        CardPurchase.status == PurchaseStatus.pending
+    ).count()
+
+    recent_txns = db.query(Transaction).filter(
+        Transaction.family_id == parent.family_id
+    ).order_by(Transaction.created_date.desc()).limit(10).all()
+
+    txns_out = []
+    for t in recent_txns:
+        is_credit = (t.direction == TransactionDirection.credit or getattr(t.direction, "value", "") == "credit")
+        amt = float(t.amount or 0.0)
+        cat_str = getattr(t.type, "value", str(t.type)) if t.type else "transfer"
+        dt_str = t.created_date.strftime("%Y-%m-%d %H:%M") if t.created_date else ""
+        txns_out.append({
+            "id": t.id,
+            "merchant": t.description or "معاملة",
+            "amount": amt if is_credit else -amt,
+            "category": cat_str,
+            "date": dt_str,
+        })
+
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_txns = db.query(Transaction).filter(
+        Transaction.family_id == parent.family_id,
+        Transaction.direction == TransactionDirection.debit,
+        Transaction.created_date >= today_start
+    ).all()
+    total_spent_today = sum(float(t.amount or 0.0) for t in today_txns)
+
+    return {
+        "family_name": family.name if family else "عائلتي",
+        "family_code": family.family_code if family else "",
+        "total_balance": round(total_balance, 2),
+        "total_spent_today": round(total_spent_today, 2),
+        "pending_approvals_count": pending_missions + pending_purchases,
+        "children": children_out,
+        "recent_transactions": txns_out,
+    }

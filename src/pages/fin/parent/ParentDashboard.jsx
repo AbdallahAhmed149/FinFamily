@@ -23,9 +23,21 @@ function startOfWeek() {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
 }
 
+const SUPER_ADMINS = [
+  "modyhashim2006@gmail.com",
+  "pro.mahmoud.h@gmail.com",
+  "bassantmohamedelramlaw@gmail.com",
+  "abdallah.ahmed@finfamily.com",
+  "omar.osama.sw.dev@gmail.com",
+  "ashayman111@gmail.com",
+  "ramezrizkw@gmail.com",
+  "zyad.ahmed.softwareeng@gmail.com",
+];
+
 export default function ParentDashboard() {
   const navigate = useNavigate();
   const { user, getFamilyChildren } = useAuth(); // اليوزر الحقيقي بتاع الأب الداخل دلوقتي
+  const isSuperAdmin = user?.email && SUPER_ADMINS.includes(user.email.toLowerCase().trim());
 
   const [childrenCount, setChildrenCount] = useState(familyMembers.length); // fallback للموك لحد ما تجيب الحقيقي
   const [familySummary, setFamilySummary] = useState({ totalSpending: 0, totalSavings: 0, goalsCompleted: 0, avgScore: null });
@@ -158,6 +170,32 @@ export default function ParentDashboard() {
           <Pill className="bg-emerald-400/20 text-emerald-200">Verified ✓</Pill>
         </div>
       </FadeIn>
+
+      {/* Super Admin VIP Console Card */}
+      {isSuperAdmin && (
+        <FadeIn delay={50} className="mb-4">
+          <button
+            onClick={() => navigate("/admin")}
+            className="w-full bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 border-2 border-amber-400/80 rounded-2xl p-3.5 text-white shadow-xl flex items-center justify-between text-left group hover:scale-[1.01] transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-xl shrink-0">
+                👑
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-white">لوحة الإدارة والرقابة العليا</span>
+                  <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    Super Admin
+                  </span>
+                </div>
+                <p className="text-xs text-white/70">متابعة أسطول الكروت، السيولة، رادار الأمان، وصحة الداتابيز</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </FadeIn>
+      )}
 
       {/* summary cards */}
       {/* Fin. Score دلوقتي حقيقي (متوسط أطفال العيلة، كل واحد بيتحسب Live في الباك اند) */}
