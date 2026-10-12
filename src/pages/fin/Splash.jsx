@@ -1,53 +1,45 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LOGO_IMAGE } from "@/lib/finData";
-import { Image } from "@/components/ui/image";
 
 export default function Splash() {
   const navigate = useNavigate();
+  const [fadingOut, setFadingOut] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => navigate("/onboarding"), 4200);
-    return () => clearTimeout(t);
+    // Start fade-out at 2.6 seconds, then navigate at 3.2 seconds
+    const fadeTimer = setTimeout(() => {
+      setFadingOut(true);
+    }, 2600);
+
+    const navTimer = setTimeout(() => {
+      navigate("/onboarding");
+    }, 3200);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(navTimer);
+    };
   }, [navigate]);
 
   return (
-    <div className="fixed inset-0 grad-hero animate-gradient flex flex-col items-center justify-center overflow-hidden text-white">
-      {/* floating coins */}
-      {[...Array(8)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 shadow-glow-gold animate-float"
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-700 ease-in-out select-none ${
+        fadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
+      }`}
+      style={{
+        background: "linear-gradient(180deg, #031944 0%, #02102E 50%, #01102D 100%)",
+      }}
+    >
+      <div className="relative w-full h-full max-w-lg max-h-[920px] flex items-center justify-center p-4">
+        <img
+          src="/splash.png"
+          alt="FinFamily Splash"
+          className="w-full h-full object-contain filter drop-shadow-2xl transition-transform duration-1000 ease-out transform scale-100 animate-in fade-in zoom-in-95"
           style={{
-            width: 14,
-            height: 14,
-            left: `${15 + i * 10}%`,
-            bottom: "30%",
-            animationDelay: `${i * 0.3}s`,
-            ["--tx"]: `${(i % 2 ? 1 : -1) * 30}px`,
+            maxHeight: "100%",
+            maxWidth: "100%",
           }}
         />
-      ))}
-
-      {/* logo */}
-      <div className="relative flex flex-col items-center z-10">
-        <div className="animate-pop" style={{ animationDelay: "0.4s" }}>
-          <Image
-            src={LOGO_IMAGE}
-            alt="FinFamily"
-            fittingType="fit"
-            className="w-56 h-56 object-contain drop-shadow-2xl"
-          />
-        </div>
-        <p className="mt-4 text-sm text-white/70 font-medium animate-slide-up" style={{ animationDelay: "1.4s" }}>
-          Growing Financially Together.
-        </p>
-      </div>
-
-      <div className="absolute bottom-12 flex gap-1 animate-slide-up" style={{ animationDelay: "3s" }}>
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="w-1.5 h-1.5 rounded-full bg-white/60" style={{ animation: `pulse-ring 1.2s ${i * 0.2}s infinite` }} />
-        ))}
       </div>
     </div>
   );
