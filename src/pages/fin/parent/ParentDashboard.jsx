@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useContentTranslation } from "@/lib/useContentTranslation";
 import {
   ChevronRight, TrendingDown, TrendingUp, Target, Wallet, Bell, Download, Search, Repeat2,
   Users, ListChecks, SlidersHorizontal, CreditCard, Gift, Bot, AlertTriangle, ShieldAlert
@@ -15,7 +17,7 @@ import { Image } from "@/components/ui/image";
 const iconEmoji = { utensils: "🍽️", "piggy-bank": "🐷", "trending-down": "📉", "shield-alert": "🚨", wallet: "👛", sparkles: "✨", "trending-up": "📈" };
 const sevColor = { alert: "#ef4444", warn: "#FFC857", good: "#00B894", info: "#3b82f6" };
 const CATEGORY_COLORS = ["#FFC857", "#00B894", "#0F2D52", "#3b82f6", "#8b5cf6", "#ef4444", "#f97316", "#ec4899", "#64748b"];
-const WEEKDAY_LABELS = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]; // الأسبوع بيبدأ السبت (زي SpendingLimits.jsx)
+const WEEKDAY_KEYS = ["sat", "sun", "mon", "tue", "wed", "thu", "fri"]; // الأسبوع بيبدأ السبت (زي SpendingLimits.jsx)
 
 function startOfWeek() {
   const now = new Date();
@@ -25,6 +27,8 @@ function startOfWeek() {
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const tc = useContentTranslation();
   const { user, getFamilyChildren } = useAuth(); // اليوزر الحقيقي بتاع الأب الداخل دلوقتي
 
   const [childrenCount, setChildrenCount] = useState(familyMembers.length); // fallback للموك لحد ما تجيب الحقيقي
@@ -74,7 +78,7 @@ export default function ParentDashboard() {
         let goalsCompleted = 0;
         const categoryTotals = {};
         const weekStart = startOfWeek();
-        const weeklyTotals = [0, 0, 0, 0, 0, 0, 0]; // مقابل WEEKDAY_LABELS
+        const weeklyTotals = [0, 0, 0, 0, 0, 0, 0]; // مقابل WEEKDAY_KEYS
 
         for (const { wallet, transactions } of perChild) {
           totalSavings += wallet.savings_balance || 0;
@@ -107,7 +111,7 @@ export default function ParentDashboard() {
         setRealSpendingCategories(
           Object.entries(categoryTotals).map(([name, value], i) => ({ name, value, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
         );
-        setRealWeeklySpending(WEEKDAY_LABELS.map((day, i) => ({ day, amount: weeklyTotals[i] })));
+        setRealWeeklySpending(WEEKDAY_KEYS.map((key, i) => ({ day: t(`parent.dashboard.weekdays.${key}`), amount: weeklyTotals[i] })));
       } catch (err) {
         console.error("Failed to load family summary:", err);
       } finally {
@@ -119,7 +123,7 @@ export default function ParentDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [getFamilyChildren]);
+  }, [getFamilyChildren, t]);
 
   return (
     <div className="px-4 pt-12">
@@ -128,13 +132,13 @@ export default function ParentDashboard() {
           <Image src={LOGO_IMAGE} alt="FinFamily" fittingType="fit" className="w-10 h-10 object-contain" />
         </button>
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-muted-foreground">Welcome back</div>
+          <div className="text-sm text-muted-foreground">{t("parent.dashboard.welcomeBack")}</div>
           <h1 className="text-lg font-extrabold font-heading truncate">{user?.full_name}</h1>
         </div>
         <button onClick={() => navigate("/parent/approvals")} className="relative w-10 h-10 rounded-full glass flex items-center justify-center shadow-premium shrink-0">
           <Bell className="w-5 h-5" />
           {pendingApprovals > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{pendingApprovals}</span>
+            <span className="absolute -top-0.5 -end-0.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{pendingApprovals}</span>
           )}
         </button>
       </FadeIn>
@@ -142,16 +146,16 @@ export default function ParentDashboard() {
       {/* parent profile card */}
       <FadeIn delay={40} className="mb-4">
         <div className="grad-navy rounded-3xl p-4 text-white shadow-premium flex items-center gap-4 relative overflow-hidden">
-          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" />
+          <div className="absolute -end-6 -top-6 w-24 h-24 rounded-full bg-white/10" />
           <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 ring-2 ring-white/30">
             <Image src={user?.avatar_url || PARENT_IMAGE} alt={user?.full_name || "Parent"} className="w-full h-full object-cover" fittingType="fill" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold">{user?.full_name}</div>
-            <div className="text-xs text-white/70">{parent.role}</div>
-            <div className="text-xs text-white/50 truncate">{parent.phone}</div>
+            <div className="text-xs text-white/70">{tc(parent.role)}</div>
+            <div className="text-xs text-white/50 truncate force-ltr text-end">{parent.phone}</div>
           </div>
-          <Pill className="bg-emerald-400/20 text-emerald-200">Verified ✓</Pill>
+          <Pill className="bg-emerald-400/20 text-emerald-200">{t("parent.dashboard.verified")}</Pill>
         </div>
       </FadeIn>
 
@@ -159,33 +163,33 @@ export default function ParentDashboard() {
       {/* Fin. Score دلوقتي حقيقي (متوسط أطفال العيلة، كل واحد بيتحسب Live في الباك اند) */}
       <FadeIn delay={60} className="grid grid-cols-2 gap-3">
         <StatCard
-          label="Total Spending"
+          label={t("parent.dashboard.stats.totalSpending")}
           value={summaryLoading ? "…" : fmtEGP(familySummary.totalSpending)}
-          trend="this month"
+          trend={t("parent.dashboard.trends.thisMonth")}
           up={false}
           icon={TrendingDown}
           color="#ef4444"
         />
         <StatCard
-          label="Total Savings"
+          label={t("parent.dashboard.stats.totalSavings")}
           value={summaryLoading ? "…" : fmtEGP(familySummary.totalSavings)}
-          trend="across kids"
+          trend={t("parent.dashboard.trends.acrossKids")}
           up={true}
           icon={TrendingUp}
           color="#00B894"
         />
         <StatCard
-          label="Goals Completed"
+          label={t("parent.dashboard.stats.goalsCompleted")}
           value={summaryLoading ? "…" : familySummary.goalsCompleted}
-          trend="this month"
+          trend={t("parent.dashboard.trends.thisMonth")}
           up={true}
           icon={Target}
           color="#FFC857"
         />
         <StatCard
-          label="Fin. Score"
+          label={t("parent.dashboard.stats.finScore")}
           value={summaryLoading || familySummary.avgScore === null ? "…" : `${familySummary.avgScore}/100`}
-          trend="family avg"
+          trend={t("parent.dashboard.trends.familyAvg")}
           up={true}
           icon={Wallet}
           color="#0F2D52"
@@ -196,7 +200,7 @@ export default function ParentDashboard() {
           أسبوع بأسبوع لحد دلوقتي (محتاج snapshot job دوري)، فمينفعش نرسم trend حقيقي. */}
       <FadeIn delay={120} className="mt-4">
         <GlassCard>
-          <SectionTitle action={<Pill color="#94a3b8">Sample data</Pill>}>Financial Score Trend</SectionTitle>
+          <SectionTitle action={<Pill color="#94a3b8">{t("parent.dashboard.sampleData")}</Pill>}>{t("parent.dashboard.scoreTrend")}</SectionTitle>
           <ResponsiveContainer width="100%" height={140}>
             <LineChart data={scoreHistory.map((v, i) => ({ week: `W${i+1}`, score: v }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="#0001" vertical={false} />
@@ -211,10 +215,10 @@ export default function ParentDashboard() {
       {/* category breakdown */}
       <FadeIn delay={180} className="mt-4">
         <GlassCard>
-          <SectionTitle>Spending by Category</SectionTitle>
+          <SectionTitle>{t("parent.dashboard.spendingByCategory")}</SectionTitle>
           {!summaryLoading && realSpendingCategories.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-6">
-              لسه مفيش مصاريف حقيقية (redemptions موافق عليها) نقدر نجمّعها حسب الفئة.
+              {t("parent.dashboard.noCategorySpending")}
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -243,7 +247,7 @@ export default function ParentDashboard() {
       {/* weekly spending bar */}
       <FadeIn delay={240} className="mt-4">
         <GlassCard>
-          <SectionTitle>Weekly Spending</SectionTitle>
+          <SectionTitle>{t("parent.dashboard.weeklySpending")}</SectionTitle>
           <ResponsiveContainer width="100%" height={130}>
             <BarChart data={realWeeklySpending}>
               <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -256,10 +260,10 @@ export default function ParentDashboard() {
 
       {/* AI alerts — تنبيهات حقيقية مبنية على قواعد (rule-based) من بيانات العيلة الفعلية */}
       <FadeIn delay={260} className="mt-4">
-        <SectionTitle action={<button onClick={() => navigate("/parent/coach")} className="text-xs font-bold text-emerald-600 flex items-center gap-1"><Bot className="w-4 h-4" /> Ask Coach</button>}>AI Alerts & Suggestions</SectionTitle>
+        <SectionTitle action={<button onClick={() => navigate("/parent/coach")} className="text-xs font-bold text-emerald-600 flex items-center gap-1"><Bot className="w-4 h-4" /> {t("parent.dashboard.askCoach")}</button>}>{t("parent.dashboard.aiAlerts")}</SectionTitle>
         <div className="space-y-2">
           {insights.slice(0, 4).map((ins) => (
-            <button key={ins.id} onClick={() => navigate("/parent/coach")} className="w-full glass rounded-2xl p-3 flex items-center gap-3 text-left shadow-premium active:scale-[0.99] transition-all">
+            <button key={ins.id} onClick={() => navigate("/parent/coach")} className="w-full glass rounded-2xl p-3 flex items-center gap-3 text-start shadow-premium active:scale-[0.99] transition-all">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0" style={{ background: `${sevColor[ins.severity]}18` }}>
                 {iconEmoji[ins.icon] || "💡"}
               </div>
@@ -275,37 +279,37 @@ export default function ParentDashboard() {
 
       {/* family management hub */}
       <FadeIn delay={300} className="mt-4">
-        <SectionTitle>Family Management</SectionTitle>
+        <SectionTitle>{t("parent.dashboard.management")}</SectionTitle>
         <div className="grid grid-cols-3 gap-3">
-          <MgmtTile icon={Users} color="#0F2D52" label="Members" sub={`${childrenCount} kids`} onClick={() => navigate("/parent/members")} />
-          <MgmtTile icon={ListChecks} color="#8b5cf6" label="Chores" sub="Assign tasks" onClick={() => navigate("/parent/chores")} />
-          <MgmtTile icon={SlidersHorizontal} color="#3b82f6" label="Limits" sub="Spend caps" onClick={() => navigate("/parent/limits")} />
-          <MgmtTile icon={CreditCard} color="#00B894" label="Cards" sub="Freeze / replace" onClick={() => navigate("/parent/cards")} />
-          <MgmtTile icon={Gift} color="#FFC857" label="Rewards" sub="Approve" onClick={() => navigate("/parent/rewards")} />
-          <MgmtTile icon={Bot} color="#ef4444" label="AI Coach" sub="Family analyst" onClick={() => navigate("/parent/coach")} />
-          <MgmtTile icon={Target} color="#10b981" label="Missions" sub="Approve tasks" onClick={() => navigate("/parent/child-missions")} />
+          <MgmtTile icon={Users} color="#0F2D52" label={t("parent.dashboard.tiles.members.label")} sub={t("parent.dashboard.tiles.members.sub", { count: childrenCount })} onClick={() => navigate("/parent/members")} />
+          <MgmtTile icon={ListChecks} color="#8b5cf6" label={t("parent.dashboard.tiles.chores.label")} sub={t("parent.dashboard.tiles.chores.sub")} onClick={() => navigate("/parent/chores")} />
+          <MgmtTile icon={SlidersHorizontal} color="#3b82f6" label={t("parent.dashboard.tiles.limits.label")} sub={t("parent.dashboard.tiles.limits.sub")} onClick={() => navigate("/parent/limits")} />
+          <MgmtTile icon={CreditCard} color="#00B894" label={t("parent.dashboard.tiles.cards.label")} sub={t("parent.dashboard.tiles.cards.sub")} onClick={() => navigate("/parent/cards")} />
+          <MgmtTile icon={Gift} color="#FFC857" label={t("parent.dashboard.tiles.rewards.label")} sub={t("parent.dashboard.tiles.rewards.sub")} onClick={() => navigate("/parent/rewards")} />
+          <MgmtTile icon={Bot} color="#ef4444" label={t("parent.dashboard.tiles.aiCoach.label")} sub={t("parent.dashboard.tiles.aiCoach.sub")} onClick={() => navigate("/parent/coach")} />
+          <MgmtTile icon={Target} color="#10b981" label={t("parent.dashboard.tiles.missions.label")} sub={t("parent.dashboard.tiles.missions.sub")} onClick={() => navigate("/parent/child-missions")} />
         </div>
       </FadeIn>
 
       {/* quick actions */}
       <FadeIn delay={340} className="grid grid-cols-2 gap-3 mt-4">
-        <button onClick={() => navigate("/parent/allowance")} className="glass rounded-2xl p-4 text-left shadow-premium active:scale-95 transition-all">
+        <button onClick={() => navigate("/parent/allowance")} className="glass rounded-2xl p-4 text-start shadow-premium active:scale-95 transition-all">
           <Wallet className="w-6 h-6 text-emerald-600 mb-2" />
-          <div className="font-bold text-sm">Send Allowance</div>
-          <div className="text-xs text-muted-foreground">Schedule or send now</div>
+          <div className="font-bold text-sm">{t("parent.dashboard.sendAllowance.title")}</div>
+          <div className="text-xs text-muted-foreground">{t("parent.dashboard.sendAllowance.desc")}</div>
         </button>
-        <button onClick={() => navigate("/parent/insights")} className="glass rounded-2xl p-4 text-left shadow-premium active:scale-95 transition-all">
+        <button onClick={() => navigate("/parent/insights")} className="glass rounded-2xl p-4 text-start shadow-premium active:scale-95 transition-all">
           <TrendingUp className="w-6 h-6 text-blue-500 mb-2" />
-          <div className="font-bold text-sm">AI Insights</div>
-          <div className="text-xs text-muted-foreground">Weekly report ready</div>
+          <div className="font-bold text-sm">{t("parent.dashboard.aiInsightsShortcut.title")}</div>
+          <div className="text-xs text-muted-foreground">{t("parent.dashboard.aiInsightsShortcut.desc")}</div>
         </button>
       </FadeIn>
 
       <FadeIn delay={360} className="mt-4">
-        <SectionTitle>Recent Activity</SectionTitle>
+        <SectionTitle>{t("parent.dashboard.recentActivity")}</SectionTitle>
         <div className="space-y-2">
           {activity.length === 0 && !summaryLoading && (
-            <div className="text-center text-sm text-muted-foreground py-4">No activity yet — assign a chore or send an allowance to get started.</div>
+            <div className="text-center text-sm text-muted-foreground py-4">{t("parent.dashboard.noActivity")}</div>
           )}
           {activity.slice(0, 5).map((n) => (
             <div key={n.id} className="glass rounded-2xl p-3 flex items-center gap-3 shadow-premium">

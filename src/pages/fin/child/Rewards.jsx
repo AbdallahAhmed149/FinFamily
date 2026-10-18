@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useContentTranslation } from "@/lib/useContentTranslation";
 import { ChevronLeft, Check, Clock } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { rewardsStore } from "@/lib/finData";
@@ -7,6 +9,8 @@ import { getMyWallet, getMyMissions, requestRedemption } from "@/lib/finApi";
 
 export default function Rewards() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const tc = useContentTranslation();
   const [balance, setBalance] = useState(0);
   const [requestedTitles, setRequestedTitles] = useState([]); // عناوين اللي لسه مستنية موافقة الأب
   const [approvedTitles, setApprovedTitles] = useState([]);
@@ -24,11 +28,11 @@ export default function Rewards() {
       setRequestedTitles(redemptions.filter((m) => m.status === "submitted").map((m) => m.title));
       setApprovedTitles(redemptions.filter((m) => m.status === "approved").map((m) => m.title));
     } catch (err) {
-      setError(err.message || "تعذر تحميل بيانات المتجر");
+      setError(err.message || t("child.rewards.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -40,7 +44,7 @@ export default function Rewards() {
       await requestRedemption({ assigned_to_id: null, title: r.name, reward: r.cost, icon: r.icon, category: r.category || "Reward" });
       await load();
     } catch (err) {
-      setError(err.message || "حصل خطأ");
+      setError(err.message || t("child.rewards.redeemFailed"));
     } finally {
       setBusyId(null);
     }
@@ -56,9 +60,9 @@ export default function Rewards() {
     <div className="px-4 pt-12">
       <FadeIn className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Rewards Store</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("child.rewards.title")}</h1>
       </FadeIn>
 
       {error && (
@@ -70,17 +74,17 @@ export default function Rewards() {
       {/* coins balance */}
       <FadeIn delay={60}>
         <div className="grad-gold rounded-3xl p-5 text-center shadow-glow-gold text-white relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 text-6xl opacity-20">🪙</div>
-          <div className="text-sm text-white/80 font-medium">Your Coins</div>
+          <div className="absolute -end-4 -top-4 text-6xl opacity-20">🪙</div>
+          <div className="text-sm text-white/80 font-medium">{t("child.rewards.yourCoins")}</div>
           <div className="text-4xl font-extrabold font-heading mt-1">{loading ? "···" : balance}</div>
-          <div className="text-xs text-white/80 mt-1">Earn more by completing chores</div>
+          <div className="text-xs text-white/80 mt-1">{t("child.rewards.earnMore")}</div>
         </div>
       </FadeIn>
 
       {/* store grid */}
       <FadeIn delay={180}>
-        <SectionTitle>Redeem Coins</SectionTitle>
-        <p className="text-[11px] text-muted-foreground -mt-1 mb-3">Requests need your parent's approval before coins are taken.</p>
+        <SectionTitle>{t("child.rewards.redeemCoins")}</SectionTitle>
+        <p className="text-[11px] text-muted-foreground -mt-1 mb-3">{t("child.rewards.approvalNote")}</p>
         <div className="grid grid-cols-2 gap-3">
           {rewardsStore.map((r, idx) => {
             const state = stateFor(r);
@@ -89,8 +93,8 @@ export default function Rewards() {
               <FadeIn key={r.id} delay={idx * 30}>
                 <div className="glass rounded-2xl p-4 text-center shadow-premium relative">
                   <div className="text-4xl mb-2">{r.icon}</div>
-                  <div className="font-bold text-sm">{r.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{r.category}</div>
+                  <div className="font-bold text-sm">{tc(r.name)}</div>
+                  <div className="text-[10px] text-muted-foreground">{tc(r.category)}</div>
                   <button
                     onClick={() => redeem(r)}
                     disabled={!afford || state !== "available" || busyId === r.id}
@@ -99,7 +103,7 @@ export default function Rewards() {
                       (state === "approved" ? "bg-emerald-500 text-white" : state === "pending" ? "bg-amber-100 text-amber-700" : afford ? "grad-navy text-white" : "bg-black/5 text-muted-foreground")
                     }
                   >
-                    {state === "approved" ? <><Check className="w-4 h-4" /> Got it</> : state === "pending" ? <><Clock className="w-4 h-4" /> Pending</> : `${r.cost} 🪙`}
+                    {state === "approved" ? <><Check className="w-4 h-4" /> {t("child.rewards.gotIt")}</> : state === "pending" ? <><Clock className="w-4 h-4" /> {t("child.rewards.pending")}</> : `${r.cost} 🪙`}
                   </button>
                 </div>
               </FadeIn>
@@ -112,8 +116,8 @@ export default function Rewards() {
         <FadeIn className="mt-5">
           <div className="glass rounded-2xl p-4 text-center animate-pop">
             <div className="text-2xl mb-1">⏳</div>
-            <div className="font-bold text-sm">{requestedTitles.length} request(s) waiting for approval</div>
-            <div className="text-xs text-muted-foreground">Ask a parent to check the Reward Approvals page.</div>
+            <div className="font-bold text-sm">{t("child.rewards.waitingCount", { count: requestedTitles.length })}</div>
+            <div className="text-xs text-muted-foreground">{t("child.rewards.waitingHint")}</div>
           </div>
         </FadeIn>
       )}

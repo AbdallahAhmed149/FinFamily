@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, Plus } from "lucide-react";
 import { GlassCard, ProgressRing, FadeIn } from "@/components/fin/ui";
 import { fmtEGP } from "@/lib/finData";
@@ -9,6 +10,7 @@ const COLORS = ["#00B894", "#3b82f6", "#FFC857", "#8b5cf6", "#f97316"];
 
 export default function Goals() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [wallet, setWallet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,11 +25,11 @@ export default function Goals() {
     try {
       setWallet(await getMyWallet());
     } catch (err) {
-      setError(err.message || "تعذر تحميل الأهداف");
+      setError(err.message || t("child.goals.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -36,7 +38,7 @@ export default function Goals() {
   const addFunds = async (goalId, amt) => {
     setError(null);
     if ((wallet?.balance || 0) < amt) {
-      setError("معندكش رصيد كافي في الـ Wallet عشان تحوّل المبلغ ده");
+      setError(t("child.goals.insufficientBalance"));
       return;
     }
     setBusyId(goalId);
@@ -46,7 +48,7 @@ export default function Goals() {
       setTimeout(() => setBurst(null), 1500);
       await load();
     } catch (err) {
-      setError(err.message || "حصل خطأ");
+      setError(err.message || t("child.goals.transferFailed"));
     } finally {
       setBusyId(null);
     }
@@ -60,7 +62,7 @@ export default function Goals() {
       setShowAdd(false);
       await load();
     } catch (err) {
-      setError(err.message || "حصل خطأ وإحنا بنضيف الهدف");
+      setError(err.message || t("child.goals.createFailed"));
     }
   };
 
@@ -70,10 +72,10 @@ export default function Goals() {
     <div className="px-4 pt-12">
       <FadeIn className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Savings Goals</h1>
-        <button onClick={() => setShowAdd(true)} className="ml-auto w-10 h-10 rounded-full grad-navy flex items-center justify-center">
+        <h1 className="text-xl font-extrabold font-heading">{t("child.goals.title")}</h1>
+        <button onClick={() => setShowAdd(true)} className="ms-auto w-10 h-10 rounded-full grad-navy flex items-center justify-center">
           <Plus className="w-5 h-5 text-white" />
         </button>
       </FadeIn>
@@ -81,7 +83,7 @@ export default function Goals() {
       {!loading && wallet && (
         <FadeIn delay={20} className="mb-4">
           <div className="glass rounded-2xl p-3 text-center text-sm font-semibold text-muted-foreground">
-            Wallet balance: <span className="text-foreground font-bold">{fmtEGP(wallet.balance)}</span> — use it to fund your goals below
+            {t("child.goals.walletBalance")} <span className="text-foreground font-bold">{fmtEGP(wallet.balance)}</span> {t("child.goals.walletBalanceHint")}
           </div>
         </FadeIn>
       )}
@@ -93,9 +95,9 @@ export default function Goals() {
       )}
 
       {loading ? (
-        <div className="text-center text-sm text-muted-foreground py-8">...بنحمّل</div>
+        <div className="text-center text-sm text-muted-foreground py-8">{t("child.goals.loading")}</div>
       ) : goals.length === 0 ? (
-        <div className="text-center text-sm text-muted-foreground py-10">مفيش أهداف لسه — دوس على + وابدأ أول هدف ادخار ليك 🎯</div>
+        <div className="text-center text-sm text-muted-foreground py-10">{t("child.goals.empty")}</div>
       ) : (
         <div className="space-y-4">
           {goals.map((g, idx) => {
@@ -111,7 +113,7 @@ export default function Goals() {
                   </div>
                 )}
                 <GlassCard className="relative overflow-hidden">
-                  <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full" style={{ background: `${color}11` }} />
+                  <div className="absolute -end-8 -top-8 w-28 h-28 rounded-full" style={{ background: `${color}11` }} />
                   <div className="flex items-center gap-4 relative">
                     <ProgressRing value={Math.min(100, (g.current / g.target) * 100)} color={color} size={72}>
                       <span className="text-2xl">{g.icon}</span>
@@ -119,13 +121,13 @@ export default function Goals() {
                     <div className="flex-1">
                       <div className="font-bold">{g.name}</div>
                       <div className="text-sm text-muted-foreground">{fmtEGP(g.current)} / {fmtEGP(g.target)}</div>
-                      {complete && <div className="text-xs font-bold mt-1" style={{ color }}>🎉 Goal reached!</div>}
+                      {complete && <div className="text-xs font-bold mt-1" style={{ color }}>{t("child.goals.goalReached")}</div>}
                     </div>
                   </div>
                   {!complete && (
                     <div className="flex gap-2 mt-3">
-                      <button disabled={busyId === g.id} onClick={() => addFunds(g.id, 10)} className="flex-1 h-9 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: color }}>+ Save 10 EGP</button>
-                      <button disabled={busyId === g.id} onClick={() => addFunds(g.id, 25)} className="flex-1 h-9 rounded-xl text-sm font-bold disabled:opacity-50" style={{ background: `${color}18`, color }}>+ 25 EGP</button>
+                      <button disabled={busyId === g.id} onClick={() => addFunds(g.id, 10)} className="flex-1 h-9 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: color }}>{t("child.goals.save10")}</button>
+                      <button disabled={busyId === g.id} onClick={() => addFunds(g.id, 25)} className="flex-1 h-9 rounded-xl text-sm font-bold disabled:opacity-50" style={{ background: `${color}18`, color }}>{t("child.goals.save25")}</button>
                     </div>
                   )}
                 </GlassCard>
@@ -140,16 +142,16 @@ export default function Goals() {
         <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center p-4" onClick={() => setShowAdd(false)}>
           <div className="glass rounded-3xl p-5 w-full max-w-md animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold font-heading">New Savings Goal</h3>
+              <h3 className="text-lg font-extrabold font-heading">{t("child.goals.newGoal")}</h3>
               <button onClick={() => setShowAdd(false)} className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">✕</button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">Goal Name</label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. New Bicycle" className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                <label className="text-xs font-semibold text-muted-foreground">{t("child.goals.goalName")}</label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t("child.goals.goalNamePlaceholder")} className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">Target (EGP)</label>
+                <label className="text-xs font-semibold text-muted-foreground">{t("child.goals.target")}</label>
                 <input type="number" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold" />
               </div>
               <div className="flex gap-2 text-2xl">
@@ -158,7 +160,7 @@ export default function Goals() {
                 ))}
               </div>
               <button onClick={addGoal} className="w-full h-12 rounded-2xl text-white font-bold grad-navy active:scale-95 transition-all flex items-center justify-center gap-2">
-                <Plus className="w-5 h-5" /> Create Goal
+                <Plus className="w-5 h-5" /> {t("child.goals.createGoal")}
               </button>
             </div>
           </div>

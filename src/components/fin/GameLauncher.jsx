@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import GameOverlay from "@/components/fin/GameOverlay";
 import RewardScreen from "@/components/fin/RewardScreen";
 import BudgetBuilder from "@/components/fin/games/BudgetBuilder";
@@ -22,6 +23,7 @@ const registry = {
 export default function GameLauncher({ game, onClose }) {
   const [reward, setReward] = useState(null);
   const [error, setError] = useState(null);
+  const { t } = useTranslation();
   const { refreshUser } = useAuth();
   const G = registry[game.id] || SmartShopper;
 
@@ -44,7 +46,7 @@ export default function GameLauncher({ game, onClose }) {
       // يعمل logout/login تاني، حتى لو الشاشة قدامه بتوري رقم XP جديد صح.
       refreshUser().catch(() => {}); // ميوقفش شاشة المكافأة لو الريفريش فشل لأي سبب
     } catch (err) {
-      setError(err.message || "تعذر تسجيل نتيجة اللعبة");
+      setError(err.message || t("games.gameLauncher.genericError"));
       // برضو نوري شاشة إنهاء (من غير مكافأة) عشان الطفل ميفضلش واقف
       setReward({ score, total, coins: 0, xp: 0, alreadyToday: false, leveledUp: false, newBadges: [], perfectDayCoins: 0, perfectDayXp: 0 });
     }
@@ -54,16 +56,19 @@ export default function GameLauncher({ game, onClose }) {
   const complete = () => { setReward(null); onClose(true); };
 
   const noteLines = [];
-  if (reward?.alreadyToday) noteLines.push("You already earned coins for this game today — nice practice run though! 💪");
-  if (reward?.perfectDayCoins > 0) noteLines.push(`🌟 Perfect Day bonus: +${reward.perfectDayCoins} coins, +${reward.perfectDayXp} XP — you played every game today!`);
-  if (reward?.newBadges?.length) noteLines.push(`New badge${reward.newBadges.length > 1 ? "s" : ""}: ${reward.newBadges.map((b) => `${b.icon} ${b.name}`).join(", ")}`);
+  if (reward?.alreadyToday) noteLines.push(t("games.gameLauncher.alreadyToday"));
+  if (reward?.perfectDayCoins > 0) noteLines.push(t("games.gameLauncher.perfectDayBonus", { coins: reward.perfectDayCoins, xp: reward.perfectDayXp }));
+  if (reward?.newBadges?.length) {
+    const names = reward.newBadges.map((b) => `${b.icon} ${b.name}`).join(", ");
+    noteLines.push(t(reward.newBadges.length > 1 ? "games.gameLauncher.newBadges" : "games.gameLauncher.newBadge", { names }));
+  }
   if (!reward?.alreadyToday && error) noteLines.push(error);
 
   return (
     <GameOverlay title={game.title} icon={game.icon} onClose={abort}>
       {reward ? (
         <RewardScreen
-          title={reward.newBadges?.length ? "New Badge Unlocked! 🏅" : reward.leveledUp ? "Level Up! 🎉" : "Mission Complete!"}
+          title={reward.newBadges?.length ? t("games.gameLauncher.badgeUnlocked") : reward.leveledUp ? t("games.gameLauncher.levelUp") : t("games.gameLauncher.missionComplete")}
           score={reward.score}
           total={reward.total}
           coins={reward.coins + (reward.perfectDayCoins || 0)}

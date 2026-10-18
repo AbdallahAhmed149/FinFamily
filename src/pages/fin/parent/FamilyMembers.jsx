@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, UserPlus, Wallet, CreditCard, Sliders, Check, Copy, CopyCheck } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle, Pill, ProgressRing } from "@/components/fin/ui";
 import { fmtEGP } from "@/lib/finData";
@@ -10,6 +11,7 @@ const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
 export default function FamilyMembers() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { getFamilyCode, getFamilyChildren, createChild } = useAuth();
 
   const [familyCode, setFamilyCode] = useState(null);
@@ -53,11 +55,11 @@ export default function FamilyMembers() {
       );
       setMembers(childrenRes.children.map((c, i) => decorate(c, i, wallets[i])));
     } catch (err) {
-      setLoadError(err.message || "تعذر تحميل بيانات العيلة");
+      setLoadError(err.message || t("parent.familyMembers.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [getFamilyCode, getFamilyChildren]);
+  }, [getFamilyCode, getFamilyChildren, t]);
 
   useEffect(() => {
     loadFamily();
@@ -77,11 +79,11 @@ export default function FamilyMembers() {
   const handleAddChild = async () => {
     setAddError(null);
     if (!form.name.trim()) {
-      setAddError("اكتب اسم الطفل");
+      setAddError(t("parent.familyMembers.nameRequired"));
       return;
     }
     if (!/^\d{6}$/.test(form.pin)) {
-      setAddError("الـ PIN لازم يكون 6 أرقام بالظبط");
+      setAddError(t("parent.familyMembers.pinInvalid"));
       return;
     }
     setSubmitting(true);
@@ -91,23 +93,22 @@ export default function FamilyMembers() {
       setShowAdd(false);
       await loadFamily(); // نجيب القايمة المحدّثة من السيرفر بدل ما نضيفه محلي بس
     } catch (err) {
-      setAddError(err.message || "حصل خطأ وإحنا بنضيف الطفل");
+      setAddError(err.message || t("parent.familyMembers.addFailed"));
     } finally {
       setSubmitting(false);
     }
   };
 
   const statusColor = { active: "#00B894", frozen: "#3b82f6", deactivated: "#94a3b8" };
-  const statusLabel = { active: "Active", frozen: "Frozen", deactivated: "Deactivated" };
 
   return (
     <div className="px-4 pt-12 pb-6">
       <FadeIn className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Family Members</h1>
-        <button onClick={() => setShowAdd(true)} className="ml-auto w-10 h-10 rounded-full grad-emerald text-white flex items-center justify-center shadow-glow-emerald active:scale-95 transition-all">
+        <h1 className="text-xl font-extrabold font-heading">{t("parent.familyMembers.title")}</h1>
+        <button onClick={() => setShowAdd(true)} className="ms-auto w-10 h-10 rounded-full grad-emerald text-white flex items-center justify-center shadow-glow-emerald active:scale-95 transition-all">
           <UserPlus className="w-5 h-5" />
         </button>
       </FadeIn>
@@ -115,9 +116,9 @@ export default function FamilyMembers() {
       {/* كود العيلة — ده اللي الطفل هيستخدمه في صفحة Child Login */}
       <FadeIn delay={20}>
         <div className="grad-navy rounded-3xl p-4 text-white shadow-premium">
-          <div className="text-xs text-white/70 mb-1">Family Code — Share with your kids</div>
+          <div className="text-xs text-white/70 mb-1">{t("parent.familyMembers.familyCodeLabel")}</div>
           <div className="flex items-center gap-3">
-            <div className="text-3xl font-extrabold tracking-[0.3em] font-heading flex-1">
+            <div className="text-3xl font-extrabold tracking-[0.3em] font-heading flex-1 force-ltr">
               {loading ? "······" : familyCode || "—"}
             </div>
             <button
@@ -142,18 +143,18 @@ export default function FamilyMembers() {
         <div className="grad-emerald/10 rounded-3xl p-4 flex items-center gap-3" style={{ background: "#00B89414" }}>
           <div className="text-2xl">👨‍👩‍👧‍👦</div>
           <div className="flex-1">
-            <div className="text-lg font-bold">{members.length} {members.length === 1 ? "Child" : "Children"}</div>
-            <div className="text-xs text-muted-foreground">Add a child, then share the code above so they can log in.</div>
+            <div className="text-lg font-bold">{t("parent.familyMembers.childrenCount", { count: members.length })}</div>
+            <div className="text-xs text-muted-foreground">{t("parent.familyMembers.addHint")}</div>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn delay={120} className="mt-4">
-        <SectionTitle>Manage Each Member</SectionTitle>
+        <SectionTitle>{t("parent.familyMembers.manageEach")}</SectionTitle>
 
         {!loading && members.length === 0 && !loadError && (
           <div className="text-center text-sm text-muted-foreground py-8">
-            مفيش أطفال متضافين لسه — دوس على <UserPlus className="w-3.5 h-3.5 inline" /> فوق عشان تضيف أول واحد.
+            {t("parent.familyMembers.empty")}
           </div>
         )}
 
@@ -164,8 +165,8 @@ export default function FamilyMembers() {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "#0F2D5214" }}>{m.avatar}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold flex items-center gap-2">{m.name} <Pill color={statusColor[m.cardStatus]} className="text-[10px] py-0">{statusLabel[m.cardStatus]}</Pill></div>
-                    <div className="text-xs text-muted-foreground">Level {m.level}</div>
+                    <div className="font-bold flex items-center gap-2">{m.name} <Pill color={statusColor[m.cardStatus]} className="text-[10px] py-0">{t(`parent.familyMembers.status.${m.cardStatus}`)}</Pill></div>
+                    <div className="text-xs text-muted-foreground">{t("parent.familyMembers.level", { level: m.level })}</div>
                   </div>
                   <ProgressRing value={m.financialScore} size={44} stroke={5} color={m.financialScore >= 75 ? "#00B894" : "#FFC857"}>
                     <span className="text-[11px] font-bold">{m.financialScore}</span>
@@ -175,27 +176,27 @@ export default function FamilyMembers() {
                 <div className="grid grid-cols-3 gap-2 mt-3 text-center">
                   <div className="rounded-xl bg-black/5 py-2">
                     <div className="text-sm font-bold">{fmtEGP(m.balance)}</div>
-                    <div className="text-[10px] text-muted-foreground">Wallet</div>
+                    <div className="text-[10px] text-muted-foreground">{t("parent.familyMembers.wallet")}</div>
                   </div>
                   <div className="rounded-xl bg-black/5 py-2">
                     <div className="text-sm font-bold">{fmtEGP(m.savings)}</div>
-                    <div className="text-[10px] text-muted-foreground">Savings</div>
+                    <div className="text-[10px] text-muted-foreground">{t("parent.familyMembers.savings")}</div>
                   </div>
                   <div className="rounded-xl bg-black/5 py-2">
                     <div className="text-sm font-bold">{m.streak}🔥</div>
-                    <div className="text-[10px] text-muted-foreground">Streak</div>
+                    <div className="text-[10px] text-muted-foreground">{t("parent.familyMembers.streak")}</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <button onClick={() => navigate("/parent/limits", { state: { member: m.id } })} className="h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1" style={{ background: "#3b82f618", color: "#3b82f6" }}>
-                    <Sliders className="w-3.5 h-3.5" /> Limits
+                    <Sliders className="w-3.5 h-3.5" /> {t("parent.familyMembers.limits")}
                   </button>
                   <button onClick={() => navigate("/parent/cards", { state: { member: m.id } })} className="h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1" style={{ background: "#0F2D5218", color: "#0F2D52" }}>
-                    <CreditCard className="w-3.5 h-3.5" /> Card
+                    <CreditCard className="w-3.5 h-3.5" /> {t("parent.familyMembers.card")}
                   </button>
                   <button onClick={() => navigate("/parent/chores", { state: { member: m.id } })} className="h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1" style={{ background: "#FFC85718", color: "#b8860b" }}>
-                    <Wallet className="w-3.5 h-3.5" /> Chores
+                    <Wallet className="w-3.5 h-3.5" /> {t("parent.familyMembers.chores")}
                   </button>
                 </div>
               </GlassCard>
@@ -209,27 +210,27 @@ export default function FamilyMembers() {
         <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center p-4" onClick={() => !submitting && setShowAdd(false)}>
           <div className="glass rounded-3xl p-5 w-full max-w-md animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold font-heading">Add a Child</h3>
+              <h3 className="text-lg font-extrabold font-heading">{t("parent.familyMembers.addChild")}</h3>
               <button onClick={() => setShowAdd(false)} className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">✕</button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">Full Name</label>
+                <label className="text-xs font-semibold text-muted-foreground">{t("parent.familyMembers.fullName")}</label>
                 <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Salma Hassan"
+                  placeholder={t("parent.familyMembers.fullNamePlaceholder")}
                   className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">PIN (6 digits) — the child uses this to log in</label>
+                <label className="text-xs font-semibold text-muted-foreground">{t("parent.familyMembers.pinLabel")}</label>
                 <input
                   value={form.pin}
                   onChange={(e) => setForm({ ...form, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
                   placeholder="123456"
                   inputMode="numeric"
-                  className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold tracking-[0.3em]"
+                  className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold tracking-[0.3em] force-ltr text-center"
                 />
               </div>
 
@@ -240,10 +241,10 @@ export default function FamilyMembers() {
                 disabled={submitting}
                 className="w-full h-12 rounded-2xl text-white font-bold grad-emerald shadow-glow-emerald active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                <Check className="w-5 h-5" /> {submitting ? "Creating..." : "Create Member Account"}
+                <Check className="w-5 h-5" /> {submitting ? t("parent.familyMembers.creating") : t("parent.familyMembers.createAccount")}
               </button>
               <p className="text-center text-[11px] text-muted-foreground">
-                Spending limits, cards, and balances will be set up once wallets are wired in — for now this creates their login.
+                {t("parent.familyMembers.createNote")}
               </p>
             </div>
           </div>

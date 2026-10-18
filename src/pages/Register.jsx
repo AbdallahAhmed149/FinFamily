@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import AuthLayout from "@/components/AuthLayout";
 export default function Register() {
   const navigate = useNavigate();
   const { registerParent } = useAuth();
+  const { t } = useTranslation();
 
   const [familyName, setFamilyName] = useState("");
   const [fullName, setFullName] = useState("");
@@ -23,7 +25,7 @@ export default function Register() {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.register.passwordMismatch"));
       return;
     }
     setLoading(true);
@@ -36,7 +38,7 @@ export default function Register() {
       });
       navigate("/parent");
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || t("auth.register.failed"));
     } finally {
       setLoading(false);
     }
@@ -45,13 +47,13 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      title={t("auth.register.title")}
+      subtitle={t("auth.register.subtitle")}
       footer={
         <>
-          Already have an account?{" "}
+          {t("auth.register.haveAccount")}{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">
-            Log in
+            {t("auth.register.logIn")}
           </Link>
         </>
       }
@@ -64,58 +66,58 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="familyName">Family Name</Label>
+          <Label htmlFor="familyName">{t("auth.register.familyName")}</Label>
           <div className="relative">
-            <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Home className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="familyName"
               type="text"
               autoComplete="off"
               autoFocus
-              placeholder="The Ahmed Family"
+              placeholder={t("auth.register.familyNamePlaceholder")}
               value={familyName}
               onChange={(e) => setFamilyName(e.target.value)}
-              className="pl-10 h-12"
+              className="ps-10 h-12"
               required
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="fullName">Your Name</Label>
+          <Label htmlFor="fullName">{t("auth.register.yourName")}</Label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <User className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="fullName"
               type="text"
               autoComplete="name"
-              placeholder="Abdallah Ahmed"
+              placeholder={t("auth.register.yourNamePlaceholder")}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="pl-10 h-12"
+              className="ps-10 h-12"
               required
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("auth.register.email")}</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder={t("auth.register.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
+              className="ps-10 h-12"
               required
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("auth.register.password")}</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="password"
               type="password"
@@ -123,16 +125,16 @@ export default function Register() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="ps-10 h-12"
               minLength={8}
               required
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">{t("auth.register.confirmPassword")}</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="confirm"
               type="password"
@@ -140,7 +142,7 @@ export default function Register() {
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
+              className="ps-10 h-12"
               minLength={8}
               required
             />
@@ -149,11 +151,11 @@ export default function Register() {
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t("auth.register.creating")}
             </>
           ) : (
-            "Create account"
+            t("auth.register.submit")
           )}
         </Button>
       </form>

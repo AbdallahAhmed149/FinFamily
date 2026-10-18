@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useContentTranslation } from "@/lib/useContentTranslation";
 import { ChevronLeft, Shield, Lock, Check, AlertTriangle } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle, Pill, ProgressBar } from "@/components/fin/ui";
 import { useAuth } from "@/lib/AuthContext";
@@ -40,6 +42,8 @@ function computeSpent(transactions) {
 
 export default function SpendingLimits() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const tc = useContentTranslation();
   const location = useLocation();
   const { getFamilyChildren } = useAuth();
 
@@ -83,7 +87,7 @@ export default function SpendingLimits() {
       });
       setMemberData(data);
     } catch (err) {
-      setLoadError(err.message || "تعذر تحميل بيانات العيلة");
+      setLoadError(err.message || t("parent.spendingLimits.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -126,7 +130,7 @@ export default function SpendingLimits() {
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
     } catch (err) {
-      setSaveError(err.message || "حصل خطأ وإحنا بنحفظ الحدود");
+      setSaveError(err.message || t("parent.spendingLimits.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -137,15 +141,15 @@ export default function SpendingLimits() {
       <div className="px-4 pt-12 pb-6">
         <FadeIn className="flex items-center gap-3 mb-5">
           <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
           </button>
-          <h1 className="text-xl font-extrabold font-heading">Spending Limits</h1>
+          <h1 className="text-xl font-extrabold font-heading">{t("parent.spendingLimits.title")}</h1>
         </FadeIn>
         {loadError ? (
           <div className="rounded-2xl bg-red-50 text-red-600 text-sm px-4 py-3">{loadError}</div>
         ) : (
           <div className="text-center text-sm text-muted-foreground py-8">
-            مفيش أطفال متضافين لسه — ضيف طفل الأول من صفحة Family Members.
+            {t("parent.spendingLimits.noChildren")}
           </div>
         )}
       </div>
@@ -153,18 +157,18 @@ export default function SpendingLimits() {
   }
 
   const periods = activeData ? [
-    { key: "daily", label: "Daily", icon: "☀️", spent: activeData.spent.daily, color: "#FFC857" },
-    { key: "weekly", label: "Weekly", icon: "📅", spent: activeData.spent.weekly, color: "#00B894" },
-    { key: "monthly", label: "Monthly", icon: "🗓️", spent: activeData.spent.monthly, color: "#0F2D52" },
+    { key: "daily", icon: "☀️", spent: activeData.spent.daily, color: "#FFC857" },
+    { key: "weekly", icon: "📅", spent: activeData.spent.weekly, color: "#00B894" },
+    { key: "monthly", icon: "🗓️", spent: activeData.spent.monthly, color: "#0F2D52" },
   ] : [];
 
   return (
     <div className="px-4 pt-12 pb-6">
       <FadeIn className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Spending Limits</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("parent.spendingLimits.title")}</h1>
       </FadeIn>
 
       {loadError && (
@@ -185,29 +189,30 @@ export default function SpendingLimits() {
       {/* limit sliders */}
       {activeData && (
         <FadeIn delay={80} className="mt-4">
-          <SectionTitle>Auto Spending Limits · {active?.full_name}</SectionTitle>
+          <SectionTitle>{t("parent.spendingLimits.autoLimitsFor", { name: active?.full_name })}</SectionTitle>
           <div className="space-y-3">
             {periods.map((p) => {
               const limit = activeData.limits[p.key];
               const over = limit > 0 && p.spent > limit;
+              const periodLabel = t(`parent.spendingLimits.periods.${p.key}`);
               return (
                 <GlassCard key={p.key}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{p.icon}</span>
-                      <span className="font-bold text-sm">{p.label} Limit</span>
+                      <span className="font-bold text-sm">{periodLabel} {t("parent.spendingLimits.limitSuffix")}</span>
                     </div>
-                    {over && <Pill color="#ef4444" className="text-[10px] py-0"><AlertTriangle className="w-3 h-3" /> Exceeded</Pill>}
+                    {over && <Pill color="#ef4444" className="text-[10px] py-0"><AlertTriangle className="w-3 h-3" /> {t("parent.spendingLimits.exceeded")}</Pill>}
                   </div>
                   <div className="flex items-center gap-3">
                     <input type="range" min="0" max={p.key === "monthly" ? 3000 : p.key === "weekly" ? 800 : 200} step="5" value={limit} onChange={(e) => setLimit(p.key, Number(e.target.value))} className="flex-1 accent-emerald-500" />
-                    <div className="text-right min-w-[90px]">
+                    <div className="text-end min-w-[90px]">
                       <div className="font-extrabold font-heading">{fmtEGP(limit)}</div>
-                      <div className="text-[10px] text-muted-foreground">spent {fmtEGP(p.spent)}</div>
+                      <div className="text-[10px] text-muted-foreground">{t("parent.spendingLimits.spent", { amount: fmtEGP(p.spent) })}</div>
                     </div>
                   </div>
                   <ProgressBar value={p.spent} max={limit || 1} color={over ? "#ef4444" : p.color} className="mt-2" />
-                  <div className="text-[11px] text-muted-foreground mt-1">Card auto-freezes if {p.label.toLowerCase()} limit is exceeded.</div>
+                  <div className="text-[11px] text-muted-foreground mt-1">{t("parent.spendingLimits.autoFreezeNote", { period: periodLabel.toLowerCase() })}</div>
                 </GlassCard>
               );
             })}
@@ -218,21 +223,21 @@ export default function SpendingLimits() {
       {/* category blocking */}
       {activeData && (
         <FadeIn delay={120} className="mt-5">
-          <SectionTitle>Blocked Categories</SectionTitle>
+          <SectionTitle>{t("parent.spendingLimits.blockedCategories")}</SectionTitle>
           <div className="glass rounded-2xl p-3 mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <Lock className="w-4 h-4 text-red-500" /> Block categories so {active?.full_name} can't spend on them at all.
+            <Lock className="w-4 h-4 text-red-500" /> {t("parent.spendingLimits.blockHint", { name: active?.full_name })}
           </div>
           <div className="grid grid-cols-2 gap-3">
             {blockableCategories.map((c) => {
               const blocked = activeData.blockedCategories.includes(c.name);
               return (
-                <button key={c.id} onClick={() => toggleBlock(c.name)} className={`rounded-2xl p-4 text-left transition-all active:scale-95 ${blocked ? "ring-2 ring-red-400" : "glass"}`} style={{ background: blocked ? "#ef44440d" : undefined }}>
+                <button key={c.id} onClick={() => toggleBlock(c.name)} className={`rounded-2xl p-4 text-start transition-all active:scale-95 ${blocked ? "ring-2 ring-red-400" : "glass"}`} style={{ background: blocked ? "#ef44440d" : undefined }}>
                   <div className="flex items-center justify-between">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: `${c.color}18` }}>{c.icon}</div>
                     {blocked ? <div className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center"><Lock className="w-3.5 h-3.5" /></div> : <div className="w-7 h-7 rounded-full bg-black/5 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-emerald-500" /></div>}
                   </div>
-                  <div className="font-bold text-sm mt-2">{c.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{blocked ? "Blocked" : "Allowed"}</div>
+                  <div className="font-bold text-sm mt-2">{tc(c.name)}</div>
+                  <div className="text-[10px] text-muted-foreground">{blocked ? t("parent.spendingLimits.blocked") : t("parent.spendingLimits.allowed")}</div>
                 </button>
               );
             })}
@@ -249,7 +254,7 @@ export default function SpendingLimits() {
       {activeData && (
         <FadeIn delay={160} className="mt-5">
           <button onClick={save} disabled={saving} className="w-full h-13 py-3.5 rounded-2xl text-white font-bold grad-navy shadow-premium active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-            {saved ? <><Check className="w-5 h-5" /> Limits Saved for {active?.full_name}</> : <><Shield className="w-5 h-5" /> {saving ? "Saving..." : "Save Limits & Blocks"}</>}
+            {saved ? <><Check className="w-5 h-5" /> {t("parent.spendingLimits.savedFor", { name: active?.full_name })}</> : <><Shield className="w-5 h-5" /> {saving ? t("parent.spendingLimits.saving") : t("parent.spendingLimits.save")}</>}
           </button>
         </FadeIn>
       )}

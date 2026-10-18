@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, Send, Sparkles, RotateCcw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { GlassCard, FadeIn, Pill } from "@/components/fin/ui";
@@ -10,48 +11,41 @@ import { getChildWallet, getCoachHistory, resetCoachHistory } from "@/lib/finApi
 
 const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
-const DEFAULT_SUGGESTIONS = [
-  "How is each child doing this week?",
-  "Any spending risks I should know about?",
-  "Suggest a better allowance plan",
-  "How do I protect the family from scams?",
-  "Who is the most disciplined saver?",
-];
-
 // نفس فكرة FinBuddy: بدل اقتراحات ثابتة، بنبنيها من بيانات العيلة الحقيقية اللي
 // جبناها للـ snapshot، فتطلع أسئلة قريبة من اللي محتاج انتباه الأب دلوقتي فعلاً.
-function buildParentSuggestions(children, wallets) {
+function buildParentSuggestions(t, children, wallets) {
   const dynamic = [];
 
   const riskyIndex = wallets.findIndex((w) => (w?.financial_score ?? 50) < 60);
   if (riskyIndex !== -1) {
-    dynamic.push(`Any spending risks with ${children[riskyIndex]?.full_name}?`);
+    dynamic.push(t("parent.coach.riskWith", { name: children[riskyIndex]?.full_name }));
   }
 
   const goalHit = children
     .map((c, i) => ({ c, goal: wallets[i]?.savings_goals?.[0] }))
     .find(({ goal }) => goal && goal.target > 0 && goal.current < goal.target && goal.current / goal.target >= 0.7);
   if (goalHit) {
-    dynamic.push(`How close is ${goalHit.c.full_name} to their "${goalHit.goal.name}" goal?`);
+    dynamic.push(t("parent.coach.goalProgress", { name: goalHit.c.full_name, goal: goalHit.goal.name }));
   }
 
   const lowBalanceIndex = wallets.findIndex((w) => (w?.balance ?? 0) < 20);
   if (lowBalanceIndex !== -1 && lowBalanceIndex !== riskyIndex) {
-    dynamic.push(`Should I send ${children[lowBalanceIndex]?.full_name} their allowance?`);
+    dynamic.push(t("parent.coach.sendAllowanceQ", { name: children[lowBalanceIndex]?.full_name }));
   }
 
-  for (const s of DEFAULT_SUGGESTIONS) {
+  const defaults = [
+    t("parent.coach.suggestions.howIsEachChild"),
+    t("parent.coach.suggestions.spendingRisks"),
+    t("parent.coach.suggestions.allowancePlan"),
+    t("parent.coach.suggestions.protectScams"),
+    t("parent.coach.suggestions.mostDisciplined"),
+  ];
+  for (const s of defaults) {
     if (dynamic.length >= 5) break;
     if (!dynamic.includes(s)) dynamic.push(s);
   }
   return dynamic.slice(0, 5);
 }
-
-const greeting = (name) => ({
-  role: "ai",
-  text: `Hello ${name || "there"} 👋 I'm Coach Nour, your family finance analyst. I monitor your children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.`,
-  icon: "🤖",
-});
 
 // bubbles are small, so Markdown gets a compact style: tight paragraph spacing,
 // and — importantly — numbered/bulleted steps actually break onto their own
@@ -66,10 +60,12 @@ function Bubble({ text }) {
 
 export default function ParentCoach() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { user, getFamilyChildren } = useAuth();
+  const greeting = () => ({ role: "ai", text: t("parent.coach.greeting", { name: user?.full_name || t("parent.coach.greetingFallbackName") }), icon: "🤖" });
   const [snapshot, setSnapshot] = useState([]);
-  const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
-  const [messages, setMessages] = useState([greeting(user?.full_name)]);
+  const [suggestions, setSuggestions] = useState(() => buildParentSuggestions(t, [], []));
+  const [messages, setMessages] = useState([greeting()]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
@@ -98,14 +94,14 @@ export default function ParentCoach() {
         const wallets = await Promise.all(children.map((c) => getChildWallet(c.id).catch(() => null)));
         if (!cancelled) {
           setSnapshot(children.map((c, i) => ({ id: c.id, name: c.full_name, avatar: AVATARS[i % AVATARS.length], score: wallets[i]?.financial_score ?? 50 })));
-          setSuggestions(buildParentSuggestions(children, wallets));
+          setSuggestions(buildParentSuggestions(t, children, wallets));
         }
       } catch {
         // فشل التحميل هنا مش critical — الصفحة بتفضل تشتغل من غير الـ snapshot
       }
     })();
     return () => { cancelled = true; };
-  }, [getFamilyChildren]);
+  }, [getFamilyChildren, t]);
 
   const send = async (text) => {
     const msg = text || input;
@@ -114,14 +110,14 @@ export default function ParentCoach() {
     setInput("");
     setLoading(true);
     try {
-      // التعديل هنا: استخدام دالة post اللي عملناها، وتوجيهها للـ Route بتاعنا
-      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "parent" });
+      // التعديل هنا: استخدام دالة post اللي عملناها، وتوجيهها للـ Route بتاعنا + إرسال اللغة الحالية
+      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "parent", lang: i18n.language });
 
       // التعديل هنا: الـ Backend بتاعنا بيرجع { reply: "..." } مباشرة
-      setMessages((m) => [...m, { role: "ai", text: res?.reply || "Let me check the family data and get back to you.", icon: "🤖" }]);
+      setMessages((m) => [...m, { role: "ai", text: res?.reply || t("parent.coach.thinkingFallback"), icon: "🤖" }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages((m) => [...m, { role: "ai", text: "I couldn't reach the AI service right now. Please try again in a moment.", icon: "🤖" }]);
+      setMessages((m) => [...m, { role: "ai", text: t("parent.coach.errorFallback"), icon: "🤖" }]);
     }
     setLoading(false);
   };
@@ -133,20 +129,20 @@ export default function ParentCoach() {
     } catch {
       // حتى لو فشل النداء، نفضّل نصفّر الشاشة عند الأقل بدل ما نسيبه واقف
     }
-    setMessages([greeting(user?.full_name)]);
+    setMessages([greeting()]);
   };
 
   return (
     <div className="px-4 pt-12 pb-6 flex flex-col" style={{ minHeight: "calc(100vh - 7rem)" }}>
       <FadeIn className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading flex-1">AI Family Coach</h1>
-        <Pill color="#00B894"><Sparkles className="w-3 h-3" /> Pro</Pill>
+        <h1 className="text-xl font-extrabold font-heading flex-1">{t("parent.coach.title")}</h1>
+        <Pill color="#00B894"><Sparkles className="w-3 h-3" /> {t("parent.coach.pro")}</Pill>
         <button
           onClick={startNewChat}
-          title="Start a new chat"
+          title={t("parent.coach.newChat")}
           className="w-9 h-9 rounded-full glass flex items-center justify-center shrink-0"
         >
           <RotateCcw className="w-4 h-4" />
@@ -159,7 +155,7 @@ export default function ParentCoach() {
           <div key={m.id} className="glass rounded-2xl p-2.5 text-center">
             <div className="text-lg">{m.avatar}</div>
             <div className="text-[10px] font-bold">{m.name}</div>
-            <div className="text-[10px] font-semibold" style={{ color: m.score >= 75 ? "#00B894" : "#FFC857" }}>{m.score} score</div>
+            <div className="text-[10px] font-semibold" style={{ color: m.score >= 75 ? "#00B894" : "#FFC857" }}>{m.score} {t("parent.coach.score")}</div>
           </div>
         ))}
       </FadeIn>
@@ -198,9 +194,9 @@ export default function ParentCoach() {
 
       {/* input */}
       <div className="glass rounded-2xl p-2 flex items-center gap-2 shadow-premium">
-        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Ask about your family's finances..." className="flex-1 bg-transparent outline-none px-3 text-sm font-medium" />
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("parent.coach.placeholder")} className="flex-1 bg-transparent outline-none px-3 text-sm font-medium" />
         <button onClick={() => send()} disabled={loading} className="w-10 h-10 rounded-xl grad-emerald text-white flex items-center justify-center active:scale-95 transition-all disabled:opacity-50">
-          <Send className="w-4 h-4" />
+          <Send className="w-4 h-4 rtl:-scale-x-100" />
         </button>
       </div>
     </div>

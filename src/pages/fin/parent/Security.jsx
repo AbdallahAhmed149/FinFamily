@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, ShieldCheck, ShieldOff, Loader2, KeyRound, Copy, Check, RefreshCw } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { useAuth } from "@/lib/AuthContext";
 
 export default function Security() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, refreshUser } = useAuth();
   const mfaRequired = user && user.mfa_enabled === false; // إجباري — لسه معملهاش، فمفيش رجوع لحد ما يخلص
 
@@ -59,7 +61,7 @@ export default function Security() {
       const res = await setupMfa();
       setSetupData(res);
     } catch (err) {
-      setError(err.message || "Couldn't start setup");
+      setError(err.message || t("parent.security.setupFailed"));
     } finally {
       setBusy(false);
     }
@@ -78,7 +80,7 @@ export default function Security() {
       setCodesStatus({ total: res.codes.length, remaining: res.codes.length });
       await refreshUser(); // يحدّث user.mfa_enabled في الـ context عشان الـ Route Guard يفتح الطريق
     } catch (err) {
-      setError(err.message || "Invalid code");
+      setError(err.message || t("parent.security.invalidCode"));
     } finally {
       setBusy(false);
     }
@@ -111,7 +113,7 @@ export default function Security() {
       setShowRegenerate(false);
       setRegenPassword("");
     } catch (err) {
-      setError(err.message || "Incorrect password");
+      setError(err.message || t("parent.security.incorrectPassword"));
     } finally {
       setBusy(false);
     }
@@ -128,7 +130,7 @@ export default function Security() {
       setPassword("");
       await refreshUser(); // من هنا الـ Route Guard هيرجعه لنفس الصفحة تلقائي (إجبارية) عشان يعيدها
     } catch (err) {
-      setError(err.message || "Incorrect password");
+      setError(err.message || t("parent.security.incorrectPassword"));
     } finally {
       setBusy(false);
     }
@@ -142,54 +144,50 @@ export default function Security() {
             onClick={() => navigate("/parent")}
             className="w-10 h-10 rounded-full glass flex items-center justify-center shadow-premium shrink-0"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
           </button>
         )}
-        <h1 className="text-lg font-extrabold font-heading">Security</h1>
+        <h1 className="text-lg font-extrabold font-heading">{t("parent.security.title")}</h1>
       </FadeIn>
 
       {mfaRequired && (
         <FadeIn delay={20} className="mb-4">
           <div className="rounded-2xl p-4 bg-amber-500/10 text-amber-700 text-sm font-medium">
-            To keep your family's account secure, two-factor authentication is required before you can
-            continue.
+            {t("parent.security.mfaRequiredNote")}
           </div>
         </FadeIn>
       )}
 
-      <SectionTitle>Two-factor authentication</SectionTitle>
+      <SectionTitle>{t("parent.security.twoFactor")}</SectionTitle>
       <FadeIn delay={40} className="mb-4">
         <GlassCard>
           {loadingStatus ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" /> Checking status...
+              <Loader2 className="w-4 h-4 animate-spin" /> {t("parent.security.checkingStatus")}
             </div>
           ) : freshCodes ? (
             // ---------------- أكواد الاسترجاع — بتتعرض مرة واحدة بس ----------------
             <div className="space-y-4">
               <div className="rounded-2xl p-3 bg-amber-500/10 text-amber-700 text-xs font-medium">
-                Save these 10 codes somewhere safe (password manager, printed paper). Each one works only
-                once, and you won't be able to see them again after leaving this screen. Use one instead of
-                your authenticator code if you ever lose access to your phone.
+                {t("parent.security.recoveryCodes.saveNote")}
               </div>
               <div className="grid grid-cols-2 gap-2 font-mono text-sm">
                 {freshCodes.map((c) => (
-                  <div key={c} className="rounded-lg bg-black/5 py-2 text-center font-semibold">{c}</div>
+                  <div key={c} className="rounded-lg bg-black/5 py-2 text-center font-semibold force-ltr">{c}</div>
                 ))}
               </div>
               <Button variant="outline" className="w-full h-11" onClick={copyCodes}>
-                {copied ? <><Check className="w-4 h-4 mr-2" /> Copied</> : <><Copy className="w-4 h-4 mr-2" /> Copy all codes</>}
+                {copied ? <><Check className="w-4 h-4 me-2" /> {t("parent.security.recoveryCodes.copied")}</> : <><Copy className="w-4 h-4 me-2" /> {t("parent.security.recoveryCodes.copyAll")}</>}
               </Button>
               <Button className="w-full h-11" onClick={finishViewingCodes}>
-                I've saved these codes
+                {t("parent.security.recoveryCodes.savedThem")}
               </Button>
             </div>
           ) : setupData ? (
             // ---------------- Enrollment: امسح الـ QR وأكد بالكود ----------------
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Scan this QR code with Google Authenticator or Microsoft Authenticator, then enter the 6-digit
-                code it shows to confirm.
+                {t("parent.security.enroll.scanNote")}
               </p>
               <div className="flex justify-center">
                 <img
@@ -199,12 +197,12 @@ export default function Security() {
                 />
               </div>
               <div className="text-xs text-muted-foreground text-center">
-                Can't scan it? Enter this code manually:{" "}
-                <span className="font-mono font-semibold">{setupData.secret}</span>
+                {t("parent.security.enroll.cantScan")}{" "}
+                <span className="font-mono font-semibold force-ltr">{setupData.secret}</span>
               </div>
               <form onSubmit={confirmEnable} className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="enable-code">6-digit code</Label>
+                  <Label htmlFor="enable-code">{t("parent.security.enroll.codeLabel")}</Label>
                   <Input
                     id="enable-code"
                     type="text"
@@ -214,12 +212,12 @@ export default function Security() {
                     placeholder="123456"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="h-12 text-center text-lg tracking-[0.4em] font-mono"
+                    className="h-12 text-center text-lg tracking-[0.4em] font-mono force-ltr"
                     required
                   />
                 </div>
                 <Button type="submit" className="w-full h-12" disabled={busy || code.length !== 6}>
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm & enable"}
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("parent.security.enroll.confirmEnable")}
                 </Button>
                 <button
                   type="button"
@@ -230,7 +228,7 @@ export default function Security() {
                   }}
                   className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Cancel
+                  {t("parent.security.enroll.cancel")}
                 </button>
               </form>
             </div>
@@ -242,21 +240,21 @@ export default function Security() {
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold">Two-factor authentication is on</div>
+                  <div className="font-bold">{t("parent.security.on.title")}</div>
                   <div className="text-xs text-muted-foreground">
-                    You'll need a code from your authenticator app every time you log in.
+                    {t("parent.security.on.desc")}
                   </div>
                 </div>
               </div>
 
               {!showDisable ? (
                 <Button variant="outline" className="w-full h-11" onClick={() => setShowDisable(true)}>
-                  Disable
+                  {t("parent.security.on.disable")}
                 </Button>
               ) : (
                 <form onSubmit={confirmDisable} className="space-y-3 mt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="disable-password">Confirm your password to disable</Label>
+                    <Label htmlFor="disable-password">{t("parent.security.on.confirmPasswordLabel")}</Label>
                     <Input
                       id="disable-password"
                       type="password"
@@ -268,7 +266,7 @@ export default function Security() {
                     />
                   </div>
                   <Button type="submit" variant="destructive" className="w-full h-11" disabled={busy}>
-                    {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Disable two-factor authentication"}
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("parent.security.on.disableAction")}
                   </Button>
                   <button
                     type="button"
@@ -279,7 +277,7 @@ export default function Security() {
                     }}
                     className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Never mind
+                    {t("parent.security.on.neverMind")}
                   </button>
                 </form>
               )}
@@ -292,16 +290,16 @@ export default function Security() {
                   <ShieldOff className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold">Two-factor authentication is off</div>
+                  <div className="font-bold">{t("parent.security.off.title")}</div>
                   <div className="text-xs text-muted-foreground">
-                    Add an extra layer of security using an authenticator app.
+                    {t("parent.security.off.desc")}
                   </div>
                 </div>
               </div>
               <Button className="w-full h-11" onClick={startSetup} disabled={busy}>
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                   <>
-                    <KeyRound className="w-4 h-4 mr-2" /> Set up two-factor authentication
+                    <KeyRound className="w-4 h-4 me-2" /> {t("parent.security.off.setup")}
                   </>
                 )}
               </Button>
@@ -316,27 +314,27 @@ export default function Security() {
 
       {enabled && !freshCodes && !setupData && (
         <FadeIn delay={80}>
-          <SectionTitle>Recovery codes</SectionTitle>
+          <SectionTitle>{t("parent.security.recoverySection.title")}</SectionTitle>
           <GlassCard>
             <p className="text-sm text-muted-foreground mb-3">
-              One-time codes you can use instead of your authenticator app if you ever lose access to it.
+              {t("parent.security.recoverySection.desc")}
             </p>
             {codesStatus && (
               <div className="text-sm font-semibold mb-3">
-                {codesStatus.remaining} of {codesStatus.total} unused
+                {t("parent.security.recoverySection.unusedCount", { remaining: codesStatus.remaining, total: codesStatus.total })}
               </div>
             )}
             {!showRegenerate ? (
               <Button variant="outline" className="w-full h-11" onClick={() => setShowRegenerate(true)}>
-                <RefreshCw className="w-4 h-4 mr-2" /> Generate new codes
+                <RefreshCw className="w-4 h-4 me-2" /> {t("parent.security.recoverySection.generateNew")}
               </Button>
             ) : (
               <form onSubmit={confirmRegenerate} className="space-y-3">
                 <div className="rounded-xl p-3 bg-amber-500/10 text-amber-700 text-xs">
-                  This replaces all your existing codes — old ones (even unused) will stop working.
+                  {t("parent.security.recoverySection.replaceWarning")}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="regen-password">Confirm your password</Label>
+                  <Label htmlFor="regen-password">{t("parent.security.recoverySection.confirmPasswordLabel")}</Label>
                   <Input
                     id="regen-password"
                     type="password"
@@ -348,14 +346,14 @@ export default function Security() {
                   />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={busy}>
-                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate new codes"}
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t("parent.security.recoverySection.generateNew")}
                 </Button>
                 <button
                   type="button"
                   onClick={() => { setShowRegenerate(false); setRegenPassword(""); setError(""); }}
                   className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Never mind
+                  {t("parent.security.recoverySection.neverMind")}
                 </button>
               </form>
             )}

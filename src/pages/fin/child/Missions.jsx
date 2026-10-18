@@ -1,20 +1,28 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, Check, Clock, Send, Award } from "lucide-react";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import MissionComplete from "@/components/fin/MissionComplete";
 import { fmtEGP } from "@/lib/finData";
 import { getMyMissions, submitMission } from "@/lib/finApi";
 
-const statusMeta = {
-  pending: { label: "To Do", color: "#3b82f6", icon: Clock },
-  submitted: { label: "Waiting for Parent", color: "#f97316", icon: Send },
-  approved: { label: "Approved & Paid", color: "#00B894", icon: Check },
-  rejected: { label: "Rejected", color: "#ef4444", icon: Award },
+const statusIcon = {
+  pending: Clock,
+  submitted: Send,
+  approved: Check,
+  rejected: Award,
+};
+const statusColor = {
+  pending: "#3b82f6",
+  submitted: "#f97316",
+  approved: "#00B894",
+  rejected: "#ef4444",
 };
 
 export default function Missions() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,11 +35,11 @@ export default function Missions() {
     try {
       setMissions(await getMyMissions());
     } catch (err) {
-      setError(err.message || "تعذر تحميل المهام");
+      setError(err.message || t("child.missions.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -41,10 +49,14 @@ export default function Missions() {
     setBusyId(m.id);
     try {
       await submitMission(m.id);
-      setDone({ xp: m.reward, badge: { name: "Goal Getter", icon: "🎯", desc: "Submitted a mission for review", color: "#FFC857" }, nextMission: "Wait for parent approval" });
+      setDone({
+        xp: m.reward,
+        badge: { name: t("child.missions.submittedBadge.name"), icon: "🎯", desc: t("child.missions.submittedBadge.desc"), color: "#FFC857" },
+        nextMission: t("child.missions.waitForApproval"),
+      });
       await load();
     } catch (err) {
-      setError(err.message || "حصل خطأ");
+      setError(err.message || t("child.missions.submitFailed"));
     } finally {
       setBusyId(null);
     }
@@ -54,11 +66,11 @@ export default function Missions() {
     <div className="px-4 pt-12">
       <FadeIn className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
         <div>
-          <h1 className="text-xl font-extrabold font-heading">My Missions</h1>
-          <div className="text-xs text-muted-foreground">Chores your parent assigned you · Earn coins with approval</div>
+          <h1 className="text-xl font-extrabold font-heading">{t("child.missions.title")}</h1>
+          <div className="text-xs text-muted-foreground">{t("child.missions.subtitle")}</div>
         </div>
       </FadeIn>
 
@@ -69,14 +81,15 @@ export default function Missions() {
       )}
 
       {loading ? (
-        <div className="text-center text-sm text-muted-foreground py-8">...بنحمّل</div>
+        <div className="text-center text-sm text-muted-foreground py-8">{t("child.missions.loading")}</div>
       ) : missions.length === 0 ? (
-        <div className="text-center text-sm text-muted-foreground py-8">مفيش مهام لسه — استنى أبوك يضيفلك واحدة 🙂</div>
+        <div className="text-center text-sm text-muted-foreground py-8">{t("child.missions.empty")}</div>
       ) : (
         <div className="space-y-3">
           {missions.map((m, idx) => {
-            const meta = statusMeta[m.status];
-            const Icon = meta.icon;
+            const Icon = statusIcon[m.status];
+            const label = t(`child.missions.status.${m.status}`);
+            const color = statusColor[m.status];
             return (
               <FadeIn key={m.id} delay={idx * 50}>
                 <GlassCard>
@@ -86,7 +99,7 @@ export default function Missions() {
                       <div className="font-bold text-sm">{m.title}</div>
                       <div className="text-xs text-muted-foreground">{m.category}</div>
                       <div className="flex items-center gap-2 mt-2">
-                        <Pill color={meta.color}><Icon className="w-3 h-3" /> {meta.label}</Pill>
+                        <Pill color={color}><Icon className="w-3 h-3" /> {label}</Pill>
                         <Pill color="#FFC857">+{fmtEGP(m.reward)}</Pill>
                       </div>
                       {m.review_note && (
@@ -100,17 +113,17 @@ export default function Missions() {
                       onClick={() => handleSubmit(m)}
                       className="w-full h-10 mt-3 rounded-xl text-white font-bold text-sm grad-navy flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      <Send className="w-4 h-4" /> Mark as Done
+                      <Send className="w-4 h-4" /> {t("child.missions.markDone")}
                     </button>
                   )}
                   {m.status === "submitted" && (
                     <div className="w-full h-10 mt-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2" style={{ background: "#f9731615", color: "#f97316" }}>
-                      <Clock className="w-4 h-4" /> Waiting for parent to approve
+                      <Clock className="w-4 h-4" /> {t("child.missions.waitingApproval")}
                     </div>
                   )}
                   {m.status === "approved" && (
                     <div className="w-full h-10 mt-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2" style={{ background: "#00B89415", color: "#00B894" }}>
-                      <Check className="w-4 h-4" /> Approved · +{fmtEGP(m.reward)}!
+                      <Check className="w-4 h-4" /> {t("child.missions.approvedLine", { amount: fmtEGP(m.reward) })}
                     </div>
                   )}
                 </GlassCard>

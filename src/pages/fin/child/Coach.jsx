@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, Send, Sparkles, RotateCcw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import Lotfy from "@/components/fin/Lotfy";
@@ -8,45 +9,39 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { getCoachHistory, resetCoachHistory, getMyWallet, getMyMissions } from "@/lib/finApi";
 
-const defaultSuggestions = [
-  "I want a football ⚽",
-  "How do I save money?",
-  "What's a budget?",
-  "Is this message a scam?",
-];
-
 // بدل ما الاقتراحات تكون نفسها لكل طفل دايمًا، بنبنيها من بيانات الطفل الحقيقية
 // (نفس الداتا اللي بتتحقن في الـ AI context بالظبط)، فتكون أقرب لحالته دلوقتي.
-function buildSuggestions(wallet, missions) {
+function buildSuggestions(t, wallet, missions) {
   const dynamic = [];
 
   const goal = wallet?.savings_goals?.[0];
   if (goal) {
     const remaining = Math.max(0, (goal.target ?? 0) - (goal.current ?? 0));
-    dynamic.push(remaining > 0 ? `How much more do I need for ${goal.name}?` : `I finished my ${goal.name} goal! 🎉`);
+    dynamic.push(remaining > 0 ? t("child.coach.goalRemaining", { goal: goal.name }) : t("child.coach.goalDone", { goal: goal.name }));
   }
 
   if ((missions || []).some((m) => m.status === "submitted")) {
-    dynamic.push("When will my chore get approved?");
+    dynamic.push(t("child.coach.choreApproval"));
   }
   if ((missions || []).some((m) => m.status === "pending")) {
-    dynamic.push("What chores can I do today?");
+    dynamic.push(t("child.coach.choresToday"));
   }
 
   // الاقتراح ده تعليمي وثابت دايمًا، مش شرط يتحط بس لو مفيش بديل شخصي أحسن
-  dynamic.push("Is this message a scam?");
+  dynamic.push(t("child.coach.suggestions.scamCheck"));
 
-  for (const s of defaultSuggestions) {
+  const defaults = [
+    t("child.coach.suggestions.football"),
+    t("child.coach.suggestions.howSave"),
+    t("child.coach.suggestions.whatBudget"),
+    t("child.coach.suggestions.scamCheck"),
+  ];
+  for (const s of defaults) {
     if (dynamic.length >= 4) break;
     if (!dynamic.includes(s)) dynamic.push(s);
   }
   return dynamic.slice(0, 4);
 }
-
-const greeting = (name) => ({
-  role: "assistant",
-  text: `Hi ${name || "there"}! 👋 I'm FinBuddy 🤖, your AI money buddy. I'll help you learn money skills by thinking together. Tell me a goal or ask me anything! 💚`,
-});
 
 // bubbles are small, so Markdown gets a compact style: tight paragraph spacing,
 // lists that actually show line breaks between items (the whole reason we're
@@ -61,12 +56,14 @@ function Bubble({ text }) {
 
 export default function Coach() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const [messages, setMessages] = useState([greeting(user?.full_name)]);
+  const greeting = () => ({ role: "assistant", text: t("child.coach.greeting", { name: user?.full_name || t("child.coach.greetingFallbackName") }) });
+  const [messages, setMessages] = useState([greeting()]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const [suggestions, setSuggestions] = useState(defaultSuggestions);
+  const [suggestions, setSuggestions] = useState(() => buildSuggestions(t));
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
@@ -78,11 +75,11 @@ export default function Coach() {
     Promise.all([getMyWallet().catch(() => null), getMyMissions().catch(() => null)])
       .then(([wallet, missions]) => {
         if (!cancelled && (wallet || missions)) {
-          setSuggestions(buildSuggestions(wallet, missions));
+          setSuggestions(buildSuggestions(t, wallet, missions));
         }
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
   // نجيب المحادثة المحفوظة أول ما نفتح الصفحة، بدل ما نرجع دايمًا للترحيب بس
   useEffect(() => {
@@ -106,12 +103,13 @@ export default function Coach() {
     setInput("");
     setLoading(true);
     try {
-      // نبعت الـ request للـ Endpoint بتاعنا ونحدد mode: "child"
-      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "child" });
-      setMessages((m) => [...m, { role: "assistant", text: res?.reply || "Hmm, let me think about that!" }]);
+      // نبعت الـ request للـ Endpoint بتاعنا ونحدد mode: "child"، وكمان اللغة الحالية
+      // عشان لو الباك اند اتظبط يرد بيها (مطلوب تعديل منفصل في aiCoach نفسه).
+      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "child", lang: i18n.language });
+      setMessages((m) => [...m, { role: "assistant", text: res?.reply || t("child.coach.thinkingFallback") }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages((m) => [...m, { role: "assistant", text: "Oops, my brain is offline for a second. Try again!" }]);
+      setMessages((m) => [...m, { role: "assistant", text: t("child.coach.errorFallback") }]);
     }
     setLoading(false);
   };
@@ -123,25 +121,25 @@ export default function Coach() {
     } catch {
       // حتى لو فشل النداء، نفضّل نصفّر الشاشة عند الأقل بدل ما نسيبه واقف
     }
-    setMessages([greeting(user?.full_name)]);
+    setMessages([greeting()]);
   };
 
   return (
     <div className="px-4 pt-12 flex flex-col" style={{ minHeight: "calc(100vh - 7rem)" }}>
       <FadeIn className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
         <div className="w-10 h-10 rounded-full grad-emerald flex items-center justify-center">
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1">
           <h1 className="text-lg font-extrabold font-heading leading-tight">FinBuddy 🤖</h1>
-          <div className="text-xs text-emerald-600 font-semibold">● Online · AI Money Buddy</div>
+          <div className="text-xs text-emerald-600 font-semibold">{t("child.coach.online")}</div>
         </div>
         <button
           onClick={startNewChat}
-          title="Start a new chat"
+          title={t("child.coach.newChat")}
           className="w-9 h-9 rounded-full glass flex items-center justify-center shrink-0"
         >
           <RotateCcw className="w-4 h-4" />
@@ -188,11 +186,11 @@ export default function Coach() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Ask FinBuddy anything..."
+          placeholder={t("child.coach.placeholder")}
           className="flex-1 bg-transparent px-3 py-2 text-sm outline-none"
         />
         <button onClick={() => send()} disabled={loading || !input.trim()} className="w-10 h-10 rounded-xl grad-emerald flex items-center justify-center disabled:opacity-40">
-          <Send className="w-4 h-4 text-white" />
+          <Send className="w-4 h-4 text-white rtl:-scale-x-100" />
         </button>
       </div>
     </div>

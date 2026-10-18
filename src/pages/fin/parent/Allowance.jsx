@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useContentTranslation } from "@/lib/useContentTranslation";
 import { ChevronLeft, Send, Check } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { useAuth } from "@/lib/AuthContext";
@@ -10,6 +12,8 @@ const AVATARS = ["🦁", "🦊", "🐻", "🐱", "🐯", "🐰"];
 
 export default function Allowance() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const tc = useContentTranslation();
   const location = useLocation();
   const { getFamilyChildren } = useAuth();
 
@@ -40,7 +44,7 @@ export default function Allowance() {
       kids.forEach((k, i) => { balanceMap[k.id] = wallets[i]?.balance ?? 0; });
       setBalances(balanceMap);
     } catch (err) {
-      setLoadError(err.message || "تعذر تحميل بيانات العيلة");
+      setLoadError(err.message || t("parent.allowance.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -64,7 +68,7 @@ export default function Allowance() {
       setSent(true);
       setTimeout(() => { setSent(false); setSelected(null); setAmount(0); }, 2200);
     } catch (err) {
-      setSendError(err.message || "حصل خطأ وإحنا بنبعت المصروف");
+      setSendError(err.message || t("parent.allowance.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -74,9 +78,9 @@ export default function Allowance() {
     <div className="px-4 pt-12">
       <FadeIn className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate("/parent")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Allowance</h1>
+        <h1 className="text-xl font-extrabold font-heading">{t("parent.allowance.title")}</h1>
       </FadeIn>
 
       {loadError && (
@@ -87,7 +91,7 @@ export default function Allowance() {
 
       {!loading && children.length === 0 && !loadError && (
         <div className="text-center text-sm text-muted-foreground py-8">
-          مفيش أطفال متضافين لسه — ضيف طفل الأول من صفحة Family Members.
+          {t("parent.allowance.noChildren")}
         </div>
       )}
 
@@ -108,45 +112,45 @@ export default function Allowance() {
 
       <FadeIn delay={60}>
         <div className="grad-navy rounded-3xl p-5 text-white shadow-premium flex items-center gap-4 relative overflow-hidden">
-          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
+          <div className="absolute -end-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
           <div className="w-16 h-16 rounded-full bg-white/15 flex items-center justify-center text-3xl shrink-0">
             {activeChild ? AVATARS[children.findIndex((c) => c.id === activeId) % AVATARS.length] : "👤"}
           </div>
           <div>
-            <div className="text-sm text-white/70">Send to</div>
+            <div className="text-sm text-white/70">{t("parent.allowance.sendTo")}</div>
             <div className="text-lg font-bold">{loading ? "..." : activeChild?.full_name || "—"}</div>
-            <div className="text-xs text-white/60">Balance: {loading ? "…" : fmtEGP(activeBalance)}</div>
+            <div className="text-xs text-white/60">{t("parent.allowance.balance", { amount: loading ? "…" : fmtEGP(activeBalance) })}</div>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn delay={120}>
-        <SectionTitle>Allowance Type</SectionTitle>
+        <SectionTitle>{t("parent.allowance.allowanceType")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3">
           {allowanceTypes.map((a) => (
             <button
               key={a.id}
               onClick={() => { setSelected(a); setAmount(a.amount); }}
-              className="glass rounded-2xl p-4 text-left shadow-premium transition-all active:scale-95"
+              className="glass rounded-2xl p-4 text-start shadow-premium transition-all active:scale-95"
               style={{ boxShadow: selected?.id === a.id ? `0 0 0 2px ${a.color}` : undefined }}
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: `${a.color}18`, color: a.color }}>
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4 rtl:-scale-x-100" />
               </div>
-              <div className="font-bold text-sm">{a.label}</div>
+              <div className="font-bold text-sm">{tc(a.label)}</div>
               {a.amount > 0 && <div className="text-xs text-muted-foreground">{fmtEGP(a.amount)}</div>}
             </button>
           ))}
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          مصروف يدوي فوري دلوقتي — الجدولة الدورية (يومي/أسبوعي تلقائي) لسه مش متاحة.
+          {t("parent.allowance.scheduleNote")}
         </p>
       </FadeIn>
 
       {selected && (
         <FadeIn className="mt-4">
           <GlassCard>
-            <div className="text-sm text-muted-foreground mb-2">Amount (EGP)</div>
+            <div className="text-sm text-muted-foreground mb-2">{t("parent.allowance.amount")}</div>
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -179,9 +183,9 @@ export default function Allowance() {
             className="w-full h-14 rounded-2xl text-white font-bold font-heading shadow-premium active:scale-[0.98] transition-all grad-emerald flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {sent ? (
-              <><Check className="w-5 h-5" /> Sent to {activeChild?.full_name}! 🎉</>
+              <><Check className="w-5 h-5" /> {t("parent.allowance.sentTo", { name: activeChild?.full_name })}</>
             ) : (
-              <><Send className="w-5 h-5" /> {sending ? "Sending..." : `Send ${amount > 0 ? fmtEGP(amount) : ""} to ${activeChild?.full_name || ""}`}</>
+              <><Send className="w-5 h-5 rtl:-scale-x-100" /> {sending ? t("parent.allowance.sending") : t("parent.allowance.sendAmountTo", { amount: amount > 0 ? fmtEGP(amount) : "", name: activeChild?.full_name || "" })}</>
             )}
           </button>
         </FadeIn>
@@ -194,7 +198,7 @@ export default function Allowance() {
               <span key={i} className="absolute text-2xl animate-float" style={{ left: `${30+i*5}%`, top: "20%", ["--tx"]: `${(i%2?1:-1)*30}px`, animationDelay: `${i*0.08}s` }}>🪙</span>
             ))}
           </div>
-          <div className="text-sm text-muted-foreground">Coins flying toward {activeChild?.full_name}... Balance updated!</div>
+          <div className="text-sm text-muted-foreground">{t("parent.allowance.flyingCoins", { name: activeChild?.full_name })}</div>
         </FadeIn>
       )}
       <div className="h-4" />

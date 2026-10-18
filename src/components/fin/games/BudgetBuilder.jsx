@@ -1,8 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useContentTranslation } from "@/lib/useContentTranslation";
 import { Check, AlertTriangle } from "lucide-react";
 import { budgetItems, BUDGET_LIMIT, fmtEGP } from "@/lib/finData";
 
 export default function BudgetBuilder({ onFinish }) {
+  const { t } = useTranslation();
+  const tc = useContentTranslation();
   const [cart, setCart] = useState([]);
   const [result, setResult] = useState(null);
 
@@ -28,20 +32,20 @@ export default function BudgetBuilder({ onFinish }) {
     <div className="px-4 pt-8 pb-8 max-w-md mx-auto">
       <div className="text-center mb-5">
         <div className="text-5xl mb-2">🛒</div>
-        <h2 className="text-xl font-extrabold font-heading">Shopping on a Budget</h2>
-        <p className="text-sm text-muted-foreground">Buy all needs (✔) and stay within {fmtEGP(BUDGET_LIMIT)}. Spend smart!</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("games.budgetBuilder.title")}</h2>
+        <p className="text-sm text-muted-foreground">{t("games.budgetBuilder.intro", { limit: fmtEGP(BUDGET_LIMIT) })}</p>
       </div>
 
       {/* budget bar */}
       <div className={"glass rounded-2xl p-4 shadow-premium mb-4 " + (over ? "ring-2 ring-red-400" : "")}>
         <div className="flex justify-between text-sm font-bold mb-2">
-          <span>Budget</span>
+          <span>{t("games.budgetBuilder.budget")}</span>
           <span className={over ? "text-red-500" : "text-emerald-600"}>{fmtEGP(total)} / {fmtEGP(BUDGET_LIMIT)}</span>
         </div>
         <div className="h-3 rounded-full bg-black/5 overflow-hidden">
           <div className={"h-full rounded-full transition-all " + (over ? "bg-red-500" : "grad-emerald")} style={{ width: `${Math.min(100, (total / BUDGET_LIMIT) * 100)}%` }} />
         </div>
-        <div className="text-xs text-muted-foreground mt-1.5">{over ? "Over budget! Remove an item." : `Remaining: ${fmtEGP(Math.max(0, remaining))}`}</div>
+        <div className="text-xs text-muted-foreground mt-1.5">{over ? t("games.budgetBuilder.overBudget") : t("games.budgetBuilder.remaining", { amount: fmtEGP(Math.max(0, remaining)) })}</div>
       </div>
 
       {/* items */}
@@ -56,7 +60,7 @@ export default function BudgetBuilder({ onFinish }) {
             >
               <div className="text-3xl mb-1">{b.emoji}</div>
               <div className="font-semibold text-sm flex items-center justify-center gap-1">
-                {b.need && <Check className="w-3 h-3 text-emerald-600" />} {b.name}
+                {b.need && <Check className="w-3 h-3 text-emerald-600" />} {tc(b.name)}
               </div>
               <div className="text-xs text-muted-foreground">{fmtEGP(b.price)}</div>
             </button>
@@ -67,7 +71,7 @@ export default function BudgetBuilder({ onFinish }) {
       {result && (
         <div className="mt-4 rounded-2xl p-4 text-center animate-pop" style={{ background: result === "win" ? "#00B89415" : "#ef444415" }}>
           <div className="text-3xl mb-1">{result === "win" ? "🏆" : <AlertTriangle className="w-8 h-8 text-red-500 mx-auto" />}</div>
-          <div className="font-bold">{result === "win" ? "Smart shopper! All needs bought within budget." : allNeeds ? "You went over budget." : "Don't forget all the needs!"}</div>
+          <div className="font-bold">{result === "win" ? t("games.budgetBuilder.winTitle") : allNeeds ? t("games.budgetBuilder.overBudgetResult") : t("games.budgetBuilder.missingNeeds")}</div>
         </div>
       )}
 
@@ -76,7 +80,7 @@ export default function BudgetBuilder({ onFinish }) {
         disabled={result !== null || cart.length === 0}
         className="w-full h-13 py-3.5 mt-4 rounded-2xl text-white font-bold font-heading grad-navy shadow-premium active:scale-[0.98] transition-all disabled:opacity-50"
       >
-        Check My Budget
+        {t("games.budgetBuilder.checkBudget")}
       </button>
     </div>
   );

@@ -39,6 +39,19 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
+  /* لما اللغة عربي، استخدم خط Cairo اللي مصمم للعربي بدل Plus Jakarta Sans */
+  html[lang="ar"] {
+    --font-heading: 'Cairo', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Cairo', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Cairo', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* عناصر لازم تفضل بنفس الاتجاه دايمًا (أرقام، أكواد OTP، اتجاه أيقونات مؤشرة) حتى في RTL */
+  html[dir="rtl"] .force-ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
   .dark {
     --background: 222 47% 9%;
     --foreground: 210 40% 98%;
@@ -207,3 +220,17 @@
 
 .animate-logo-float { animation: logo-float 3.2s ease-in-out infinite; }
 .animate-logo-glow { animation: logo-glow-pulse 3.2s ease-in-out infinite; }
+/* انتقال ناعم (cross-fade) عند تبديل اللغة عربي/إنجليزي — بيشتغل مع View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

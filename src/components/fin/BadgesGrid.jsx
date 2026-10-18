@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { FadeIn } from "@/components/fin/ui";
 
@@ -35,12 +36,13 @@ function Hex({ badge, onClick }) {
 
 export default function BadgesGrid({ badges }) {
   const [selected, setSelected] = useState(null);
+  const { t, i18n } = useTranslation();
   const unlockedCount = badges.filter((b) => b.unlocked).length;
 
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-3">
-        You've earned {unlockedCount} of {badges.length} badges — tap any badge to see how to unlock it.
+        {t("games.badgesGrid.earnedCount", { unlocked: unlockedCount, total: badges.length })}
       </p>
       <div className="flex flex-wrap gap-x-3 gap-y-4">
         {badges.map((b) => (
@@ -64,15 +66,15 @@ export default function BadgesGrid({ badges }) {
 
             {selected.unlocked ? (
               <div className="mt-2 flex items-center justify-center gap-1.5 text-sm font-semibold text-emerald-600">
-                <Check className="w-4 h-4" /> Unlocked
+                <Check className="w-4 h-4" /> {t("games.badgesGrid.unlocked")}
                 {selected.unlocked_date && (
                   <span className="text-muted-foreground font-normal">
-                    · {new Date(selected.unlocked_date).toLocaleDateString("en-EG", { dateStyle: "medium" })}
+                    · {new Date(selected.unlocked_date).toLocaleDateString(i18n.language === "ar" ? "ar-EG" : "en-EG", { dateStyle: "medium" })}
                   </span>
                 )}
               </div>
             ) : (
-              <div className="mt-1 text-xs font-bold text-amber-600">🔒 Locked</div>
+              <div className="mt-1 text-xs font-bold text-amber-600">🔒 {t("games.badgesGrid.locked")}</div>
             )}
 
             <p className="text-sm text-muted-foreground mt-3">{selected.desc}</p>
@@ -81,7 +83,7 @@ export default function BadgesGrid({ badges }) {
               onClick={() => setSelected(null)}
               className="w-full h-11 mt-5 rounded-2xl font-bold text-white grad-navy active:scale-95 transition-all"
             >
-              Got it
+              {t("games.badgesGrid.gotIt")}
             </button>
           </div>
         </div>

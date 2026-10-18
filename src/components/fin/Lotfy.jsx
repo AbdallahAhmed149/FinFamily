@@ -15,7 +15,7 @@ export default function Lotfy({ size = 120, className, speech }) {
         />
       </div>
       {speech && (
-        <div className="absolute -top-2 -right-6 max-w-[180px] glass rounded-2xl px-3 py-2 text-xs font-medium shadow-premium animate-pop">
+        <div className="absolute -top-2 -end-6 max-w-[180px] glass rounded-2xl px-3 py-2 text-xs font-medium shadow-premium animate-pop">
           {speech}
         </div>
       )}

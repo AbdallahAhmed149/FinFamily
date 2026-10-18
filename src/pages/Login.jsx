@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import AuthLayout from "@/components/AuthLayout";
 export default function Login() {
   const navigate = useNavigate();
   const { loginParent } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -35,7 +37,7 @@ export default function Login() {
         navigate("/parent");
       }
     } catch (err) {
-      setError(err.message || (mfaStep ? "Invalid code" : "Invalid email or password"));
+      setError(err.message || (mfaStep ? t("auth.login.mfa.invalidCode") : t("auth.login.invalidCredentials")));
     } finally {
       setLoading(false);
     }
@@ -52,14 +54,14 @@ export default function Login() {
   return (
     <AuthLayout
       icon={mfaStep ? ShieldCheck : LogIn}
-      title={mfaStep ? "Two-factor authentication" : "Welcome back"}
-      subtitle={mfaStep ? "Enter the 6-digit code from your authenticator app" : "Log in to your account"}
+      title={mfaStep ? t("auth.login.mfa.title") : t("auth.login.welcomeBack")}
+      subtitle={mfaStep ? t("auth.login.mfa.subtitle") : t("auth.login.subtitle")}
       footer={
         mfaStep ? null : (
           <>
-            Don't have an account?{" "}
+            {t("auth.login.noAccount")}{" "}
             <Link to="/register" className="text-primary font-medium hover:underline">
-              Create one
+              {t("auth.login.createOne")}
             </Link>
           </>
         )
@@ -74,31 +76,31 @@ export default function Login() {
       {!mfaStep ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("auth.login.email")}</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
                 autoFocus
-                placeholder="you@example.com"
+                placeholder={t("auth.login.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 h-12"
+                className="ps-10 h-12"
                 required
               />
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.login.password")}</Label>
               <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                Forgot password?
+                {t("auth.login.forgotPassword")}
               </Link>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <Lock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <Input
                 id="password"
                 type="password"
@@ -106,7 +108,7 @@ export default function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 h-12"
+                className="ps-10 h-12"
                 required
               />
             </div>
@@ -114,11 +116,11 @@ export default function Login() {
           <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Logging in...
+                <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                {t("auth.login.loggingIn")}
               </>
             ) : (
-              "Log in"
+              t("auth.login.submit")
             )}
           </Button>
         </form>
@@ -126,7 +128,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!useRecovery ? (
             <div className="space-y-2">
-              <Label htmlFor="otp">Authentication code</Label>
+              <Label htmlFor="otp">{t("auth.login.mfa.codeLabel")}</Label>
               <Input
                 id="otp"
                 type="text"
@@ -137,13 +139,13 @@ export default function Login() {
                 placeholder="123456"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="h-12 text-center text-lg tracking-[0.4em] font-mono"
+                className="h-12 text-center text-lg tracking-[0.4em] font-mono force-ltr"
                 required
               />
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="recovery">Recovery code</Label>
+              <Label htmlFor="recovery">{t("auth.login.mfa.recoveryLabel")}</Label>
               <Input
                 id="recovery"
                 type="text"
@@ -152,11 +154,11 @@ export default function Login() {
                 placeholder="XXXX-XXXX"
                 value={recoveryCode}
                 onChange={(e) => setRecoveryCode(e.target.value.toUpperCase().slice(0, 9))}
-                className="h-12 text-center text-lg tracking-widest font-mono"
+                className="h-12 text-center text-lg tracking-widest font-mono force-ltr"
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Use one of the one-time recovery codes you saved when you set up two-factor authentication.
+                {t("auth.login.mfa.recoveryHint")}
               </p>
             </div>
           )}
@@ -167,11 +169,11 @@ export default function Login() {
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Verifying...
+                <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                {t("auth.login.mfa.verifying")}
               </>
             ) : (
-              "Verify"
+              t("auth.login.mfa.verify")
             )}
           </Button>
           <button
@@ -179,15 +181,15 @@ export default function Login() {
             onClick={() => { setUseRecovery((v) => !v); setOtpCode(""); setRecoveryCode(""); setError(""); }}
             className="w-full text-sm text-primary hover:underline transition-colors"
           >
-            {useRecovery ? "Use authenticator code instead" : "Lost your authenticator? Use a recovery code"}
+            {useRecovery ? t("auth.login.mfa.useAuthenticator") : t("auth.login.mfa.useRecovery")}
           </button>
           <button
             type="button"
             onClick={backToPassword}
             className="w-full flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back
+            <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-180" />
+            {t("common.back")}
           </button>
         </form>
       )}

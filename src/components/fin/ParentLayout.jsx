@@ -1,22 +1,24 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LayoutDashboard, Wallet, Sparkles, Bell, Target, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/AuthContext";
 
 const nav = [
-  { to: "/parent", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/parent/allowance", label: "Allowance", icon: Wallet },
-  { to: "/parent/insights", label: "AI Insights", icon: Sparkles },
-  { to: "/parent/approvals", label: "Approvals", icon: Bell },
-  { to: "/parent/child-missions", label: "Missions", icon: Target },
-  { to: "/parent/profile", label: "Profile", icon: User },
+  { to: "/parent", key: "dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/parent/allowance", key: "allowance", icon: Wallet },
+  { to: "/parent/insights", key: "insights", icon: Sparkles },
+  { to: "/parent/approvals", key: "approvals", icon: Bell },
+  { to: "/parent/child-missions", key: "missions", icon: Target },
+  { to: "/parent/profile", key: "profile", icon: User },
 ];
 
 export default function ParentLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   // MFA إجبارية على كل أب: لو لسه معملهاش، مسموحله يشوف صفحة /parent/security
   // بس — أي محاولة يفتح صفحة تانية بترجّعه لها تلقائيًا لحد ما يفعّل.
@@ -57,7 +59,7 @@ export default function ParentLayout() {
                     <Icon className={cn("w-5 h-5", active ? "text-white" : "text-navy/50")} style={{ color: active ? "white" : "hsl(var(--muted-foreground))" }} />
                   </div>
                   <span className={cn("text-[10px] font-semibold", active ? "text-navy" : "text-muted-foreground")} style={{ color: active ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}>
-                    {item.label}
+                    {t(`nav.parent.${item.key}`)}
                   </span>
                 </button>
               );

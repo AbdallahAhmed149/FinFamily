@@ -9,7 +9,14 @@ load_dotenv()
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 # بناء الـ Engine اللي بيشغل الاتصال بـ PostgreSQL
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_size=int(os.getenv("DB_POOL_SIZE", "5")),
+    max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "5")),
+    pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "10")),
+    pool_recycle=1800,
+    pool_pre_ping=True,
+)
 
 # تجهيز الـ Session اللي هنستخدمها لإدارة العمليات مع كل Request
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

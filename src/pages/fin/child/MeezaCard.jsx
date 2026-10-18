@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useContentTranslation } from "@/lib/useContentTranslation";
 import { ChevronLeft, CreditCard, Check, Palette, Zap, Loader2 } from "lucide-react";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { cardThemes, blockableCategories, fmtEGP } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyCardPurchases, makeCardPurchase, updateMyCardTheme } from "@/lib/finApi";
 
-const statusMeta = {
-  completed: { label: null, color: "#0F2D52" },
-  pending: { label: "Pending", color: "#FFC857" },
-  rejected: { label: "Declined", color: "#ef4444" },
+const statusColor = {
+  completed: "#0F2D52",
+  pending: "#FFC857",
+  rejected: "#ef4444",
 };
 
 export default function MeezaCard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const tc = useContentTranslation();
   const { user } = useAuth();
   const [flipped, setFlipped] = useState(false);
   const [wallet, setWallet] = useState(null);
@@ -41,15 +45,16 @@ export default function MeezaCard() {
     load();
   }, []);
 
-  const theme = cardThemes.find((t) => t.id === wallet?.card_theme) || cardThemes[0];
+  const theme = cardThemes.find((th) => th.id === wallet?.card_theme) || cardThemes[0];
   const frozen = wallet?.card_status === "frozen";
   const deactivated = wallet?.card_status === "deactivated";
+  const statusKey = deactivated ? "deactivated" : frozen ? "frozen" : "active";
 
-  const pickTheme = async (t) => {
-    if (!wallet || wallet.card_theme === t.id) return;
-    setWallet({ ...wallet, card_theme: t.id }); // optimistic
+  const pickTheme = async (th) => {
+    if (!wallet || wallet.card_theme === th.id) return;
+    setWallet({ ...wallet, card_theme: th.id }); // optimistic
     try {
-      await updateMyCardTheme(t.id);
+      await updateMyCardTheme(th.id);
     } catch (err) {
       console.error("Failed to save theme:", err);
       load(); // ترجع الحقيقي لو فشل الحفظ
@@ -71,7 +76,7 @@ export default function MeezaCard() {
       setForm({ merchant: "", category: blockableCategories[0].name, amount: "", location: "" });
       await load(); // نجيب الرصيد وقائمة المدفوعات المحدّثة
     } catch (err) {
-      setResult({ status: "rejected", decline_reason: err.message || "Something went wrong" });
+      setResult({ status: "rejected", decline_reason: err.message || t("child.meezaCard.genericError") });
     } finally {
       setSubmitting(false);
     }
@@ -81,11 +86,11 @@ export default function MeezaCard() {
     <div className="px-4 pt-12">
       <FadeIn className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate("/child")} className="w-10 h-10 rounded-full glass flex items-center justify-center">
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
         </button>
-        <h1 className="text-xl font-extrabold font-heading">Meeza Card</h1>
-        <Pill color={deactivated ? "#94a3b8" : frozen ? "#3b82f6" : "#00B894"} className="ml-auto">
-          {loading ? "···" : deactivated ? "Deactivated" : frozen ? "Frozen" : "Active"}
+        <h1 className="text-xl font-extrabold font-heading">{t("child.meezaCard.title")}</h1>
+        <Pill color={deactivated ? "#94a3b8" : frozen ? "#3b82f6" : "#00B894"} className="ms-auto">
+          {loading ? "···" : t(`child.meezaCard.status.${statusKey}`)}
         </Pill>
       </FadeIn>
 
@@ -107,14 +112,14 @@ export default function MeezaCard() {
               </div>
               <div className="w-10 h-8 rounded-md bg-gradient-to-br from-yellow-300 to-amber-500" />
             </div>
-            <div className="text-xl font-mono tracking-widest">{loading ? "•••• •••• •••• ····" : wallet?.card_number}</div>
+            <div className="text-xl font-mono tracking-widest force-ltr text-end">{loading ? "•••• •••• •••• ····" : wallet?.card_number}</div>
             <div className="flex justify-between items-end">
               <div>
-                <div className="text-[10px] text-white/60">STATUS</div>
-                <div className="text-sm font-semibold">{deactivated ? "Deactivated" : frozen ? "Frozen" : "Active"}</div>
+                <div className="text-[10px] text-white/60">{t("child.meezaCard.statusLabel")}</div>
+                <div className="text-sm font-semibold">{t(`child.meezaCard.status.${statusKey}`)}</div>
               </div>
-              <div className="text-right">
-                <div className="text-[10px] text-white/60">BALANCE</div>
+              <div className="text-end">
+                <div className="text-[10px] text-white/60">{t("child.meezaCard.balanceLabel")}</div>
                 <div className="text-sm font-bold">{loading ? "···" : fmtEGP(wallet?.balance ?? 0)}</div>
               </div>
               <div className="text-2xl">🌳</div>
@@ -125,20 +130,20 @@ export default function MeezaCard() {
             style={{ background: theme.gradient }}
           >
             <div className="w-full h-9 bg-black/80 rounded" />
-            <div className="text-center text-xs text-white/70">This is a simulated card — not linked to a real bank.</div>
+            <div className="text-center text-xs text-white/70">{t("child.meezaCard.simulatedNotice")}</div>
             <div className="flex justify-between text-[10px] text-white/70">
-              <span>Tap to flip back</span>
+              <span>{t("child.meezaCard.tapToFlipBack")}</span>
               <span>Meeza · FinFamily</span>
             </div>
           </div>
         </div>
-        <p className="text-center text-xs text-muted-foreground mt-2">Tap card to flip</p>
+        <p className="text-center text-xs text-muted-foreground mt-2">{t("child.meezaCard.tapToFlip")}</p>
       </FadeIn>
 
       {(frozen || deactivated) && (
         <FadeIn className="mb-5">
           <div className="glass rounded-2xl p-3 text-center text-xs text-muted-foreground">
-            {deactivated ? "Your card is deactivated — ask a parent to claim a new one." : "Your card is frozen — ask a parent to unfreeze it from Family Cards."}
+            {deactivated ? t("child.meezaCard.deactivatedNotice") : t("child.meezaCard.frozenNotice")}
           </div>
         </FadeIn>
       )}
@@ -150,20 +155,20 @@ export default function MeezaCard() {
           disabled={frozen || deactivated}
           className="w-full h-14 rounded-2xl text-white font-extrabold font-heading flex items-center justify-center gap-2 grad-navy shadow-premium active:scale-[0.98] transition-all disabled:opacity-50"
         >
-          <Zap className="w-5 h-5" /> Simulate a Purchase
+          <Zap className="w-5 h-5" /> {t("child.meezaCard.simulatePurchase")}
         </button>
       </FadeIn>
 
       {/* theme customization */}
       <FadeIn delay={180}>
-        <SectionTitle><Palette className="inline w-4 h-4 mr-1" />Theme</SectionTitle>
+        <SectionTitle><Palette className="inline w-4 h-4 me-1" />{t("child.meezaCard.theme")}</SectionTitle>
         <div className="grid grid-cols-4 gap-3">
-          {cardThemes.map((t) => (
-            <button key={t.id} onClick={() => pickTheme(t)} className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
-              <div className="w-full h-12 rounded-xl shadow-premium flex items-center justify-center" style={{ background: t.gradient }}>
-                {theme.id === t.id && <Check className="w-4 h-4 text-white" />}
+          {cardThemes.map((th) => (
+            <button key={th.id} onClick={() => pickTheme(th)} className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
+              <div className="w-full h-12 rounded-xl shadow-premium flex items-center justify-center" style={{ background: th.gradient }}>
+                {theme.id === th.id && <Check className="w-4 h-4 text-white" />}
               </div>
-              <span className="text-[9px] font-semibold text-center leading-tight">{t.name}</span>
+              <span className="text-[9px] font-semibold text-center leading-tight">{tc(th.name)}</span>
             </button>
           ))}
         </div>
@@ -171,9 +176,9 @@ export default function MeezaCard() {
 
       {/* recent payments */}
       <FadeIn delay={240} className="mt-5">
-        <SectionTitle>Recent Payments</SectionTitle>
+        <SectionTitle>{t("child.meezaCard.recentPayments")}</SectionTitle>
         {!loading && purchases.length === 0 && (
-          <div className="text-center text-sm text-muted-foreground py-6">No purchases yet — try simulating one above.</div>
+          <div className="text-center text-sm text-muted-foreground py-6">{t("child.meezaCard.noPurchases")}</div>
         )}
         <div className="space-y-2">
           {purchases.slice(0, 8).map((p) => (
@@ -185,10 +190,10 @@ export default function MeezaCard() {
                 <div className="text-sm font-semibold truncate">{p.merchant}</div>
                 <div className="text-xs text-muted-foreground truncate">{p.category}{p.status === "rejected" && p.decline_reason ? ` · ${p.decline_reason}` : ""}</div>
               </div>
-              <div className="text-right shrink-0">
+              <div className="text-end shrink-0">
                 <div className={"font-bold text-sm " + (p.status === "rejected" ? "line-through text-muted-foreground" : "")}>{fmtEGP(p.amount)}</div>
-                {statusMeta[p.status].label && (
-                  <div className="text-[10px] font-semibold" style={{ color: statusMeta[p.status].color }}>{statusMeta[p.status].label}</div>
+                {p.status !== "completed" && (
+                  <div className="text-[10px] font-semibold" style={{ color: statusColor[p.status] }}>{t(`child.meezaCard.status.${p.status === "rejected" ? "declined" : "pending"}`)}</div>
                 )}
               </div>
             </div>
@@ -204,22 +209,22 @@ export default function MeezaCard() {
             {!result ? (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-extrabold font-heading">Simulate a Purchase</h3>
+                  <h3 className="text-lg font-extrabold font-heading">{t("child.meezaCard.simulatePurchase")}</h3>
                   <button onClick={() => setShowBuy(false)} className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">✕</button>
                 </div>
                 <form onSubmit={handleBuy} className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground">Merchant</label>
+                    <label className="text-xs font-semibold text-muted-foreground">{t("child.meezaCard.merchant")}</label>
                     <input
                       value={form.merchant}
                       onChange={(e) => setForm({ ...form, merchant: e.target.value })}
-                      placeholder="e.g. GameZone"
+                      placeholder={t("child.meezaCard.merchantPlaceholder")}
                       required
                       className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground">Category</label>
+                    <label className="text-xs font-semibold text-muted-foreground">{t("child.meezaCard.category")}</label>
                     <div className="grid grid-cols-3 gap-2 mt-1">
                       {blockableCategories.map((c) => (
                         <button
@@ -235,22 +240,22 @@ export default function MeezaCard() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground">Amount (EGP)</label>
+                    <label className="text-xs font-semibold text-muted-foreground">{t("child.meezaCard.amount")}</label>
                     <input
                       value={form.amount}
                       onChange={(e) => setForm({ ...form, amount: e.target.value.replace(/[^\d.]/g, "") })}
                       placeholder="50"
                       inputMode="decimal"
                       required
-                      className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold"
+                      className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold force-ltr text-start"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground">Location (optional)</label>
+                    <label className="text-xs font-semibold text-muted-foreground">{t("child.meezaCard.location")}</label>
                     <input
                       value={form.location}
                       onChange={(e) => setForm({ ...form, location: e.target.value })}
-                      placeholder="e.g. City Mall"
+                      placeholder={t("child.meezaCard.locationPlaceholder")}
                       className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold"
                     />
                   </div>
@@ -259,7 +264,7 @@ export default function MeezaCard() {
                     disabled={submitting}
                     className="w-full h-12 rounded-2xl text-white font-bold grad-navy shadow-premium active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                   >
-                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />} {submitting ? "Processing..." : "Pay Now"}
+                    {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />} {submitting ? t("child.meezaCard.processing") : t("child.meezaCard.payNow")}
                   </button>
                 </form>
               </>
@@ -269,11 +274,11 @@ export default function MeezaCard() {
                   {result.status === "completed" ? "✅" : result.status === "pending" ? "⏳" : "❌"}
                 </div>
                 <div className="font-extrabold font-heading text-lg">
-                  {result.status === "completed" ? "Payment Approved!" : result.status === "pending" ? "Waiting for Parent Approval" : "Payment Declined"}
+                  {result.status === "completed" ? t("child.meezaCard.paymentApproved") : result.status === "pending" ? t("child.meezaCard.waitingParentApproval") : t("child.meezaCard.paymentDeclined")}
                 </div>
                 {result.decline_reason && <div className="text-sm text-muted-foreground mt-1">{result.decline_reason}</div>}
-                {result.status === "pending" && <div className="text-sm text-muted-foreground mt-1">You went over a spending limit — your parent will review it.</div>}
-                <button onClick={() => setShowBuy(false)} className="mt-5 w-full h-12 rounded-2xl font-bold grad-navy text-white active:scale-95 transition-all">Done</button>
+                {result.status === "pending" && <div className="text-sm text-muted-foreground mt-1">{t("child.meezaCard.overLimitNote")}</div>}
+                <button onClick={() => setShowBuy(false)} className="mt-5 w-full h-12 rounded-2xl font-bold grad-navy text-white active:scale-95 transition-all">{t("child.meezaCard.done")}</button>
               </div>
             )}
           </div>

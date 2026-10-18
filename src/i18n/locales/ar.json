@@ -1,0 +1,835 @@
+{
+  "common": {
+    "back": "رجوع",
+    "loading": "بتحمّل...",
+    "goHome": "الصفحة الرئيسية"
+  },
+  "splash": {
+    "tagline": "بنكبر مع بعض ماديًا."
+  },
+  "onboarding": {
+    "skip": "تخطي",
+    "next": "التالي",
+    "start": "ابدأ الرحلة",
+    "slides": {
+      "parents": {
+        "title": "الأهل في السيطرة كاملةً",
+        "desc": "حدّد المصروف، وافق على المشتريات، وتابع الصرف — كل ده من لوحة تحكم واحدة وآمنة."
+      },
+      "children": {
+        "title": "الأطفال يتعلموا بالتجربة",
+        "desc": "لطفي يوفر، يحدد ميزانية، ويلعب ألعاب تعليمية تبني عادات مالية حقيقية."
+      },
+      "ai": {
+        "title": "الذكاء الاصطناعي يبني عادات صحية",
+        "desc": "مدرّب شخصي بالذكاء الاصطناعي يوجّه كل قرار، يحتفل بالإنجازات، ويقترح الخطوة الجاية."
+      }
+    }
+  },
+  "roleSelect": {
+    "prompt": "مين اللي هيستخدم التطبيق دلوقتي؟",
+    "parent": {
+      "title": "أنا ولي أمر",
+      "desc": "سجّل دخول لعرض لوحة التحكم البنكية الكاملة والصلاحيات."
+    },
+    "kid": {
+      "title": "أنا طفل",
+      "desc": "دخّل كود العيلة والـ PIN وابدأ مع لطفي."
+    }
+  },
+  "auth": {
+    "login": {
+      "welcomeBack": "أهلاً بيك تاني",
+      "subtitle": "سجّل دخول لحسابك",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "you@example.com",
+      "password": "كلمة السر",
+      "forgotPassword": "نسيت كلمة السر؟",
+      "submit": "تسجيل الدخول",
+      "loggingIn": "بيسجل دخولك...",
+      "noAccount": "معاك حساب؟",
+      "createOne": "اعمل واحد",
+      "invalidCredentials": "البريد الإلكتروني أو كلمة السر غلط",
+      "mfa": {
+        "title": "التحقق بخطوتين",
+        "subtitle": "دخّل الكود المكون من 6 أرقام من تطبيق الـ authenticator",
+        "codeLabel": "كود التحقق",
+        "recoveryLabel": "كود الاستعادة",
+        "recoveryHint": "استخدم واحد من أكواد الاستعادة اللي حفظتها لما فعّلت التحقق بخطوتين.",
+        "verify": "تحقّق",
+        "verifying": "بيتحقق...",
+        "useRecovery": "فقدت الـ authenticator؟ استخدم كود استعادة",
+        "useAuthenticator": "استخدم كود الـ authenticator بدل ده",
+        "invalidCode": "الكود غلط"
+      }
+    },
+    "register": {
+      "title": "اعمل حسابك",
+      "subtitle": "سجّل عشان تبدأ",
+      "familyName": "اسم العيلة",
+      "familyNamePlaceholder": "عيلة أحمد",
+      "yourName": "اسمك",
+      "yourNamePlaceholder": "عبدالله أحمد",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "you@example.com",
+      "password": "كلمة السر",
+      "confirmPassword": "تأكيد كلمة السر",
+      "submit": "إنشاء الحساب",
+      "creating": "بيعمل الحساب...",
+      "haveAccount": "معاك حساب بالفعل؟",
+      "logIn": "سجّل دخول",
+      "passwordMismatch": "كلمة السر غير متطابقة",
+      "failed": "فشل التسجيل"
+    },
+    "forgotPassword": {
+      "title": "إعادة تعيين كلمة السر",
+      "subtitle": "هنبعتلك لينك تقدر تعيد تعيينها بيه",
+      "emailLabel": "البريد الإلكتروني",
+      "submit": "إبعت لينك إعادة التعيين",
+      "sending": "بيبعت...",
+      "backToLogin": "رجوع لتسجيل الدخول",
+      "sentMessage": "لو فيه حساب مربوط بهذا البريد، هتستقبل لينك إعادة تعيين كلمة السر قريبًا."
+    },
+    "resetPassword": {
+      "title": "كلمة سر جديدة",
+      "subtitle": "دخّل كلمة السر الجديدة تحت",
+      "newPassword": "كلمة السر الجديدة",
+      "confirmPassword": "تأكيد كلمة السر",
+      "submit": "إعادة تعيين كلمة السر",
+      "resetting": "بيعيد التعيين...",
+      "passwordMismatch": "كلمة السر غير متطابقة",
+      "failed": "فشلت إعادة تعيين كلمة السر",
+      "invalidLink": {
+        "title": "لينك إعادة التعيين غير صحيح",
+        "subtitle": "اللينك ده ناقص أو غير صحيح",
+        "message": "اللينك اللي استخدمته يبدو ناقص. من فضلك اطلب إيميل إعادة تعيين جديد.",
+        "requestNew": "اطلب لينك جديد"
+      }
+    },
+    "childLogin": {
+      "hey": "أهلاً يا مستكشف! 🦁",
+      "askParent": "اطلب من والدك كود العيلة عشان تدخل",
+      "familyCodePlaceholder": "كود العيلة",
+      "findFamily": "دور على عيلتي ←",
+      "searching": "بيدور...",
+      "familyNotFound": "كود العيلة غير موجود",
+      "areYouParent": "أنت ولي أمر؟",
+      "logInHere": "سجّل دخول من هنا",
+      "welcomeFamily": "أهلاً بيك في عيلة {{familyName}}! 👋",
+      "whichOneIsYou": "أنت مين فيهم؟",
+      "noKids": "لسه معملتش أطفال في العيلة ده — اطلب من والدك يضيفك الأول.",
+      "hiChild": "أهلاً يا {{childName}}!",
+      "enterPin": "دخّل الـ PIN السري بتاعك",
+      "wrongPin": "الـ PIN غلط، حاول تاني",
+      "checking": "بيتحقق..."
+    }
+  },
+  "notFound": {
+    "title": "الصفحة غير موجودة",
+    "message": "الصفحة \"{{pageName}}\" غير موجودة في هذا التطبيق.",
+    "adminNoteTitle": "ملاحظة للمشرف",
+    "adminNoteMessage": "ده ممكن معناه إن الـ AI لسه ما نفّذ الصفحة ده. اطلب منه ينفّذها في الشات.",
+    "goHome": "الصفحة الرئيسية"
+  },
+  "nav": {
+    "child": {
+      "home": "الرئيسية",
+      "wallet": "المحفظة",
+      "learn": "تعلّم",
+      "rewards": "الجوائز",
+      "profile": "حسابي"
+    },
+    "parent": {
+      "dashboard": "الرئيسية",
+      "allowance": "المصروف",
+      "insights": "تحليلات AI",
+      "approvals": "الموافقات",
+      "missions": "المهام",
+      "profile": "حسابي"
+    }
+  },
+  "avatarUpload": {
+    "changePhoto": "غيّر الصورة",
+    "notAnImage": "من فضلك اختر ملف صورة.",
+    "tooLarge": "الصورة كبيرة أوي (الحد الأقصى 2MB).",
+    "readFailed": "معرفتش أقرا الصورة دي، حاول تاني.",
+    "saveFailed": "معرفتش أحفظ صورتك، حاول تاني."
+  },
+  "games": {
+    "gameLauncher": {
+      "genericError": "تعذر تسجيل نتيجة اللعبة",
+      "alreadyToday": "أخذت كوينز للعبة دي النهاردة بالفعل — بس تمرين حلو برضو! 💪",
+      "perfectDayBonus": "🌟 مكافأة اليوم المثالي: +{{coins}} كوين، +{{xp}} XP — لعبت كل الألعاب النهاردة!",
+      "newBadge": "شارة جديدة: {{names}}",
+      "newBadges": "شارات جديدة: {{names}}",
+      "badgeUnlocked": "شارة جديدة اتفتحت! 🏅",
+      "levelUp": "لفل أب! 🎉",
+      "missionComplete": "المهمة خلصت!"
+    },
+    "missionComplete": {
+      "title": "المهمة خلصت!",
+      "subtitle": "بتتحول لبطل مالي حقيقي!",
+      "xpEarned": "XP اتكسبت ⭐",
+      "streak": "سلسلة {{days}} يوم — كمّل كده!",
+      "nextMission": "المهمة الجاية",
+      "continue": "كمّل المغامرة"
+    },
+    "rewardScreen": {
+      "defaultTitle": "شغل تحفة!",
+      "scoreLine": "سجّلت {{score}} من {{total}}",
+      "coins": "كوينز 🪙",
+      "xp": "XP ⭐",
+      "claim": "استلم الجائزة"
+    },
+    "badgesGrid": {
+      "earnedCount": "كسبت {{unlocked}} من {{total}} شارة — دوس على أي شارة عشان تعرف تفتحها إزاي.",
+      "unlocked": "متفتحة",
+      "locked": "مقفولة",
+      "gotIt": "تمام"
+    },
+    "quizPlayer": {
+      "question": "سؤال {{current}}/{{total}}",
+      "tapCorrect": "دوس على الإجابة الصح",
+      "quizComplete": "الكويز خلص!",
+      "correct": "✅ صح! ",
+      "incorrect": "❌ مش كده. "
+    },
+    "needsVsWants": {
+      "itemProgress": "حاجة {{current}}/{{total}}",
+      "question": "ده احتياج ولا رغبة؟",
+      "need": "احتياج",
+      "want": "رغبة",
+      "correct": "✅ صح! ",
+      "incorrect": "❌ لأ. ",
+      "explainNeed": "{{name}} ده احتياج — أساسي للحياة.",
+      "explainWant": "{{name}} ده رغبة — حلو لو موجود بس مش أساسي."
+    },
+    "guessPrice": {
+      "round": "جولة {{current}}/{{total}}",
+      "guessThePrice": "خمّن السعر الحقيقي",
+      "perfectGuess": "🎉 تخمين تحفة!",
+      "realPriceIs": "السعر الحقيقي هو {{price}}"
+    },
+    "coinCatcher": {
+      "title": "صياد الكوينز",
+      "intro": "دوس على الكوينز الواقعة عشان تمسكها (+2). تجنّب القنابل (−5)! عندك 20 ثانية.",
+      "start": "ابدأ ▶",
+      "finalScore": "النتيجة النهائية: {{score}}",
+      "footerHint": "امسك الكوينز، وتجنّب القنابل!"
+    },
+    "savingHero": {
+      "title": "بطل التوفير",
+      "goalLine": "الهدف: {{name}} · {{target}}",
+      "remaining_zero": "متبقي: {{amount}} · تقريبًا خلصت",
+      "remaining_one": "متبقي: {{amount}} · أسبوع واحد تقريبًا وهتوصل",
+      "remaining_two": "متبقي: {{amount}} · أسبوعين تقريبًا وهتوصل",
+      "remaining_few": "متبقي: {{amount}} · حوالي {{count}} أسابيع وهتوصل",
+      "remaining_many": "متبقي: {{amount}} · حوالي {{count}} أسبوع وهتوصل",
+      "remaining_other": "متبقي: {{amount}} · حوالي {{count}} أسبوع وهتوصل",
+      "goalReachedTitle": "وصلت للهدف! إنت بطل توفير!",
+      "goalReachedDesc": "التوفير المستمر بيحوّل الكوينز الصغيرة لأحلام كبيرة.",
+      "chooseWeekly": "اختار قد إيه هتوفر كل أسبوع:",
+      "saveThisWeek": "وفّر {{amount}} الأسبوع ده",
+      "tip": "نصيحة: توفير شوية كل أسبوع أحسن من توفير كتير مرة واحدة. الاستمرارية هي القوة الحقيقية! 💪"
+    },
+    "budgetBuilder": {
+      "title": "التسوق بميزانية",
+      "intro": "اشتري كل الاحتياجات (✔) وابقى في حدود {{limit}}. اصرف بذكاء!",
+      "budget": "الميزانية",
+      "overBudget": "عديت الميزانية! شيل حاجة.",
+      "remaining": "متبقي: {{amount}}",
+      "winTitle": "متسوق ذكي! اشتريت كل الاحتياجات في حدود الميزانية.",
+      "overBudgetResult": "عديت الميزانية.",
+      "missingNeeds": "متنساش كل الاحتياجات!",
+      "checkBudget": "اتأكد من ميزانيتي"
+    },
+    "futureInvestor": {
+      "comingSoonTitle": "قريبًا!",
+      "comingSoonDesc": "المستثمر المستقبلي بيتفتح في سن 12. لحد دلوقتي كمّل في التوفير والميزانية! 🚀",
+      "backToAdventure": "رجوع للمغامرة",
+      "title": "المستثمر المستقبلي",
+      "subtitle": "محاكاة تعليمية · فلوس تجريبية بس — مفيش تداول حقيقي",
+      "virtualMoney": "فلوسك التجريبية",
+      "imagineNote": "تخيل إن معاك المبلغ ده لمدة سنة. هتعمل إيه؟",
+      "risk": "المخاطرة:",
+      "return": "العائد:",
+      "time": "المدة:",
+      "afterYear": "بعد سنة، فلوسك التجريبية هتبقى",
+      "completeLesson": "خلّص الدرس"
+    },
+    "scamDetective": {
+      "completeTitle": "محقق النصب خلص!",
+      "spottedCount": "اكتشفت {{score}} من {{total}} عمليات نصب",
+      "badgeUnlocked": "شارة اتفتحت: محقق النصب",
+      "title": "محقق النصب",
+      "caseLine": "قضية {{current}} من {{total}} · اكتشف الخطر",
+      "correct": "✅ صح!",
+      "incorrect": "⚠️ مش أأمن خطوة",
+      "finish": "خلّص",
+      "nextCase": "القضية الجاية"
+    },
+    "smartShopper": {
+      "completeTitle": "المتسوق الذكي خلص!",
+      "madeChoices_zero": "معملتش قرارات ذكية من أصل {{total}}",
+      "madeChoices_one": "عملت قرار ذكي واحد من أصل {{total}}",
+      "madeChoices_two": "عملت قرارين ذكيين من أصل {{total}}",
+      "madeChoices_few": "عملت {{count}} قرارات ذكية من أصل {{total}}",
+      "madeChoices_many": "عملت {{count}} قرار ذكي من أصل {{total}}",
+      "madeChoices_other": "عملت {{count}} قرار ذكي من أصل {{total}}",
+      "title": "المتسوق الذكي",
+      "roundLine": "جولة {{current}} من {{total}} · قارن القيمة، مش بس السعر",
+      "correct": "🎉 اختيار ذكي!",
+      "incorrect": "💡 خلّينا نتعلم",
+      "tryAnother": "جرّب خيار تاني عشان تشوف الأذكى!",
+      "finish": "خلّص",
+      "next": "التالي"
+    },
+    "changeMaker": {
+      "title": "حساب الباقي",
+      "intro": "لطفي بيدفع تمن حاجة — تقدر تحسب الباقي الصح؟",
+      "howToPlay": "إزاي تلعب",
+      "steps": {
+        "step1": "شوف سعر الحاجة والمبلغ المدفوع",
+        "step2": "اختار الباقي الصح من 4 اختيارات",
+        "step3": "6 جولات · اكسب كوينز على الإجابات الصح"
+      },
+      "startCounting": "ابدأ الحساب",
+      "round": "جولة {{current}} / {{total}}",
+      "correctCount": "{{count}} صح",
+      "itemPrice": "سعر الحاجة",
+      "paidWith": "— اتدفع بـ —",
+      "youPaid": "دفعت",
+      "howMuchChange": "هتاخد باقي كام؟",
+      "correct": "🎉 صح! مهاراتك في الحساب تحفة!",
+      "incorrect": "❌ للأسف! الباقي الصحيح هو {{amount}}"
+    }
+  },
+  "language": {
+    "switchTo": "English"
+  },
+  "child": {
+    "greeting": {
+      "morning": "صباح الخير",
+      "afternoon": "مساء الخير",
+      "evening": "مساء الخير"
+    },
+    "home": {
+      "heroStatus": "حالة البطل المالي",
+      "dayStreak": "سلسلة {{count}} يوم",
+      "levelLine": "لفل {{level}} · {{name}}",
+      "maxLevel": "أقصى لفل",
+      "xpToNext": "{{xp}} XP علشان توصل لـ {{name}}",
+      "topLevel": "وصلت لأعلى لفل! 👑",
+      "totalXp": "إجمالي XP",
+      "dayStreakStat": "أيام متتالية",
+      "coins": "كوينز 🪙",
+      "todaysMission": "مهمة النهاردة",
+      "startMission": "ابدأ المهمة",
+      "playAndLearn": "العب واتعلم",
+      "adventureMapLink": "خريطة المغامرة",
+      "doneSuffix": "% خلصت",
+      "continueAdventure": "كمّل مغامرتك",
+      "shortcuts": {
+        "adventureMap": { "title": "خريطة المغامرة", "desc": "٧ عوالم تستكشفها" },
+        "missions": { "title": "مهام من الواقع", "desc": "اتمرن واكسب XP" },
+        "coach": { "title": "فين بادي 🤖", "desc": "صاحبك الذكي في الفلوس" },
+        "leaderboard": { "title": "لوحة المتصدرين", "desc": "اطلع في الترتيب" },
+        "wallet": { "title": "المحفظة", "desc": "رصيدك ومصاريفك" },
+        "goals": { "title": "أهداف الادخار", "desc": "تابع أحلامك" }
+      }
+    },
+    "wallet": {
+      "title": "المحفظة الذكية",
+      "loadFailed": "تعذر تحميل بيانات المحفظة",
+      "currentBalance": "الرصيد الحالي",
+      "viewMeezaCard": "اعرض كارت ميزة",
+      "stats": {
+        "savings": "المدخرات",
+        "todaySpending": "صرف النهاردة",
+        "totalEarned": "إجمالي المكسب"
+      },
+      "cardActive": "شغال",
+      "cardFrozen": "مجمّد",
+      "cardLabel": "الكارت {{status}}",
+      "systemsSecure": "كل حاجة آمنة 🔒",
+      "savingsGoals": "أهداف الادخار",
+      "transactions": "الحركات",
+      "loading": "بتحمّل...",
+      "empty": "مفيش حركات لسه — أول ما تخلّص مهمة وأبوك يوافق عليها هتظهر هنا.",
+      "dateTime": "التاريخ والوقت",
+      "types": {
+        "mission_reward": "مهمة",
+        "redemption": "جائزة",
+        "allowance": "مصروف",
+        "savings_transfer": "ادخار",
+        "adjustment": "تعديل"
+      },
+      "directions": {
+        "credit": "استلمت",
+        "debit": "صرفت"
+      }
+    },
+    "missions": {
+      "title": "مهامي",
+      "subtitle": "مهام كلّفك بيها أبوك · اكسب كوينز لما توافق عليها",
+      "loadFailed": "تعذر تحميل المهام",
+      "submitFailed": "حصل خطأ",
+      "loading": "بتحمّل...",
+      "empty": "مفيش مهام لسه — استنى أبوك يضيفلك واحدة 🙂",
+      "status": {
+        "pending": "لسه هتعمله",
+        "submitted": "مستني أبوك",
+        "approved": "اتوافق عليها واتصرفت",
+        "rejected": "اترفضت"
+      },
+      "markDone": "خلّصتها",
+      "waitingApproval": "مستني أبوك يوافق عليها",
+      "approvedLine": "اتوافق عليها · +{{amount}}!",
+      "submittedBadge": { "name": "صياد الأهداف", "desc": "بعت مهمة للمراجعة" },
+      "waitForApproval": "استنى موافقة أبوك"
+    },
+    "goals": {
+      "title": "أهداف الادخار",
+      "loadFailed": "تعذر تحميل الأهداف",
+      "insufficientBalance": "معندكش رصيد كافي في المحفظة عشان تحوّل المبلغ ده",
+      "transferFailed": "حصل خطأ",
+      "createFailed": "حصل خطأ وإحنا بنضيف الهدف",
+      "walletBalance": "رصيد المحفظة:",
+      "walletBalanceHint": "— استخدمه في تمويل أهدافك تحت",
+      "loading": "بتحمّل...",
+      "empty": "مفيش أهداف لسه — دوس على + وابدأ أول هدف ادخار ليك 🎯",
+      "goalReached": "🎉 وصلت للهدف!",
+      "save10": "+ وفّر 10 جنيه",
+      "save25": "+ 25 جنيه",
+      "newGoal": "هدف ادخار جديد",
+      "goalName": "اسم الهدف",
+      "goalNamePlaceholder": "مثال: عجلة جديدة",
+      "target": "الهدف (جنيه)",
+      "createGoal": "اعمل الهدف"
+    },
+    "rewards": {
+      "title": "متجر الجوائز",
+      "loadFailed": "تعذر تحميل بيانات المتجر",
+      "redeemFailed": "حصل خطأ",
+      "yourCoins": "كوينزك",
+      "earnMore": "اكسب أكتر بإنك تخلّص مهام",
+      "redeemCoins": "استبدل الكوينز",
+      "approvalNote": "الطلبات محتاجة موافقة أبوك الأول قبل ما الكوينز تتخصم.",
+      "gotIt": "خدتها",
+      "pending": "مستنية",
+      "waitingCount": "{{count}} طلب مستني الموافقة",
+      "waitingHint": "اطلب من أبوك يشوف صفحة موافقات الجوائز."
+    },
+    "profile": {
+      "title": "حسابي",
+      "defaultLevelTitle": "مستكشف الفلوس",
+      "level": "لفل {{level}}",
+      "financialScore": "التقييم المالي",
+      "liveScore": "تقييم لحظي",
+      "scoreNote": "انضباط مالي ممتاز! كمّل كده. 🌟",
+      "financialJourney": "رحلتي المالية",
+      "badges": "الشارات",
+      "myChores": "مهامي",
+      "chores": { "approved": "اتوافق عليها", "waiting": "مستنية", "toDo": "لسه هتعملها" },
+      "settingsTitle": "الإعدادات",
+      "settings": {
+        "parentDashboard": "لوحة تحكم ولي الأمر",
+        "notifications": "الإشعارات",
+        "security": "الأمان",
+        "darkMode": "الوضع الليلي",
+        "language": "اللغة · {{lang}}",
+        "accessibility": "سهولة الوصول",
+        "helpCenter": "مركز المساعدة",
+        "termsPrivacy": "الشروط والخصوصية",
+        "switchRole": "بدّل الدور"
+      }
+    },
+    "leaderboard": {
+      "title": "ترتيب العيلة",
+      "rank": "الترتيب #{{rank}}",
+      "loadFailed": "تعذر تحميل الترتيب",
+      "yourPosition": "ترتيبك",
+      "positionLine": "#{{rank}} من {{total}}",
+      "xpLevelLine": "{{xp}} XP · لفل {{level}}",
+      "wallet": "المحفظة",
+      "loading": "بتحمّل...",
+      "onlyChild": "الترتيب بيظهر لما يبقى فيه أكتر من طفل في العيلة — دلوقتي إنت الوحيد المسجل. 🦁",
+      "fullRanking": "الترتيب الكامل",
+      "you": "إنت",
+      "dayStreak": "سلسلة {{count}} يوم",
+      "xpLevelShort": "XP · لفل {{level}}"
+    },
+    "coach": {
+      "suggestions": {
+        "football": "عايز كورة ⚽",
+        "howSave": "أوفر فلوسي إزاي؟",
+        "whatBudget": "الميزانية يعني إيه؟",
+        "scamCheck": "الرسالة دي نصب؟"
+      },
+      "goalRemaining": "محتاج كام كمان علشان أوصل لهدف {{goal}}؟",
+      "goalDone": "خلّصت هدف {{goal}}! 🎉",
+      "choreApproval": "إمتى مهمتي هتتوافق عليها؟",
+      "choresToday": "أعمل مهام إيه النهاردة؟",
+      "greeting": "أهلاً يا {{name}}! 👋 أنا فين بادي 🤖، صاحبك الذكي في الفلوس. هساعدك تتعلم مهارات مالية ونفكر مع بعض. قولّي عن هدفك أو اسألني أي حاجة! 💚",
+      "greetingFallbackName": "صاحبي",
+      "thinkingFallback": "هممم، خليني أفكر في ده!",
+      "errorFallback": "معلش، مخي مقفول لحظة. جرّب تاني!",
+      "online": "● متصل · صاحب الفلوس الذكي",
+      "newChat": "ابدأ محادثة جديدة",
+      "placeholder": "اسأل فين بادي أي حاجة..."
+    },
+    "adventureMap": {
+      "title": "مغامرة الفلوس",
+      "levelLine": "لفل {{level}} · {{name}} · {{xp}} XP",
+      "heroLine": "رحلتك عشان تبقى بطل مالي 🦸",
+      "unlockHint": "خلّص كل عالم عشان تفتح اللي بعده",
+      "world": "العالم {{num}}",
+      "progress": "التقدم",
+      "unlocksAt": "بيتفتح عند لفل {{level}}"
+    },
+    "meezaCard": {
+      "title": "كارت ميزة",
+      "status": { "active": "شغال", "frozen": "مجمّد", "deactivated": "متلغي", "pending": "مستنية", "declined": "اترفضت" },
+      "statusLabel": "الحالة",
+      "balanceLabel": "الرصيد",
+      "simulatedNotice": "الكارت ده تجريبي — مش مربوط ببنك حقيقي.",
+      "tapToFlipBack": "دوس عشان يرجع",
+      "tapToFlip": "دوس على الكارت عشان يتقلب",
+      "deactivatedNotice": "كارتك اتلغى — اطلب من أبوك يطلبلك واحد جديد.",
+      "frozenNotice": "كارتك مجمّد — اطلب من أبوك يفكّه من صفحة كروت العيلة.",
+      "simulatePurchase": "جرّب عملية شراء",
+      "theme": "الشكل",
+      "recentPayments": "آخر المدفوعات",
+      "noPurchases": "مفيش مشتريات لسه — جرّب تعمل واحدة فوق.",
+      "merchant": "المتجر",
+      "merchantPlaceholder": "مثال: GameZone",
+      "category": "الفئة",
+      "amount": "المبلغ (جنيه)",
+      "location": "المكان (اختياري)",
+      "locationPlaceholder": "مثال: سيتي مول",
+      "processing": "بيتنفّذ...",
+      "payNow": "ادفع دلوقتي",
+      "paymentApproved": "الدفع اتوافق عليه!",
+      "waitingParentApproval": "مستني موافقة أبوك",
+      "paymentDeclined": "الدفع اترفض",
+      "overLimitNote": "عديت حد الصرف — أبوك هيراجعها.",
+      "done": "تمام",
+      "genericError": "حصل خطأ"
+    },
+    "learn": {
+      "title": "تعلّم",
+      "learningPath": "مسار التعلّم",
+      "levelLine": "{{xp}} XP · لفل {{level}}",
+      "lessonsCount": "درس",
+      "tabs": { "lessons": "الدروس", "games": "الألعاب" },
+      "storySuffix": "· القصة",
+      "storyText": "🦁 زمان، لطفي كسب أول 10 جنيه ليه. وقتها فهم إن الفلوس ممكن توفّرها أو تصرفها أو تشاركها — وإن قراراتك الذكية النهاردة بتكبر لأحلام كبيرة بكرة!",
+      "certificate": "شهادة",
+      "startQuiz": "ابدأ الكويز",
+      "gameComplete": "اللعبة خلصت!"
+    }
+  },
+  "parent": {
+    "dashboard": {
+      "welcomeBack": "أهلاً بيك تاني",
+      "verified": "موثّق ✓",
+      "stats": {
+        "totalSpending": "إجمالي الصرف",
+        "totalSavings": "إجمالي المدخرات",
+        "goalsCompleted": "أهداف خلصت",
+        "finScore": "التقييم المالي"
+      },
+      "trends": { "thisMonth": "الشهر ده", "acrossKids": "لكل الأطفال", "familyAvg": "متوسط العيلة" },
+      "sampleData": "بيانات تجريبية",
+      "scoreTrend": "منحنى التقييم المالي",
+      "spendingByCategory": "الصرف حسب الفئة",
+      "noCategorySpending": "لسه مفيش مصاريف حقيقية (redemptions موافق عليها) نقدر نجمّعها حسب الفئة.",
+      "weeklySpending": "الصرف الأسبوعي",
+      "weekdays": { "sat": "سبت", "sun": "حد", "mon": "اتنين", "tue": "تلات", "wed": "أربع", "thu": "خميس", "fri": "جمعة" },
+      "askCoach": "اسأل المستشار",
+      "aiAlerts": "تنبيهات واقتراحات AI",
+      "management": "إدارة العيلة",
+      "tiles": {
+        "members": { "label": "الأعضاء", "sub": "{{count}} طفل" },
+        "chores": { "label": "المهام", "sub": "كلّف مهمة" },
+        "limits": { "label": "الحدود", "sub": "حدود الصرف" },
+        "cards": { "label": "الكروت", "sub": "تجميد / استبدال" },
+        "rewards": { "label": "الجوائز", "sub": "وافق عليها" },
+        "aiCoach": { "label": "مستشار AI", "sub": "محلل العيلة" },
+        "missions": { "label": "المهام", "sub": "وافق على المهام" }
+      },
+      "sendAllowance": { "title": "ابعت مصروف", "desc": "جدوله أو ابعته دلوقتي" },
+      "aiInsightsShortcut": { "title": "تحليلات AI", "desc": "التقرير الأسبوعي جاهز" },
+      "recentActivity": "آخر النشاطات",
+      "noActivity": "مفيش نشاط لسه — كلّف مهمة أو ابعت مصروف عشان تبدأ."
+    },
+    "approvals": {
+      "title": "موافقات الشراء",
+      "pendingCount_zero": "مفيش طلبات مستنية",
+      "pendingCount_one": "طلب واحد مستني",
+      "pendingCount_two": "طلبين مستنيين",
+      "pendingCount_few": "{{count}} طلبات مستنية",
+      "pendingCount_many": "{{count}} طلب مستني",
+      "pendingCount_other": "{{count}} طلب مستني",
+      "overLimitNote": "مشتريات عدّت حد الصرف",
+      "requests": "الطلبات",
+      "empty": "مفيش مشتريات كارت لسه.",
+      "approved": "اتوافق عليها",
+      "rejected": "اترفضت",
+      "reject": "ارفض",
+      "approve": "وافق",
+      "approvedNote": "✓ اتوافق عليها واتدفعت من المحفظة",
+      "declinedNote": "✕ اترفضت{{reason}}"
+    },
+    "rewardApprovals": {
+      "title": "طلبات الجوائز",
+      "pending": "{{count}} مستنية",
+      "loadFailed": "تعذر تحميل طلبات الصرف",
+      "decideFailed": "حصل خطأ في الموافقة — يمكن الطفل معندوش رصيد كافي",
+      "bannerTitle": "الأطفال عايزين يستبدلوا كوينز",
+      "bannerDesc": "وافق أو ارفض طلبات الجوائز بتاعتهم",
+      "pendingRequests": "الطلبات المستنية",
+      "loading": "بتحمّل...",
+      "requestedBy": "طلبها",
+      "ofCoins": "من {{balance}} كوين",
+      "reject": "ارفض",
+      "approveFulfill": "وافق ونفّذ",
+      "noPending": "مفيش طلبات جوائز مستنية 🎉",
+      "history": "السجل",
+      "noHistory": "مفيش سجل لسه"
+    },
+    "childMissions": {
+      "title": "المهام",
+      "subtitle": "المهام وطلبات الجوائز في العيلة كلها",
+      "loadFailed": "تعذر تحميل المهام",
+      "decideFailed": "حصل خطأ في الموافقة",
+      "waitingCount_zero": "مفيش مهام مستنية موافقتك",
+      "waitingCount_one": "مهمة واحدة مستنية موافقتك",
+      "waitingCount_two": "مهمتين مستنيين موافقتك",
+      "waitingCount_few": "{{count}} مهام مستنية موافقتك",
+      "waitingCount_many": "{{count}} مهمة مستنية موافقتك",
+      "waitingCount_other": "{{count}} مهمة مستنية موافقتك",
+      "loading": "بتحمّل...",
+      "empty": "مفيش مهام لسه — روح المهام والتكليفات وسند أول مهمة.",
+      "status": { "pending": "متكلّف بيها", "submitted": "محتاجة موافقة", "approved": "اتوافق عليها", "rejected": "اترفضت" },
+      "rewardRequest": "طلب جائزة",
+      "chore": "مهمة",
+      "paid": "اتدفعت",
+      "approve": "وافق",
+      "reject": "ارفض"
+    },
+    "chores": {
+      "title": "المهام والتكليفات",
+      "loadFailed": "تعذر تحميل المهام",
+      "addFailed": "حصل خطأ وإحنا بنضيف المهمة",
+      "decideFailed": "حصل خطأ في الموافقة",
+      "earnByDoing": "اكسب بالمجهود",
+      "summaryLine": "{{count}} مستنية · {{reward}} هتتصرف كمكافأة",
+      "all": "الكل",
+      "taskBoard": "لوحة المهام",
+      "loading": "بتحمّل...",
+      "status": { "pending": "مستني الطفل", "submitted": "محتاجة مراجعتك", "approved": "اتدفعت", "rejected": "اترفضت" },
+      "categories": { "Home": "البيت", "School": "المدرسة", "Learning": "التعلّم" },
+      "approvePay": "وافق وادفع",
+      "reject": "ارفض",
+      "rewardPaidTo": "المكافأة اتدفعت لـ {{name}}",
+      "noTasks": "مفيش مهام لسه. دوس على + عشان تكلّف واحدة.",
+      "quickTemplates": "قوالب سريعة",
+      "coins": "كوين",
+      "assignChore": "كلّف بمهمة",
+      "taskTitle": "اسم المهمة",
+      "taskTitlePlaceholder": "مثال: نضف المطبخ",
+      "assignTo": "كلّف مين",
+      "noChildren": "مفيش أطفال لسه",
+      "rewardCoins": "المكافأة (كوينز)",
+      "category": "الفئة",
+      "assign": "كلّف بالمهمة",
+      "addChildFirst": "ضيف طفل الأول من صفحة أعضاء العيلة."
+    },
+    "allowance": {
+      "title": "المصروف",
+      "loadFailed": "تعذر تحميل بيانات العيلة",
+      "sendFailed": "حصل خطأ وإحنا بنبعت المصروف",
+      "noChildren": "مفيش أطفال متضافين لسه — ضيف طفل الأول من صفحة أعضاء العيلة.",
+      "sendTo": "ابعت لـ",
+      "balance": "الرصيد: {{amount}}",
+      "allowanceType": "نوع المصروف",
+      "scheduleNote": "مصروف يدوي فوري دلوقتي — الجدولة الدورية (يومي/أسبوعي تلقائي) لسه مش متاحة.",
+      "amount": "المبلغ (جنيه)",
+      "sentTo": "اتبعت لـ {{name}}! 🎉",
+      "sending": "بيتبعت...",
+      "sendAmountTo": "ابعت {{amount}} لـ {{name}}",
+      "flyingCoins": "الكوينز طايرة لـ {{name}}... الرصيد اتحدّث!"
+    },
+    "familyMembers": {
+      "title": "أعضاء العيلة",
+      "loadFailed": "تعذر تحميل بيانات العيلة",
+      "nameRequired": "اكتب اسم الطفل",
+      "pinInvalid": "الـ PIN لازم يكون 6 أرقام بالظبط",
+      "addFailed": "حصل خطأ وإحنا بنضيف الطفل",
+      "familyCodeLabel": "كود العيلة — شاركه مع أطفالك",
+      "childrenCount_zero": "مفيش أطفال",
+      "childrenCount_one": "طفل واحد",
+      "childrenCount_two": "طفلين",
+      "childrenCount_few": "{{count}} أطفال",
+      "childrenCount_many": "{{count}} طفل",
+      "childrenCount_other": "{{count}} طفل",
+      "addHint": "ضيف طفل، وبعدين شارك الكود فوق عشان يقدروا يسجّلوا دخول.",
+      "manageEach": "إدارة كل عضو",
+      "empty": "مفيش أطفال متضافين لسه — دوس على + فوق عشان تضيف أول واحد.",
+      "status": { "active": "شغال", "frozen": "مجمّد", "deactivated": "متلغي" },
+      "level": "لفل {{level}}",
+      "wallet": "المحفظة",
+      "savings": "المدخرات",
+      "streak": "السلسلة",
+      "limits": "الحدود",
+      "card": "الكارت",
+      "chores": "المهام",
+      "addChild": "ضيف طفل",
+      "fullName": "الاسم بالكامل",
+      "fullNamePlaceholder": "مثال: سلمى حسن",
+      "pinLabel": "الـ PIN (6 أرقام) — الطفل هيستخدمه عشان يسجّل دخول",
+      "creating": "بيتعمل...",
+      "createAccount": "اعمل حساب العضو",
+      "createNote": "حدود الصرف والكروت والأرصدة هتتظبط أول ما المحافظ تتربط — دلوقتي ده بيعمل حساب الدخول بتاعه بس."
+    },
+    "familyCards": {
+      "title": "كروت العيلة",
+      "noKids": "مفيش أطفال متضافين لسه — ضيف واحد من أعضاء العيلة الأول.",
+      "flashFrozen": "الكارت اتجمّد لـ {{name}}",
+      "flashActivated": "الكارت اتفعّل لـ {{name}}",
+      "flashDeactivated": "الكارت اتلغى لـ {{name}}",
+      "flashError": "حصل خطأ",
+      "flashNewCard": "الكارت الجديد اتخد — القديم اتلغى",
+      "status": {
+        "active": { "label": "شغال", "desc": "الكارت شغال عادي" },
+        "frozen": { "label": "مجمّد", "desc": "كل المدفوعات متوقفة" },
+        "deactivated": { "label": "متلغي", "desc": "محتاج كارت جديد عشان يشتغل تاني" }
+      },
+      "cardControls": "التحكم في الكارت",
+      "freeze": { "title": "جمّد الكارت", "desc": "يوقف كل المدفوعات فورًا" },
+      "unfreeze": { "title": "فكّ التجميد", "desc": "رجّع الكارت يشتغل" },
+      "claimNew": { "title": "اطلب كارت جديد", "desc": "استبدال كارت ضاع أو اتسرق" },
+      "deactivate": { "title": "ألغي", "desc": "تعطيل دائم" },
+      "reactivate": { "title": "فعّل تاني", "desc": "رجّع الكارت يشتغل" },
+      "allCards": "كل كروت العيلة"
+    },
+    "spendingLimits": {
+      "title": "حدود الصرف",
+      "loadFailed": "تعذر تحميل بيانات العيلة",
+      "saveFailed": "حصل خطأ وإحنا بنحفظ الحدود",
+      "noChildren": "مفيش أطفال متضافين لسه — ضيف طفل الأول من صفحة أعضاء العيلة.",
+      "autoLimitsFor": "حدود الصرف التلقائية · {{name}}",
+      "periods": { "daily": "يومي", "weekly": "أسبوعي", "monthly": "شهري" },
+      "limitSuffix": "حد",
+      "exceeded": "اتعدّى",
+      "spent": "صرف {{amount}}",
+      "autoFreezeNote": "الكارت بيتجمّد تلقائيًا لو الحد الـ{{period}} اتعدّى.",
+      "blockedCategories": "الفئات المحظورة",
+      "blockHint": "احظر فئات عشان {{name}} مايقدرش يصرف عليها خالص.",
+      "blocked": "محظورة",
+      "allowed": "مسموحة",
+      "savedFor": "الحدود اتحفظت لـ {{name}}",
+      "saving": "بيحفظ...",
+      "save": "احفظ الحدود والحظر"
+    },
+    "insights": {
+      "title": "تحليلات العيلة",
+      "loadFailed": "تعذر تحميل التحليل",
+      "reportLabel": "التقرير المالي للعيلة",
+      "scoreLine": "التقييم المالي {{score}}/100",
+      "spending": "الصرف:",
+      "savings": "المدخرات:",
+      "keyFindings": "أهم الملاحظات",
+      "loading": "بتحمّل..."
+    },
+    "coach": {
+      "suggestions": {
+        "howIsEachChild": "كل طفل ماشي إزاي الأسبوع ده؟",
+        "spendingRisks": "فيه مخاطر صرف محتاج أعرفها؟",
+        "allowancePlan": "اقترح خطة مصروف أحسن",
+        "protectScams": "أحمي العيلة من النصب إزاي؟",
+        "mostDisciplined": "مين أكتر واحد منضبط في التوفير؟"
+      },
+      "riskWith": "فيه مخاطر صرف مع {{name}}؟",
+      "goalProgress": "{{name}} قربت قد إيه من هدف \"{{goal}}\"؟",
+      "sendAllowanceQ": "أبعت لـ {{name}} مصروفه؟",
+      "greeting": "أهلاً {{name}} 👋 أنا المستشار نور، محلل مالي العيلة بتاعك. بتابع صرف وتوفير ونشاط كارت أطفالك. اسألني عن المخاطر أو الحدود أو المصروف أو أمان التطبيقات المالية.",
+      "greetingFallbackName": "صاحبي",
+      "thinkingFallback": "خليني أشوف بيانات العيلة وأرد عليك.",
+      "errorFallback": "معرفتش أوصل لخدمة الذكاء الاصطناعي دلوقتي. حاول تاني بعد لحظة.",
+      "title": "مستشار العيلة الذكي",
+      "pro": "برو",
+      "newChat": "ابدأ محادثة جديدة",
+      "score": "تقييم",
+      "placeholder": "اسأل عن مالية عيلتك..."
+    },
+    "profile": {
+      "title": "حسابي",
+      "defaultName": "ولي الأمر",
+      "defaultEmail": "parent@family.com",
+      "familyAdmin": "مسؤول العيلة",
+      "verified": "موثّق 🛡️",
+      "familyOverview": "نظرة عامة على العيلة",
+      "members": "الأعضاء",
+      "secured": "آمن",
+      "accountStatus": "حالة الحساب",
+      "settingsTitle": "الإعدادات",
+      "settings": {
+        "manageFamily": "إدارة العيلة",
+        "billingCards": "الفواتير والكروت",
+        "securityMfa": "الأمان والتحقق بخطوتين",
+        "notifications": "الإشعارات",
+        "darkMode": "الوضع الليلي",
+        "language": "اللغة · {{lang}}",
+        "helpCenter": "مركز المساعدة",
+        "termsPrivacy": "الشروط والخصوصية",
+        "signOut": "تسجيل الخروج"
+      }
+    },
+    "security": {
+      "title": "الأمان",
+      "setupFailed": "معرفتش أبدأ الإعداد",
+      "invalidCode": "الكود غلط",
+      "incorrectPassword": "كلمة السر غلط",
+      "mfaRequiredNote": "عشان نحافظ على أمان حساب عيلتك، لازم تفعّل التحقق بخطوتين قبل ما تكمل.",
+      "twoFactor": "التحقق بخطوتين",
+      "checkingStatus": "بيتحقق من الحالة...",
+      "recoveryCodes": {
+        "saveNote": "احفظ الـ 10 أكواد دي في مكان آمن (مدير كلمات سر، ورقة مطبوعة). كل كود بيشتغل مرة واحدة بس، ومش هتقدر تشوفهم تاني بعد ما تسيب الشاشة دي. استخدم واحد منهم بدل كود الـ authenticator لو فقدت الوصول لموبايلك.",
+        "copied": "اتنسخت",
+        "copyAll": "انسخ كل الأكواد",
+        "savedThem": "حفظت الأكواد دي"
+      },
+      "enroll": {
+        "scanNote": "امسح كود الـ QR ده بتطبيق Google Authenticator أو Microsoft Authenticator، وبعدين دخّل الكود المكون من 6 أرقام اللي هيظهر عشان تأكد.",
+        "cantScan": "معرفتش تمسحه؟ دخّل الكود ده يدوي:",
+        "codeLabel": "كود مكون من 6 أرقام",
+        "confirmEnable": "أكّد وفعّل",
+        "cancel": "إلغاء"
+      },
+      "on": {
+        "title": "التحقق بخطوتين شغال",
+        "desc": "هتحتاج كود من تطبيق الـ authenticator كل مرة تسجّل فيها دخول.",
+        "disable": "عطّل",
+        "confirmPasswordLabel": "أكّد كلمة السر عشان تعطّله",
+        "disableAction": "عطّل التحقق بخطوتين",
+        "neverMind": "تراجع"
+      },
+      "off": {
+        "title": "التحقق بخطوتين مقفول",
+        "desc": "ضيف طبقة حماية إضافية باستخدام تطبيق authenticator.",
+        "setup": "فعّل التحقق بخطوتين"
+      },
+      "recoverySection": {
+        "title": "أكواد الاسترجاع",
+        "desc": "أكواد استخدام لمرة واحدة تقدر تستخدمها بدل تطبيق الـ authenticator لو فقدت الوصول ليه.",
+        "unusedCount": "{{remaining}} من {{total}} لسه مستخدمة",
+        "generateNew": "ولّد أكواد جديدة",
+        "replaceWarning": "ده هيستبدل كل الأكواد الحالية — القديمة (حتى اللي متستخدمتش) هتوقف عن الشغل.",
+        "confirmPasswordLabel": "أكّد كلمة السر",
+        "neverMind": "تراجع"
+      }
+    }
+  }
+}

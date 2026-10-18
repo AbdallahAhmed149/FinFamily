@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Camera, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Image } from "@/components/ui/image";
@@ -26,6 +27,7 @@ export function AvatarUpload({
   const inputRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -35,11 +37,11 @@ export function AvatarUpload({
     setError("");
 
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+      setError(t("avatarUpload.notAnImage"));
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
-      setError("Image is too large (max 2MB).");
+      setError(t("avatarUpload.tooLarge"));
       return;
     }
 
@@ -51,7 +53,7 @@ export function AvatarUpload({
     }).catch(() => null);
 
     if (!dataUrl) {
-      setError("Couldn't read that image, try again.");
+      setError(t("avatarUpload.readFailed"));
       return;
     }
 
@@ -59,7 +61,7 @@ export function AvatarUpload({
       setSaving(true);
       await onUpload?.(dataUrl);
     } catch (err) {
-      setError(err?.message || "Couldn't save your photo, try again.");
+      setError(err?.message || t("avatarUpload.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -75,7 +77,7 @@ export function AvatarUpload({
         type="button"
         onClick={() => !disabled && inputRef.current?.click()}
         disabled={disabled || saving}
-        aria-label="Change photo"
+        aria-label={t("avatarUpload.changePhoto")}
         className={cn(
           "absolute inset-0 rounded-full flex items-center justify-center",
           "bg-black/0 group-hover:bg-black/40 focus-visible:bg-black/40",

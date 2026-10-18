@@ -1,0 +1,817 @@
+{
+  "common": {
+    "back": "Back",
+    "loading": "Loading...",
+    "goHome": "Go Home"
+  },
+  "splash": {
+    "tagline": "Growing Financially Together."
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Start Journey",
+    "slides": {
+      "parents": {
+        "title": "Parents Stay in Control",
+        "desc": "Set allowances, approve purchases, and monitor spending — all from one secure dashboard."
+      },
+      "children": {
+        "title": "Children Learn by Doing",
+        "desc": "Lotfy saves, budgets, and plays educational games that build real financial habits."
+      },
+      "ai": {
+        "title": "AI Builds Healthy Habits",
+        "desc": "A personal AI coach guides every decision, celebrates wins, and recommends the next step."
+      }
+    }
+  },
+  "roleSelect": {
+    "prompt": "Who's using the app right now?",
+    "parent": {
+      "title": "I'm a Parent",
+      "desc": "Log in for the full banking dashboard & controls."
+    },
+    "kid": {
+      "title": "I'm a Kid",
+      "desc": "Enter your Family Code and PIN to jump in with Lotfy."
+    }
+  },
+  "auth": {
+    "login": {
+      "welcomeBack": "Welcome back",
+      "subtitle": "Log in to your account",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "submit": "Log in",
+      "loggingIn": "Logging in...",
+      "noAccount": "Don't have an account?",
+      "createOne": "Create one",
+      "invalidCredentials": "Invalid email or password",
+      "mfa": {
+        "title": "Two-factor authentication",
+        "subtitle": "Enter the 6-digit code from your authenticator app",
+        "codeLabel": "Authentication code",
+        "recoveryLabel": "Recovery code",
+        "recoveryHint": "Use one of the one-time recovery codes you saved when you set up two-factor authentication.",
+        "verify": "Verify",
+        "verifying": "Verifying...",
+        "useRecovery": "Lost your authenticator? Use a recovery code",
+        "useAuthenticator": "Use authenticator code instead",
+        "invalidCode": "Invalid code"
+      }
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Sign up to get started",
+      "familyName": "Family Name",
+      "familyNamePlaceholder": "The Ahmed Family",
+      "yourName": "Your Name",
+      "yourNamePlaceholder": "Abdallah Ahmed",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Create account",
+      "creating": "Creating account...",
+      "haveAccount": "Already have an account?",
+      "logIn": "Log in",
+      "passwordMismatch": "Passwords do not match",
+      "failed": "Registration failed"
+    },
+    "forgotPassword": {
+      "title": "Reset password",
+      "subtitle": "We'll send you a link to reset it",
+      "emailLabel": "Email address",
+      "submit": "Send reset link",
+      "sending": "Sending...",
+      "backToLogin": "Back to log in",
+      "sentMessage": "If an account exists with that email, you'll receive a password reset link shortly."
+    },
+    "resetPassword": {
+      "title": "New password",
+      "subtitle": "Enter your new password below",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Reset password",
+      "resetting": "Resetting...",
+      "passwordMismatch": "Passwords do not match",
+      "failed": "Failed to reset password",
+      "invalidLink": {
+        "title": "Invalid reset link",
+        "subtitle": "This password reset link is missing or invalid",
+        "message": "The link you used appears to be incomplete. Please request a new password reset email.",
+        "requestNew": "Request a new link"
+      }
+    },
+    "childLogin": {
+      "hey": "Hey Explorer! 🦁",
+      "askParent": "Ask your parent for your Family Code to join",
+      "familyCodePlaceholder": "FAMILY CODE",
+      "findFamily": "Find My Family →",
+      "searching": "Searching...",
+      "familyNotFound": "Family code not found",
+      "areYouParent": "Are you a parent?",
+      "logInHere": "Log in here",
+      "welcomeFamily": "Welcome to the {{familyName}} family! 👋",
+      "whichOneIsYou": "Which one is you?",
+      "noKids": "No kids added to this family yet — ask your parent to add you first.",
+      "hiChild": "Hi {{childName}}!",
+      "enterPin": "Enter your secret PIN",
+      "wrongPin": "Wrong PIN, try again",
+      "checking": "Checking..."
+    }
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "message": "The page \"{{pageName}}\" could not be found in this application.",
+    "adminNoteTitle": "Admin Note",
+    "adminNoteMessage": "This could mean that the AI hasn't implemented this page yet. Ask it to implement it in the chat.",
+    "goHome": "Go Home"
+  },
+  "nav": {
+    "child": {
+      "home": "Home",
+      "wallet": "Wallet",
+      "learn": "Learn",
+      "rewards": "Rewards",
+      "profile": "Profile"
+    },
+    "parent": {
+      "dashboard": "Dashboard",
+      "allowance": "Allowance",
+      "insights": "AI Insights",
+      "approvals": "Approvals",
+      "missions": "Missions",
+      "profile": "Profile"
+    }
+  },
+  "avatarUpload": {
+    "changePhoto": "Change photo",
+    "notAnImage": "Please choose an image file.",
+    "tooLarge": "Image is too large (max 2MB).",
+    "readFailed": "Couldn't read that image, try again.",
+    "saveFailed": "Couldn't save your photo, try again."
+  },
+  "games": {
+    "gameLauncher": {
+      "genericError": "Couldn't record the game result",
+      "alreadyToday": "You already earned coins for this game today — nice practice run though! 💪",
+      "perfectDayBonus": "🌟 Perfect Day bonus: +{{coins}} coins, +{{xp}} XP — you played every game today!",
+      "newBadge": "New badge: {{names}}",
+      "newBadges": "New badges: {{names}}",
+      "badgeUnlocked": "New Badge Unlocked! 🏅",
+      "levelUp": "Level Up! 🎉",
+      "missionComplete": "Mission Complete!"
+    },
+    "missionComplete": {
+      "title": "Mission Complete!",
+      "subtitle": "You're becoming a Financial Hero!",
+      "xpEarned": "XP earned ⭐",
+      "streak": "{{days}}-day streak — keep it going!",
+      "nextMission": "Next Mission",
+      "continue": "Continue Adventure"
+    },
+    "rewardScreen": {
+      "defaultTitle": "Great job!",
+      "scoreLine": "You scored {{score}} out of {{total}}",
+      "coins": "Coins 🪙",
+      "xp": "XP ⭐",
+      "claim": "Claim Reward"
+    },
+    "badgesGrid": {
+      "earnedCount": "You've earned {{unlocked}} of {{total}} badges — tap any badge to see how to unlock it.",
+      "unlocked": "Unlocked",
+      "locked": "Locked",
+      "gotIt": "Got it"
+    },
+    "quizPlayer": {
+      "question": "Question {{current}}/{{total}}",
+      "tapCorrect": "Tap the correct answer",
+      "quizComplete": "Quiz Complete!",
+      "correct": "✅ Correct! ",
+      "incorrect": "❌ Not quite. "
+    },
+    "needsVsWants": {
+      "itemProgress": "Item {{current}}/{{total}}",
+      "question": "Is this a Need or a Want?",
+      "need": "Need",
+      "want": "Want",
+      "correct": "✅ Correct! ",
+      "incorrect": "❌ Nope. ",
+      "explainNeed": "{{name}} is a need — essential for life.",
+      "explainWant": "{{name}} is a want — nice to have."
+    },
+    "guessPrice": {
+      "round": "Round {{current}}/{{total}}",
+      "guessThePrice": "Guess the real price",
+      "perfectGuess": "🎉 Perfect guess!",
+      "realPriceIs": "The real price is {{price}}"
+    },
+    "coinCatcher": {
+      "title": "Coin Catcher",
+      "intro": "Tap the falling coins to catch them (+2). Avoid the bombs (−5)! You have 20 seconds.",
+      "start": "Start ▶",
+      "finalScore": "Final Score: {{score}}",
+      "footerHint": "Tap coins, dodge bombs!"
+    },
+    "savingHero": {
+      "title": "Saving Hero",
+      "goalLine": "Goal: {{name}} · {{target}}",
+      "remaining_one": "Remaining: {{amount}} · About {{count}} week to go",
+      "remaining_other": "Remaining: {{amount}} · About {{count}} weeks to go",
+      "goalReachedTitle": "Goal reached! You're a Saving Hero!",
+      "goalReachedDesc": "Consistent saving turns small coins into big dreams.",
+      "chooseWeekly": "Choose how much to save each week:",
+      "saveThisWeek": "Save {{amount}} this week",
+      "tip": "Tip: Saving a little every week beats saving a lot once. Consistency is the superpower! 💪"
+    },
+    "budgetBuilder": {
+      "title": "Shopping on a Budget",
+      "intro": "Buy all needs (✔) and stay within {{limit}}. Spend smart!",
+      "budget": "Budget",
+      "overBudget": "Over budget! Remove an item.",
+      "remaining": "Remaining: {{amount}}",
+      "winTitle": "Smart shopper! All needs bought within budget.",
+      "overBudgetResult": "You went over budget.",
+      "missingNeeds": "Don't forget all the needs!",
+      "checkBudget": "Check My Budget"
+    },
+    "futureInvestor": {
+      "comingSoonTitle": "Coming Soon!",
+      "comingSoonDesc": "Future Investor unlocks at age 12. For now, keep mastering saving & budgeting! 🚀",
+      "backToAdventure": "Back to Adventure",
+      "title": "Future Investor",
+      "subtitle": "Educational simulator · Virtual money only — no real trading",
+      "virtualMoney": "Your virtual money",
+      "imagineNote": "Imagine you have this for 1 year. What would you do?",
+      "risk": "Risk:",
+      "return": "Return:",
+      "time": "Time:",
+      "afterYear": "After 1 year your virtual money becomes",
+      "completeLesson": "Complete Lesson"
+    },
+    "scamDetective": {
+      "completeTitle": "Scam Detective Complete!",
+      "spottedCount": "You spotted {{score}} of {{total}} scams",
+      "badgeUnlocked": "Badge Unlocked: Scam Detective",
+      "title": "Scam Detective",
+      "caseLine": "Case {{current}} of {{total}} · Spot the danger",
+      "correct": "✅ Correct!",
+      "incorrect": "⚠️ Not the safest move",
+      "finish": "Finish",
+      "nextCase": "Next Case"
+    },
+    "smartShopper": {
+      "completeTitle": "Smart Shopper Complete!",
+      "madeChoices_one": "You made {{count}} smart choice out of {{total}}",
+      "madeChoices_other": "You made {{count}} smart choices out of {{total}}",
+      "title": "Smart Shopper",
+      "roundLine": "Round {{current}} of {{total}} · Compare value, not just price",
+      "correct": "🎉 Smart choice!",
+      "incorrect": "💡 Let's learn",
+      "tryAnother": "Try another option to see the smartest one!",
+      "finish": "Finish",
+      "next": "Next"
+    },
+    "changeMaker": {
+      "title": "Change Maker",
+      "intro": "Lotfy pays for an item — can you figure out the correct change?",
+      "howToPlay": "How to play",
+      "steps": {
+        "step1": "See the item price & amount paid",
+        "step2": "Pick the correct change from 4 options",
+        "step3": "6 rounds · earn coins for correct answers"
+      },
+      "startCounting": "Start Counting",
+      "round": "Round {{current}} / {{total}}",
+      "correctCount": "{{count}} correct",
+      "itemPrice": "Item price",
+      "paidWith": "— paid with —",
+      "youPaid": "You paid",
+      "howMuchChange": "How much change do you get back?",
+      "correct": "🎉 Correct! Great math skills!",
+      "incorrect": "❌ Oops! Correct change is {{amount}}"
+    }
+  },
+  "language": {
+    "switchTo": "العربية"
+  },
+  "child": {
+    "greeting": {
+      "morning": "Good Morning",
+      "afternoon": "Good Afternoon",
+      "evening": "Good Evening"
+    },
+    "home": {
+      "heroStatus": "Financial Hero Status",
+      "dayStreak": "{{count}}-day streak",
+      "levelLine": "Level {{level}} · {{name}}",
+      "maxLevel": "MAX",
+      "xpToNext": "{{xp}} XP to {{name}}",
+      "topLevel": "You reached the top level! 👑",
+      "totalXp": "Total XP",
+      "dayStreakStat": "Day Streak",
+      "coins": "Coins 🪙",
+      "todaysMission": "Today's Mission",
+      "startMission": "START MISSION",
+      "playAndLearn": "Play & Learn",
+      "adventureMapLink": "Adventure Map",
+      "doneSuffix": "% done",
+      "continueAdventure": "Continue Your Adventure",
+      "shortcuts": {
+        "adventureMap": { "title": "Adventure Map", "desc": "7 worlds to explore" },
+        "missions": { "title": "Real-Life Missions", "desc": "Practice & earn XP" },
+        "coach": { "title": "FinBuddy 🤖", "desc": "Your AI money buddy" },
+        "leaderboard": { "title": "Leaderboard", "desc": "Climb the ranks" },
+        "wallet": { "title": "Wallet", "desc": "Balance & spending" },
+        "goals": { "title": "Savings Goals", "desc": "Track your dreams" }
+      }
+    },
+    "wallet": {
+      "title": "Smart Wallet",
+      "loadFailed": "Couldn't load your wallet",
+      "currentBalance": "Current Balance",
+      "viewMeezaCard": "View Meeza Card",
+      "stats": {
+        "savings": "Savings",
+        "todaySpending": "Today's Spending",
+        "totalEarned": "Total Earned"
+      },
+      "cardActive": "Active",
+      "cardFrozen": "Frozen",
+      "cardLabel": "Card {{status}}",
+      "systemsSecure": "All systems secure 🔒",
+      "savingsGoals": "Savings Goals",
+      "transactions": "Transactions",
+      "loading": "Loading...",
+      "empty": "No transactions yet — once you finish a chore and your parent approves it, it'll show up here.",
+      "dateTime": "Date & Time",
+      "types": {
+        "mission_reward": "Chore",
+        "redemption": "Reward",
+        "allowance": "Allowance",
+        "savings_transfer": "Savings",
+        "adjustment": "Adjustment"
+      },
+      "directions": {
+        "credit": "Received",
+        "debit": "Spent"
+      }
+    },
+    "missions": {
+      "title": "My Missions",
+      "subtitle": "Chores your parent assigned you · Earn coins with approval",
+      "loadFailed": "Couldn't load your missions",
+      "submitFailed": "Something went wrong",
+      "loading": "Loading...",
+      "empty": "No missions yet — wait for your parent to add one 🙂",
+      "status": {
+        "pending": "To Do",
+        "submitted": "Waiting for Parent",
+        "approved": "Approved & Paid",
+        "rejected": "Rejected"
+      },
+      "markDone": "Mark as Done",
+      "waitingApproval": "Waiting for parent to approve",
+      "approvedLine": "Approved · +{{amount}}!",
+      "submittedBadge": { "name": "Goal Getter", "desc": "Submitted a mission for review" },
+      "waitForApproval": "Wait for parent approval"
+    },
+    "goals": {
+      "title": "Savings Goals",
+      "loadFailed": "Couldn't load your goals",
+      "insufficientBalance": "You don't have enough balance in your Wallet to transfer that amount",
+      "transferFailed": "Something went wrong",
+      "createFailed": "Something went wrong while adding the goal",
+      "walletBalance": "Wallet balance:",
+      "walletBalanceHint": "— use it to fund your goals below",
+      "loading": "Loading...",
+      "empty": "No goals yet — tap + and start your first savings goal 🎯",
+      "goalReached": "🎉 Goal reached!",
+      "save10": "+ Save 10 EGP",
+      "save25": "+ 25 EGP",
+      "newGoal": "New Savings Goal",
+      "goalName": "Goal Name",
+      "goalNamePlaceholder": "e.g. New Bicycle",
+      "target": "Target (EGP)",
+      "createGoal": "Create Goal"
+    },
+    "rewards": {
+      "title": "Rewards Store",
+      "loadFailed": "Couldn't load the store",
+      "redeemFailed": "Something went wrong",
+      "yourCoins": "Your Coins",
+      "earnMore": "Earn more by completing chores",
+      "redeemCoins": "Redeem Coins",
+      "approvalNote": "Requests need your parent's approval before coins are taken.",
+      "gotIt": "Got it",
+      "pending": "Pending",
+      "waitingCount": "{{count}} request(s) waiting for approval",
+      "waitingHint": "Ask a parent to check the Reward Approvals page."
+    },
+    "profile": {
+      "title": "Profile",
+      "defaultLevelTitle": "Money Explorer",
+      "level": "Level {{level}}",
+      "financialScore": "Financial Score",
+      "liveScore": "Live score",
+      "scoreNote": "Excellent financial discipline! Keep it up. 🌟",
+      "financialJourney": "My Financial Journey",
+      "badges": "Badges",
+      "myChores": "My Chores",
+      "chores": { "approved": "Approved", "waiting": "Waiting", "toDo": "To Do" },
+      "settingsTitle": "Settings",
+      "settings": {
+        "parentDashboard": "Parent Dashboard",
+        "notifications": "Notifications",
+        "security": "Security",
+        "darkMode": "Dark Mode",
+        "language": "Language · {{lang}}",
+        "accessibility": "Accessibility",
+        "helpCenter": "Help Center",
+        "termsPrivacy": "Terms & Privacy",
+        "switchRole": "Switch Role"
+      }
+    },
+    "leaderboard": {
+      "title": "Family Leaderboard",
+      "rank": "Rank #{{rank}}",
+      "loadFailed": "Couldn't load the ranking",
+      "yourPosition": "Your position",
+      "positionLine": "#{{rank}} of {{total}}",
+      "xpLevelLine": "{{xp}} XP · Level {{level}}",
+      "wallet": "wallet",
+      "loading": "Loading...",
+      "onlyChild": "The ranking shows up once there's more than one child in the family — right now you're the only one registered. 🦁",
+      "fullRanking": "Full Ranking",
+      "you": "You",
+      "dayStreak": "{{count}}-day streak",
+      "xpLevelShort": "XP · Lvl {{level}}"
+    },
+    "coach": {
+      "suggestions": {
+        "football": "I want a football ⚽",
+        "howSave": "How do I save money?",
+        "whatBudget": "What's a budget?",
+        "scamCheck": "Is this message a scam?"
+      },
+      "goalRemaining": "How much more do I need for {{goal}}?",
+      "goalDone": "I finished my {{goal}} goal! 🎉",
+      "choreApproval": "When will my chore get approved?",
+      "choresToday": "What chores can I do today?",
+      "greeting": "Hi {{name}}! 👋 I'm FinBuddy 🤖, your AI money buddy. I'll help you learn money skills by thinking together. Tell me a goal or ask me anything! 💚",
+      "greetingFallbackName": "there",
+      "thinkingFallback": "Hmm, let me think about that!",
+      "errorFallback": "Oops, my brain is offline for a second. Try again!",
+      "online": "● Online · AI Money Buddy",
+      "newChat": "Start a new chat",
+      "placeholder": "Ask FinBuddy anything..."
+    },
+    "adventureMap": {
+      "title": "Financial Adventure",
+      "levelLine": "Level {{level}} · {{name}} · {{xp}} XP",
+      "heroLine": "Your journey to becoming a Financial Hero 🦸",
+      "unlockHint": "Complete each world to unlock the next",
+      "world": "WORLD {{num}}",
+      "progress": "Progress",
+      "unlocksAt": "Unlocks at Level {{level}}"
+    },
+    "meezaCard": {
+      "title": "Meeza Card",
+      "status": { "active": "Active", "frozen": "Frozen", "deactivated": "Deactivated", "pending": "Pending", "declined": "Declined" },
+      "statusLabel": "STATUS",
+      "balanceLabel": "BALANCE",
+      "simulatedNotice": "This is a simulated card — not linked to a real bank.",
+      "tapToFlipBack": "Tap to flip back",
+      "tapToFlip": "Tap card to flip",
+      "deactivatedNotice": "Your card is deactivated — ask a parent to claim a new one.",
+      "frozenNotice": "Your card is frozen — ask a parent to unfreeze it from Family Cards.",
+      "simulatePurchase": "Simulate a Purchase",
+      "theme": "Theme",
+      "recentPayments": "Recent Payments",
+      "noPurchases": "No purchases yet — try simulating one above.",
+      "merchant": "Merchant",
+      "merchantPlaceholder": "e.g. GameZone",
+      "category": "Category",
+      "amount": "Amount (EGP)",
+      "location": "Location (optional)",
+      "locationPlaceholder": "e.g. City Mall",
+      "processing": "Processing...",
+      "payNow": "Pay Now",
+      "paymentApproved": "Payment Approved!",
+      "waitingParentApproval": "Waiting for Parent Approval",
+      "paymentDeclined": "Payment Declined",
+      "overLimitNote": "You went over a spending limit — your parent will review it.",
+      "done": "Done",
+      "genericError": "Something went wrong"
+    },
+    "learn": {
+      "title": "Learn",
+      "learningPath": "Learning Path",
+      "levelLine": "{{xp}} XP · Level {{level}}",
+      "lessonsCount": "lessons",
+      "tabs": { "lessons": "Lessons", "games": "Games" },
+      "storySuffix": "· Story",
+      "storyText": "🦁 Once upon a time, Lotfy earned his first 10 EGP. He learned that money can be saved, spent, or shared — and that smart choices today grow into big dreams tomorrow!",
+      "certificate": "Certificate",
+      "startQuiz": "Start Quiz",
+      "gameComplete": "Game Complete!"
+    }
+  },
+  "parent": {
+    "dashboard": {
+      "welcomeBack": "Welcome back",
+      "verified": "Verified ✓",
+      "stats": {
+        "totalSpending": "Total Spending",
+        "totalSavings": "Total Savings",
+        "goalsCompleted": "Goals Completed",
+        "finScore": "Fin. Score"
+      },
+      "trends": { "thisMonth": "this month", "acrossKids": "across kids", "familyAvg": "family avg" },
+      "sampleData": "Sample data",
+      "scoreTrend": "Financial Score Trend",
+      "spendingByCategory": "Spending by Category",
+      "noCategorySpending": "No real spending yet (approved redemptions) to break down by category.",
+      "weeklySpending": "Weekly Spending",
+      "weekdays": { "sat": "Sat", "sun": "Sun", "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri" },
+      "askCoach": "Ask Coach",
+      "aiAlerts": "AI Alerts & Suggestions",
+      "management": "Family Management",
+      "tiles": {
+        "members": { "label": "Members", "sub": "{{count}} kids" },
+        "chores": { "label": "Chores", "sub": "Assign tasks" },
+        "limits": { "label": "Limits", "sub": "Spend caps" },
+        "cards": { "label": "Cards", "sub": "Freeze / replace" },
+        "rewards": { "label": "Rewards", "sub": "Approve" },
+        "aiCoach": { "label": "AI Coach", "sub": "Family analyst" },
+        "missions": { "label": "Missions", "sub": "Approve tasks" }
+      },
+      "sendAllowance": { "title": "Send Allowance", "desc": "Schedule or send now" },
+      "aiInsightsShortcut": { "title": "AI Insights", "desc": "Weekly report ready" },
+      "recentActivity": "Recent Activity",
+      "noActivity": "No activity yet — assign a chore or send an allowance to get started."
+    },
+    "approvals": {
+      "title": "Purchase Approvals",
+      "pendingCount_one": "{{count}} pending request",
+      "pendingCount_other": "{{count}} pending requests",
+      "overLimitNote": "Purchases that went over a spending limit",
+      "requests": "Requests",
+      "empty": "No card purchases yet.",
+      "approved": "approved",
+      "rejected": "rejected",
+      "reject": "Reject",
+      "approve": "Approve",
+      "approvedNote": "✓ Approved and paid from wallet",
+      "declinedNote": "✕ Declined{{reason}}"
+    },
+    "rewardApprovals": {
+      "title": "Reward Requests",
+      "pending": "{{count}} pending",
+      "loadFailed": "Couldn't load reward requests",
+      "decideFailed": "Something went wrong approving this — the child may not have enough balance",
+      "bannerTitle": "Children want to redeem coins",
+      "bannerDesc": "Approve or reject their reward requests",
+      "pendingRequests": "Pending Requests",
+      "loading": "Loading...",
+      "requestedBy": "Requested by",
+      "ofCoins": "of {{balance}} coins",
+      "reject": "Reject",
+      "approveFulfill": "Approve & Fulfill",
+      "noPending": "No pending reward requests 🎉",
+      "history": "History",
+      "noHistory": "No history yet"
+    },
+    "childMissions": {
+      "title": "Missions",
+      "subtitle": "Chores & reward requests across the family",
+      "loadFailed": "Couldn't load missions",
+      "decideFailed": "Something went wrong approving this",
+      "waitingCount_zero": "No missions waiting for your approval",
+      "waitingCount_one": "{{count}} mission waiting for your approval",
+      "waitingCount_other": "{{count}} missions waiting for your approval",
+      "loading": "Loading...",
+      "empty": "No missions yet — go to Chores & Tasks and assign the first one.",
+      "status": { "pending": "Assigned", "submitted": "Needs Approval", "approved": "Approved", "rejected": "Rejected" },
+      "rewardRequest": "Reward request",
+      "chore": "Chore",
+      "paid": "Paid",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "chores": {
+      "title": "Chores & Tasks",
+      "loadFailed": "Couldn't load chores",
+      "addFailed": "Something went wrong adding the chore",
+      "decideFailed": "Something went wrong approving this",
+      "earnByDoing": "Earn by doing",
+      "summaryLine": "{{count}} pending · {{reward}} to reward",
+      "all": "All",
+      "taskBoard": "Task Board",
+      "loading": "Loading...",
+      "status": { "pending": "Waiting for child", "submitted": "Needs Your Review", "approved": "Paid", "rejected": "Rejected" },
+      "categories": { "Home": "Home", "School": "School", "Learning": "Learning" },
+      "approvePay": "Approve & Pay",
+      "reject": "Reject",
+      "rewardPaidTo": "Reward paid to {{name}}",
+      "noTasks": "No tasks yet. Tap + to assign one.",
+      "quickTemplates": "Quick Templates",
+      "coins": "coins",
+      "assignChore": "Assign a Chore",
+      "taskTitle": "Task Title",
+      "taskTitlePlaceholder": "e.g. Clean the kitchen",
+      "assignTo": "Assign To",
+      "noChildren": "No children yet",
+      "rewardCoins": "Reward (coins)",
+      "category": "Category",
+      "assign": "Assign Chore",
+      "addChildFirst": "Add a child first from Family Members."
+    },
+    "allowance": {
+      "title": "Allowance",
+      "loadFailed": "Couldn't load family data",
+      "sendFailed": "Something went wrong sending the allowance",
+      "noChildren": "No children added yet — add a child first from Family Members.",
+      "sendTo": "Send to",
+      "balance": "Balance: {{amount}}",
+      "allowanceType": "Allowance Type",
+      "scheduleNote": "One-time manual allowance for now — recurring schedules (daily/weekly auto) aren't available yet.",
+      "amount": "Amount (EGP)",
+      "sentTo": "Sent to {{name}}! 🎉",
+      "sending": "Sending...",
+      "sendAmountTo": "Send {{amount}} to {{name}}",
+      "flyingCoins": "Coins flying toward {{name}}... Balance updated!"
+    },
+    "familyMembers": {
+      "title": "Family Members",
+      "loadFailed": "Couldn't load family data",
+      "nameRequired": "Enter the child's name",
+      "pinInvalid": "PIN must be exactly 6 digits",
+      "addFailed": "Something went wrong adding the child",
+      "familyCodeLabel": "Family Code — Share with your kids",
+      "childrenCount_zero": "No Children",
+      "childrenCount_one": "{{count}} Child",
+      "childrenCount_other": "{{count}} Children",
+      "addHint": "Add a child, then share the code above so they can log in.",
+      "manageEach": "Manage Each Member",
+      "empty": "No children added yet — tap + above to add the first one.",
+      "status": { "active": "Active", "frozen": "Frozen", "deactivated": "Deactivated" },
+      "level": "Level {{level}}",
+      "wallet": "Wallet",
+      "savings": "Savings",
+      "streak": "Streak",
+      "limits": "Limits",
+      "card": "Card",
+      "chores": "Chores",
+      "addChild": "Add a Child",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "e.g. Salma Hassan",
+      "pinLabel": "PIN (6 digits) — the child uses this to log in",
+      "creating": "Creating...",
+      "createAccount": "Create Member Account",
+      "createNote": "Spending limits, cards, and balances will be set up once wallets are wired in — for now this creates their login."
+    },
+    "familyCards": {
+      "title": "Family Cards",
+      "noKids": "No kids added yet — add one from Family Members first.",
+      "flashFrozen": "Card frozen for {{name}}",
+      "flashActivated": "Card activated for {{name}}",
+      "flashDeactivated": "Card deactivated for {{name}}",
+      "flashError": "Something went wrong",
+      "flashNewCard": "New card claimed — old one voided",
+      "status": {
+        "active": { "label": "Active", "desc": "Card works normally" },
+        "frozen": { "label": "Frozen", "desc": "All payments blocked" },
+        "deactivated": { "label": "Deactivated", "desc": "Needs a new card to work again" }
+      },
+      "cardControls": "Card Controls",
+      "freeze": { "title": "Freeze Card", "desc": "Block all payments instantly" },
+      "unfreeze": { "title": "Unfreeze", "desc": "Reactivate the card" },
+      "claimNew": { "title": "Claim New Card", "desc": "Replace lost/stolen card" },
+      "deactivate": { "title": "Deactivate", "desc": "Permanently disable" },
+      "reactivate": { "title": "Reactivate", "desc": "Turn card back on" },
+      "allCards": "All Family Cards"
+    },
+    "spendingLimits": {
+      "title": "Spending Limits",
+      "loadFailed": "Couldn't load family data",
+      "saveFailed": "Something went wrong saving the limits",
+      "noChildren": "No children added yet — add a child first from Family Members.",
+      "autoLimitsFor": "Auto Spending Limits · {{name}}",
+      "periods": { "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly" },
+      "limitSuffix": "Limit",
+      "exceeded": "Exceeded",
+      "spent": "spent {{amount}}",
+      "autoFreezeNote": "Card auto-freezes if {{period}} limit is exceeded.",
+      "blockedCategories": "Blocked Categories",
+      "blockHint": "Block categories so {{name}} can't spend on them at all.",
+      "blocked": "Blocked",
+      "allowed": "Allowed",
+      "savedFor": "Limits Saved for {{name}}",
+      "saving": "Saving...",
+      "save": "Save Limits & Blocks"
+    },
+    "insights": {
+      "title": "Family Insights",
+      "loadFailed": "Couldn't load the analysis",
+      "reportLabel": "Family Financial Report",
+      "scoreLine": "Financial Score {{score}}/100",
+      "spending": "Spending:",
+      "savings": "Savings:",
+      "keyFindings": "Key Findings",
+      "loading": "Loading..."
+    },
+    "coach": {
+      "suggestions": {
+        "howIsEachChild": "How is each child doing this week?",
+        "spendingRisks": "Any spending risks I should know about?",
+        "allowancePlan": "Suggest a better allowance plan",
+        "protectScams": "How do I protect the family from scams?",
+        "mostDisciplined": "Who is the most disciplined saver?"
+      },
+      "riskWith": "Any spending risks with {{name}}?",
+      "goalProgress": "How close is {{name}} to their \"{{goal}}\" goal?",
+      "sendAllowanceQ": "Should I send {{name}} their allowance?",
+      "greeting": "Hello {{name}} 👋 I'm Coach Nour, your family finance analyst. I monitor your children's spending, savings, and card activity. Ask me about risks, limits, allowances, or fintech safety.",
+      "greetingFallbackName": "there",
+      "thinkingFallback": "Let me check the family data and get back to you.",
+      "errorFallback": "I couldn't reach the AI service right now. Please try again in a moment.",
+      "title": "AI Family Coach",
+      "pro": "Pro",
+      "newChat": "Start a new chat",
+      "score": "score",
+      "placeholder": "Ask about your family's finances..."
+    },
+    "profile": {
+      "title": "Profile",
+      "defaultName": "Parent User",
+      "defaultEmail": "parent@family.com",
+      "familyAdmin": "Family Admin",
+      "verified": "Verified 🛡️",
+      "familyOverview": "Family Overview",
+      "members": "Members",
+      "secured": "Secured",
+      "accountStatus": "Account Status",
+      "settingsTitle": "Settings",
+      "settings": {
+        "manageFamily": "Manage Family",
+        "billingCards": "Billing & Cards",
+        "securityMfa": "Security & MFA",
+        "notifications": "Notifications",
+        "darkMode": "Dark Mode",
+        "language": "Language · {{lang}}",
+        "helpCenter": "Help Center",
+        "termsPrivacy": "Terms & Privacy",
+        "signOut": "Sign Out"
+      }
+    },
+    "security": {
+      "title": "Security",
+      "setupFailed": "Couldn't start setup",
+      "invalidCode": "Invalid code",
+      "incorrectPassword": "Incorrect password",
+      "mfaRequiredNote": "To keep your family's account secure, two-factor authentication is required before you can continue.",
+      "twoFactor": "Two-factor authentication",
+      "checkingStatus": "Checking status...",
+      "recoveryCodes": {
+        "saveNote": "Save these 10 codes somewhere safe (password manager, printed paper). Each one works only once, and you won't be able to see them again after leaving this screen. Use one instead of your authenticator code if you ever lose access to your phone.",
+        "copied": "Copied",
+        "copyAll": "Copy all codes",
+        "savedThem": "I've saved these codes"
+      },
+      "enroll": {
+        "scanNote": "Scan this QR code with Google Authenticator or Microsoft Authenticator, then enter the 6-digit code it shows to confirm.",
+        "cantScan": "Can't scan it? Enter this code manually:",
+        "codeLabel": "6-digit code",
+        "confirmEnable": "Confirm & enable",
+        "cancel": "Cancel"
+      },
+      "on": {
+        "title": "Two-factor authentication is on",
+        "desc": "You'll need a code from your authenticator app every time you log in.",
+        "disable": "Disable",
+        "confirmPasswordLabel": "Confirm your password to disable",
+        "disableAction": "Disable two-factor authentication",
+        "neverMind": "Never mind"
+      },
+      "off": {
+        "title": "Two-factor authentication is off",
+        "desc": "Add an extra layer of security using an authenticator app.",
+        "setup": "Set up two-factor authentication"
+      },
+      "recoverySection": {
+        "title": "Recovery codes",
+        "desc": "One-time codes you can use instead of your authenticator app if you ever lose access to it.",
+        "unusedCount": "{{remaining}} of {{total}} unused",
+        "generateNew": "Generate new codes",
+        "replaceWarning": "This replaces all your existing codes — old ones (even unused) will stop working.",
+        "confirmPasswordLabel": "Confirm your password",
+        "neverMind": "Never mind"
+      }
+    }
+  }
+}

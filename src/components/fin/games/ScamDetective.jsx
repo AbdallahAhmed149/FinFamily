@@ -1,8 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useContentTranslation } from "@/lib/useContentTranslation";
 import { Check, X, ShieldCheck, ArrowRight } from "lucide-react";
 import { scamDetectiveScenarios } from "@/lib/finData";
 
 export default function ScamDetective({ onFinish }) {
+  const { t } = useTranslation();
+  const tc = useContentTranslation();
   const [round, setRound] = useState(0);
   const [picked, setPicked] = useState(null);
   const [score, setScore] = useState(0);
@@ -32,10 +36,10 @@ export default function ScamDetective({ onFinish }) {
     return (
       <div className="px-6 py-12 text-center animate-pop">
         <div className="text-5xl mb-3">🕵️</div>
-        <h2 className="text-xl font-extrabold font-heading">Scam Detective Complete!</h2>
-        <p className="text-sm text-muted-foreground mt-1">You spotted {score} of {scamDetectiveScenarios.length} scams</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("games.scamDetective.completeTitle")}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t("games.scamDetective.spottedCount", { score, total: scamDetectiveScenarios.length })}</p>
         <div className="mt-4 inline-flex items-center gap-2 grad-emerald rounded-full px-4 py-2 text-white text-sm font-bold shadow-glow-emerald">
-          <ShieldCheck className="w-4 h-4" /> Badge Unlocked: Scam Detective
+          <ShieldCheck className="w-4 h-4" /> {t("games.scamDetective.badgeUnlocked")}
         </div>
       </div>
     );
@@ -45,8 +49,8 @@ export default function ScamDetective({ onFinish }) {
     <div className="px-4 pt-8 pb-8 max-w-md mx-auto">
       <div className="text-center mb-4">
         <div className="text-5xl mb-2">🕵️</div>
-        <h2 className="text-xl font-extrabold font-heading">Scam Detective</h2>
-        <p className="text-xs text-muted-foreground">Case {round + 1} of {scamDetectiveScenarios.length} · Spot the danger</p>
+        <h2 className="text-xl font-extrabold font-heading">{t("games.scamDetective.title")}</h2>
+        <p className="text-xs text-muted-foreground">{t("games.scamDetective.caseLine", { current: round + 1, total: scamDetectiveScenarios.length })}</p>
       </div>
 
       <div className="flex gap-1.5 mb-4">
@@ -55,8 +59,8 @@ export default function ScamDetective({ onFinish }) {
         ))}
       </div>
 
-      <div className="glass rounded-2xl p-4 shadow-premium mb-4 border-l-4 border-red-400">
-        <p className="text-sm font-semibold">{sc.prompt}</p>
+      <div className="glass rounded-2xl p-4 shadow-premium mb-4 border-s-4 border-red-400">
+        <p className="text-sm font-semibold">{tc(sc.prompt)}</p>
       </div>
 
       <div className="space-y-2.5">
@@ -68,9 +72,9 @@ export default function ScamDetective({ onFinish }) {
               key={o.id}
               onClick={() => pick(o.id)}
               disabled={picked !== null}
-              className={"w-full glass rounded-2xl p-3.5 text-left shadow-premium border-2 transition-all active:scale-[0.99] flex items-center gap-3 " + (show && o.correct ? "border-emerald-400 bg-emerald-50" : show && selected ? "border-red-400 bg-red-50" : "border-transparent")}
+              className={"w-full glass rounded-2xl p-3.5 text-start shadow-premium border-2 transition-all active:scale-[0.99] flex items-center gap-3 " + (show && o.correct ? "border-emerald-400 bg-emerald-50" : show && selected ? "border-red-400 bg-red-50" : "border-transparent")}
             >
-              <span className="flex-1 text-sm font-semibold">{o.label}</span>
+              <span className="flex-1 text-sm font-semibold">{tc(o.label)}</span>
               {show && o.correct && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
               {show && selected && !o.correct && <X className="w-4 h-4 text-red-500 shrink-0" />}
             </button>
@@ -80,10 +84,10 @@ export default function ScamDetective({ onFinish }) {
 
       {picked !== null && (
         <div className="mt-4 rounded-2xl p-4 animate-pop" style={{ background: opt?.correct ? "#00B89415" : "#ef444415" }}>
-          <div className="font-bold text-sm mb-1">{opt?.correct ? "✅ Correct!" : "⚠️ Not the safest move"}</div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{opt?.explain}</p>
+          <div className="font-bold text-sm mb-1">{opt?.correct ? t("games.scamDetective.correct") : t("games.scamDetective.incorrect")}</div>
+          <p className="text-xs text-muted-foreground leading-relaxed">{tc(opt?.explain)}</p>
           <button onClick={next} className="w-full h-11 mt-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 grad-navy active:scale-[0.98] transition-all">
-            {round + 1 >= scamDetectiveScenarios.length ? "Finish" : "Next Case"} <ArrowRight className="w-4 h-4" />
+            {round + 1 >= scamDetectiveScenarios.length ? t("games.scamDetective.finish") : t("games.scamDetective.nextCase")} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
           </button>
         </div>
       )}
