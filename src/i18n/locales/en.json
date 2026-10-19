@@ -1,4 +1,46 @@
 {
+  "quests": {
+    "title": "Today's Quests",
+    "claimedCount": "{{done}}/{{total}} claimed",
+    "claim": "Claim",
+    "games_2": {
+      "title": "Play 2 different games"
+    },
+    "games_3": {
+      "title": "Play 3 different games"
+    },
+    "high_score": {
+      "title": "Score 80% or more in any game"
+    },
+    "save_money": {
+      "title": "Add money to a savings goal"
+    },
+    "chore": {
+      "title": "Finish a chore at home"
+    },
+    "ask_lotfy": {
+      "title": "Ask Lotfy a money question"
+    },
+    "chestLocked": "Finish all 3 quests to open the chest",
+    "chestOpened": "Chest opened! 🎉",
+    "chestReward": "Bonus +{{xp}} XP"
+  },
+  "celebration": {
+    "soundOn": "Turn sound on",
+    "soundOff": "Turn sound off",
+    "levelUp": {
+      "title": "LEVEL UP!",
+      "level": "LEVEL",
+      "nowA": "You're now a {{name}}!",
+      "next": "Next: {{name}} at {{xp}} XP",
+      "button": "Awesome!"
+    }
+  },
+  "streakBanner": {
+    "atRisk": "🔥 Play anything today to keep your {{count}}-day streak going!",
+    "covered": "❄️ Your Streak Freeze will protect your {{count}}-day streak — just play today.",
+    "broken": "Start a brand-new streak today!"
+  },
   "common": {
     "back": "Back",
     "loading": "Loading...",
@@ -179,6 +221,9 @@
       "scoreLine": "You scored {{score}} out of {{total}}",
       "coins": "Coins 🪙",
       "xp": "XP ⭐",
+      "streakFreezeUsed": "Your Streak Freeze just saved your streak!",
+      "streakFreezeEarned": "You earned a new Streak Freeze!",
+      "streakLost": "Your {{count}}-day streak ended — start a new one today, you can beat it!",
       "claim": "Claim Reward"
     },
     "badgesGrid": {

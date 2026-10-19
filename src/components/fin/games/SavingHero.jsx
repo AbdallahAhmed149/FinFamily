@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { play } from "@/lib/sounds";
 import { useTranslation } from "react-i18next";
 import { useContentTranslation } from "@/lib/useContentTranslation";
 import { PiggyBank, ArrowRight, Sparkles } from "lucide-react";
@@ -18,6 +19,7 @@ export default function SavingHero({ onFinish }) {
 
   const save = () => {
     if (complete) return;
+    play("coin");
     const next = Math.min(target, current + weekly);
     setCurrent(next);
     setBurst(true);

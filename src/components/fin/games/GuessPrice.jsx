@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { play } from "@/lib/sounds";
 import { useTranslation } from "react-i18next";
 import { useContentTranslation } from "@/lib/useContentTranslation";
 import { Check, X } from "lucide-react";
@@ -18,6 +19,7 @@ export default function GuessPrice({ onFinish }) {
     if (picked !== null) return;
     setPicked(opt);
     const correct = opt === item.price;
+    play(correct ? "correct" : "wrong");
     if (correct) setScore((s) => s + 1);
     setTimeout(() => {
       const next = i + 1;

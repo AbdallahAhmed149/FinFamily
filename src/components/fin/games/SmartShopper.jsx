@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { play } from "@/lib/sounds";
 import { useTranslation } from "react-i18next";
 import { useContentTranslation } from "@/lib/useContentTranslation";
 import { Check, X, Star, ArrowRight } from "lucide-react";
@@ -18,6 +19,7 @@ export default function SmartShopper({ onFinish }) {
   const pick = (id) => {
     if (picked) return;
     setPicked(id);
+    play(id === sc.answer ? "correct" : "wrong");
     if (id === sc.answer && !done) setScore((s) => s + 1);
   };
 

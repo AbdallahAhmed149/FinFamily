@@ -25,3 +25,8 @@ class GameCompleteResponse(BaseModel):
     newly_unlocked_badges: List[BadgeOut] = []
     perfect_day_bonus_coins: float = 0
     perfect_day_bonus_xp: int = 0
+    # Streak Freeze
+    streak_freeze_used: int = 0         # كام يوم اتحمى بـ Freeze في النشاط ده
+    streak_freeze_earned: bool = False  # كسب Freeze جديد
+    streak_lost: int = 0                # لو الـ streak اتكسر: كان كام
+    new_streak_freezes: int = 0

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import GameOverlay from "@/components/fin/GameOverlay";
 import RewardScreen from "@/components/fin/RewardScreen";
@@ -13,6 +13,8 @@ import FutureInvestor from "@/components/fin/games/FutureInvestor";
 import SavingHero from "@/components/fin/games/SavingHero";
 import { completeGame } from "@/lib/finApi";
 import { useAuth } from "@/lib/AuthContext";
+import { useCelebrationHold } from "@/lib/CelebrationContext";
+import { play } from "@/lib/sounds";
 
 const registry = {
   gm2: BudgetBuilder, gm3: NeedsVsWants, gm4: GuessPrice,
@@ -27,6 +29,10 @@ export default function GameLauncher({ game, onClose }) {
   const { refreshUser } = useAuth();
   const G = registry[game.id] || SmartShopper;
 
+  // طول ما اللعبة/شاشة المكافأة مفتوحة، شاشة Level-Up العامة تستنى (يشوف المكافأة الأول).
+  useCelebrationHold(true);
+  useEffect(() => { play("open"); }, []);
+
   // المكافأة بتتحدد في الباك اند بس (GAME_CATALOG) — احنا هنا بس بنبعت النتيجة
   // الخام (score/total) اللي اللعبة وصلتلها، وبنعرض اللي السيرفر يرجعه فعليًا.
   const handleFinish = async (score, total) => {
@@ -39,6 +45,11 @@ export default function GameLauncher({ game, onClose }) {
         alreadyToday: res.already_rewarded_today, leveledUp: res.leveled_up,
         newBadges: res.newly_unlocked_badges || [],
         perfectDayCoins: res.perfect_day_bonus_coins, perfectDayXp: res.perfect_day_bonus_xp,
+        streak: {
+          freezeUsed: res.streak_freeze_used || 0,
+          freezeEarned: !!res.streak_freeze_earned,
+          lost: res.streak_lost || 0,
+        },
       });
       // الرصيد (coins) بيتحدث لوحده لأن Home/Profile بيجيبوا الـ wallet تاني كل ما تفتحهم،
       // لكن الـ xp/level/streak جايين من AuthContext.user اللي بيتحمّل مرة واحدة بس وقت
@@ -48,20 +59,16 @@ export default function GameLauncher({ game, onClose }) {
     } catch (err) {
       setError(err.message || t("games.gameLauncher.genericError"));
       // برضو نوري شاشة إنهاء (من غير مكافأة) عشان الطفل ميفضلش واقف
-      setReward({ score, total, coins: 0, xp: 0, alreadyToday: false, leveledUp: false, newBadges: [], perfectDayCoins: 0, perfectDayXp: 0 });
+      setReward({ score, total, coins: 0, xp: 0, alreadyToday: false, leveledUp: false, newBadges: [], perfectDayCoins: 0, perfectDayXp: 0, streak: null });
     }
   };
 
-  const abort = () => onClose(false);
+  const abort = () => { play("back"); onClose(false); };
   const complete = () => { setReward(null); onClose(true); };
 
   const noteLines = [];
   if (reward?.alreadyToday) noteLines.push(t("games.gameLauncher.alreadyToday"));
   if (reward?.perfectDayCoins > 0) noteLines.push(t("games.gameLauncher.perfectDayBonus", { coins: reward.perfectDayCoins, xp: reward.perfectDayXp }));
-  if (reward?.newBadges?.length) {
-    const names = reward.newBadges.map((b) => `${b.icon} ${b.name}`).join(", ");
-    noteLines.push(t(reward.newBadges.length > 1 ? "games.gameLauncher.newBadges" : "games.gameLauncher.newBadge", { names }));
-  }
   if (!reward?.alreadyToday && error) noteLines.push(error);
 
   return (
@@ -74,6 +81,8 @@ export default function GameLauncher({ game, onClose }) {
           coins={reward.coins + (reward.perfectDayCoins || 0)}
           xp={reward.xp + (reward.perfectDayXp || 0)}
           note={noteLines.length ? noteLines.join(" · ") : undefined}
+          badges={reward.newBadges || []}
+          streak={reward.streak || undefined}
           onClose={complete}
         />
       ) : (

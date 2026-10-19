@@ -19,6 +19,8 @@ class UserResponse(BaseModel):
     level: int = 1
     streak: int = 0
     birth_year: Optional[int] = None
+    streak_freezes: int = 0
+    streak_status: str = "none"  # none | active | at_risk | covered | broken
     mfa_enabled: bool = False
     created_date: datetime
 

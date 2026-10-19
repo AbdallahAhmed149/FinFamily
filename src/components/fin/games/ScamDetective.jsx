@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { play } from "@/lib/sounds";
 import { useTranslation } from "react-i18next";
 import { useContentTranslation } from "@/lib/useContentTranslation";
 import { Check, X, ShieldCheck, ArrowRight } from "lucide-react";
@@ -19,6 +20,7 @@ export default function ScamDetective({ onFinish }) {
     if (picked) return;
     setPicked(id);
     const o = sc.options.find((x) => x.id === id);
+    play(o.correct ? "correct" : "wrong");
     if (o.correct) setScore((s) => s + 1);
   };
 

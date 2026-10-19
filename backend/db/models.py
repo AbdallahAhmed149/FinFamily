@@ -4,7 +4,7 @@ import string
 from datetime import datetime
 import enum
 
-from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Float, Integer, JSON, Boolean, Text
+from sqlalchemy import Column, String, DateTime, Date, Enum, ForeignKey, Float, Integer, JSON, Boolean, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -113,6 +113,10 @@ class User(Base):
     # بتتحدد من الأب وقت إضافة الطفل، وبتتحكم في المحتوى المناسب للسن (زي FutureInvestor 12+).
     birth_year = Column(Integer, nullable=True)
 
+    # عدد "Streak Freeze" المتاح (بيحمي الـ streak لو الطفل فوّت يوم). بيتكسب كل 7 أيام
+    # متتالية (حد أقصى 2) وبيتستهلك تلقائيًا في services/streaks.py.
+    streak_freezes = Column(Integer, nullable=False, default=0, server_default="0")
+
     # قفل مؤقت ضد تخمين الـ PIN (الطفل بس) — منفصل عن rate limiting بالـ IP،
     # عشان يحمي حتى لو حد جرب من أجهزة/شبكات مختلفة على نفس الطفل بالظبط
     failed_pin_attempts = Column(Integer, default=0)
@@ -129,6 +133,27 @@ class User(Base):
     created_date = Column(DateTime, default=datetime.utcnow)
     updated_date = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by_id = Column(String, nullable=True)
+
+
+    @property
+    def streak_status(self) -> str:
+        """
+        حالة الـ streak الحقيقية دلوقتي (مش بس الرقم المخزّن اللي ممكن يبقى قديم):
+          none    — مفيش streak
+          active  — الطفل عمل نشاط النهارده
+          at_risk — آخر نشاط إمبارح؛ لو عمل نشاط النهارده الـ streak يكمّل
+          covered — فوّت يوم أو أكتر بس عنده Freeze كفاية يحميه (هيتستهلك أول نشاط)
+          broken  — فوّت أيام أكتر من الـ Freezes؛ أول نشاط هيبدأ streak جديد من 1
+        """
+        from core.timeutil import cairo_date, cairo_today  # import محلي: تجنّب circular imports
+        if not self.streak or not self.last_active_date:
+            return "none"
+        days = (cairo_today() - cairo_date(self.last_active_date)).days
+        if days <= 0:
+            return "active"
+        if days == 1:
+            return "at_risk"
+        return "covered" if (self.streak_freezes or 0) >= days - 1 else "broken"
 
 
 class Wallet(Base):
@@ -368,3 +393,37 @@ class ChatMessage(Base):
     content = Column(String, nullable=False)
 
     created_date = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class DailyQuestClaim(Base):
+    """
+    المهام اليومية (Daily Quests) بتتولّد وبيتحسب تقدمها من الداتا الموجودة أصلًا (GameCompletion /
+    Transaction / Mission / ChatMessage)، فمحتاجين نخزّن بس إيه اللي الطفل استلم مكافأته.
+    الـ UniqueConstraint بيمنع استلام نفس المهمة مرتين حتى لو الطفل ضغط الزرار مرتين بسرعة.
+    quest_key="chest" هو صندوق إتمام الـ 3 مهام.
+    """
+    __tablename__ = "daily_quest_claims"
+    __table_args__ = (UniqueConstraint("child_id", "quest_date", "quest_key", name="uq_child_day_quest"),)
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    child_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    quest_date = Column(Date, nullable=False, index=True)  # اليوم بتوقيت القاهرة
+    quest_key = Column(String, nullable=False)
+    xp_awarded = Column(Integer, default=0)
+    created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class DailyQuestSet(Base):
+    """
+    مجموعة مهام اليوم للطفل (3 مهام) — بتتولّد أول مرة الطفل يفتحها النهارده وبتتثبّت،
+    عشان ماتتغيرش وسط اليوم لو حالة الداتا اتغيرت (مثلًا خلّص المهمة البيتية الوحيدة اللي كانت pending).
+    quests = [{"key": "games_2", "target": 2, "xp": 30}, ...]
+    """
+    __tablename__ = "daily_quest_sets"
+    __table_args__ = (UniqueConstraint("child_id", "quest_date", name="uq_child_day_quest_set"),)
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    child_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    quest_date = Column(Date, nullable=False, index=True)  # اليوم بتوقيت القاهرة
+    quests = Column(JSON, nullable=False)
+    created_date = Column(DateTime, default=datetime.utcnow)

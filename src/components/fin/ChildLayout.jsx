@@ -1,8 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Home, Wallet, GraduationCap, Gift, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/AuthContext";
+import { CelebrationProvider, useCelebrations } from "@/lib/CelebrationContext";
+import { preloadSounds } from "@/lib/sounds";
+import LevelUpScreen from "@/components/fin/LevelUpScreen";
 
 const nav = [
   { to: "/child", key: "home", icon: Home, exact: true },
@@ -12,15 +16,67 @@ const nav = [
   { to: "/child/profile", key: "profile", icon: User },
 ];
 
-export default function ChildLayout() {
+// بيراقب الـ level الحقيقي (من /auth/me): لو زاد عن آخر level الطفل شافه، يعرض شاشة Level-Up.
+// بالشكل ده بيشتغل مهما كان مصدر الـ XP (لعبة، مهمة الأب وافق عليها، Daily Quest...) بدل ما كل شاشة
+// تعمل الاحتفال بنفسها. أول مرة (من غير قيمة محفوظة) بنسجّل الـ level الحالي بس من غير احتفال.
+function LevelUpWatcher() {
+  const { user } = useAuth();
+  const { holds } = useCelebrations();
+  const [pending, setPending] = useState(null);
+  const storageKey = user?.id ? `ff_seen_level_${user.id}` : null;
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const level = user?.level || 1;
+    let seen = NaN;
+    try { seen = parseInt(window.localStorage.getItem(storageKey), 10); } catch { /* تجاهل */ }
+    if (!Number.isFinite(seen)) {
+      try { window.localStorage.setItem(storageKey, String(level)); } catch { /* تجاهل */ }
+      return;
+    }
+    if (level > seen) setPending(level);
+  }, [storageKey, user?.level]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!pending || holds > 0) return null; // holds > 0 = شاشة مكافأة مفتوحة، نستنى لحد ما تتقفل
+  const close = () => {
+    try { window.localStorage.setItem(storageKey, String(pending)); } catch { /* تجاهل */ }
+    setPending(null);
+  };
+  return <LevelUpScreen level={pending} onClose={close} />;
+}
+
+function ChildLayoutInner() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { refreshUser } = useAuth();
+
+  // XP ممكن يزيد من غير ما الطفل يعمل حاجة في الشاشة (الأب وافق على مهمة، Daily Quest...). فلما الطفل
+  // يرجع للتطبيق (يفتح التاب/الموبايل) نحدّث بياناته — بالحد الأدنى 30 ثانية بين كل تحديث.
+  useEffect(() => {
+    let last = Date.now();
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < 30000) return;
+      last = Date.now();
+      refreshUser?.().catch?.(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refreshUser]);
+
+  // المتصفحات بتمنع الصوت قبل أول لمسة — نحمّل الملفات (خفيفة: ~120KB كلها) أول ما الطفل يلمس الشاشة.
+  useEffect(() => {
+    const once = () => preloadSounds();
+    window.addEventListener("pointerdown", once, { once: true });
+    return () => window.removeEventListener("pointerdown", once);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <div className="max-w-md mx-auto">
         <Outlet />
       </div>
+      <LevelUpWatcher />
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 px-4 pb-4">
         <div className="glass-dark rounded-3xl grid grid-cols-5 items-center p-2 shadow-premium">
           {nav.map((item) => {
@@ -49,5 +105,13 @@ export default function ChildLayout() {
         </div>
       </nav>
     </div>
+  );
+}
+
+export default function ChildLayout() {
+  return (
+    <CelebrationProvider>
+      <ChildLayoutInner />
+    </CelebrationProvider>
   );
 }

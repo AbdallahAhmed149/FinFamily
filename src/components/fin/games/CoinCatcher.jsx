@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { play } from "@/lib/sounds";
 import { useTranslation } from "react-i18next";
 import { Bomb, Timer } from "lucide-react";
 
@@ -28,6 +29,7 @@ export default function CoinCatcher({ onFinish }) {
   }, [time, done, score, onFinish]);
 
   const catchItem = (item) => {
+    play(item.isBomb ? "wrong" : "coin");
     setItems((prev) => prev.filter((p) => p.id !== item.id));
     setScore((s) => Math.max(0, s + (item.isBomb ? -5 : 2)));
   };

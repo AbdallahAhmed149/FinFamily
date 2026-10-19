@@ -7,6 +7,9 @@ import {
 import { GlassCard, ProgressBar, Pill, SectionTitle, FadeIn } from "@/components/fin/ui";
 import GameLauncher from "@/components/fin/GameLauncher";
 import MissionComplete from "@/components/fin/MissionComplete";
+import DailyQuests from "@/components/fin/DailyQuests";
+import StreakBanner from "@/components/fin/StreakBanner";
+import SoundToggle from "@/components/fin/SoundToggle";
 import { child, todayMissions, playLearnCards, levels, fmtEGP, LOFTY_IMAGE } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { useContentTranslation } from "@/lib/useContentTranslation";
@@ -25,6 +28,7 @@ export default function ChildHome() {
   const [missionDone, setMissionDone] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [walletLoading, setWalletLoading] = useState(true);
+  const [questsKey, setQuestsKey] = useState(0); // بيزيد لما اللعبة تتقفل عشان تقدم المهام اليومية يتحدّث
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -42,7 +46,10 @@ export default function ChildHome() {
   // xp/level/streak جايين من /auth/me الحقيقي (مش من finData الوهمي)
   const userXp = user?.xp || 0;
   const userLevel = user?.level || 1;
-  const userStreak = user?.streak || 0;
+  // الـ streak "الفعلي": لو اتكسر (فوّت أيام أكتر من الـ Freezes) الرقم المخزّن قديم، فنعرض 0 لحد أول نشاط جديد.
+  const streakStatus = user?.streak_status || "none";
+  const userStreak = streakStatus === "broken" || streakStatus === "none" ? 0 : (user?.streak || 0);
+  const streakFreezes = user?.streak_freezes || 0;
   const coins = wallet?.balance ?? 0;
 
   const level = levels.find((l) => l.level === userLevel) || levels[0];
@@ -62,6 +69,7 @@ export default function ChildHome() {
     // GameLauncher بيعرض الشاشة الحقيقية (RewardScreen) بالمكافأة الفعلية من الباك اند
     // قبل ما يقفل — مفيش داعي نكرر احتفال تاني هنا بأرقام وهمية زي ما كان بيحصل قبل كده.
     setActiveGame(null);
+    if (completed) setQuestsKey((k) => k + 1); // تقدم المهام اليومية اتغيّر
   };
 
   return (
@@ -72,6 +80,8 @@ export default function ChildHome() {
           <div className="text-sm text-muted-foreground">{t(`child.greeting.${greet}`)},</div>
           <h1 className="text-2xl font-extrabold font-heading">{user?.full_name || child.name} 👋</h1>
         </div>
+        <div className="flex items-center gap-3 shrink-0">
+        <SoundToggle />
         <div className="relative shrink-0">
           <div className="absolute inset-0 rounded-full bg-emerald-400/30 blur-xl scale-110" />
           <div className="relative w-16 h-16 rounded-full overflow-hidden shadow-glow-emerald border-4 border-white">
@@ -82,6 +92,7 @@ export default function ChildHome() {
               fittingType="fill"
             />
           </div>
+        </div>
         </div>
       </FadeIn>
 
@@ -108,6 +119,7 @@ export default function ChildHome() {
             </div>
           </div>
         </div>
+        <StreakBanner status={streakStatus} streak={user?.streak || 0} />
       </FadeIn>
 
       {/* quick stats */}
@@ -121,6 +133,7 @@ export default function ChildHome() {
           <Flame className="w-5 h-5 text-red-500 mx-auto mb-1" />
           <div className="text-lg font-extrabold font-heading">{userStreak}</div>
           <div className="text-[10px] text-muted-foreground">{t("child.home.dayStreakStat")}</div>
+          {streakFreezes > 0 && <div className="text-[10px] font-bold text-sky-600 mt-0.5" data-testid="streak-freezes">❄️ ×{streakFreezes}</div>}
         </div>
         <div className="glass rounded-2xl p-3 text-center shadow-premium">
           <Trophy className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
@@ -129,28 +142,9 @@ export default function ChildHome() {
         </div>
       </FadeIn>
 
-      {/* today's mission */}
+      {/* المهام اليومية الحقيقية (بدل "Today's Mission" الثابتة اللي كانت نفس الكارت كل يوم) */}
       <FadeIn delay={140}>
-        <SectionTitle>{t("child.home.todaysMission")}</SectionTitle>
-        <div className="rounded-3xl p-5 shadow-premium relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${mission.color}, ${mission.color}cc)` }}>
-          <div className="absolute -end-6 -top-6 w-24 h-24 rounded-full bg-white/15" />
-          <div className="relative text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">{mission.icon}</div>
-              <div className="flex-1">
-                <div className="font-extrabold font-heading">{tc(mission.title)}</div>
-                <div className="text-xs text-white/85">{tc(mission.desc)}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[11px] bg-white/20 rounded-full px-2 py-0.5 font-semibold">{tc(mission.difficulty)}</span>
-              <span className="text-[11px] bg-white/20 rounded-full px-2 py-0.5 font-semibold">+{mission.xp} XP</span>
-            </div>
-            <button onClick={() => launchGame(mission.game)} className="w-full h-12 rounded-2xl bg-white text-sm font-extrabold font-heading flex items-center justify-center gap-2 active:scale-[0.98] transition-all" style={{ color: mission.color }}>
-              <Play className="w-4 h-4" /> {t("child.home.startMission")}
-            </button>
-          </div>
-        </div>
+        <DailyQuests refreshKey={questsKey} />
       </FadeIn>
 
       {/* play & learn */}

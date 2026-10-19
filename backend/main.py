@@ -11,6 +11,7 @@ load_dotenv()
 from db.database import engine, Base
 from api.routes import functions_router
 from api.auth_routes import router as auth_router
+from api.quest_routes import router as quest_router
 from api.family_routes import router as family_router
 from core.limiter import limiter
 
@@ -42,4 +43,5 @@ app.add_middleware(
 # تسجيل الـ Routes
 app.include_router(auth_router)
 app.include_router(family_router)
+app.include_router(quest_router)
 app.include_router(functions_router)

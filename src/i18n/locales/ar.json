@@ -1,4 +1,46 @@
 {
+  "quests": {
+    "title": "مهام النهارده",
+    "claimedCount": "{{done}}/{{total}} اتستلموا",
+    "claim": "استلم",
+    "games_2": {
+      "title": "العب لعبتين مختلفتين"
+    },
+    "games_3": {
+      "title": "العب 3 ألعاب مختلفة"
+    },
+    "high_score": {
+      "title": "هات 80% أو أكتر في أي لعبة"
+    },
+    "save_money": {
+      "title": "حوّش فلوس في هدف من أهدافك"
+    },
+    "chore": {
+      "title": "خلّص مهمة من مهام البيت"
+    },
+    "ask_lotfy": {
+      "title": "اسأل لطفي سؤال عن الفلوس"
+    },
+    "chestLocked": "خلّص الـ 3 مهام عشان تفتح الصندوق",
+    "chestOpened": "الصندوق اتفتح! 🎉",
+    "chestReward": "بونص +{{xp}} XP"
+  },
+  "celebration": {
+    "soundOn": "شغّل الصوت",
+    "soundOff": "اكتم الصوت",
+    "levelUp": {
+      "title": "ليفل جديد!",
+      "level": "المستوى",
+      "nowA": "بقيت {{name}}!",
+      "next": "الجاي: {{name}} عند {{xp}} XP",
+      "button": "جامد!"
+    }
+  },
+  "streakBanner": {
+    "atRisk": "🔥 العب أي حاجة النهارده عشان تحافظ على streak {{count}} يوم!",
+    "covered": "❄️ الـ Freeze هيحمي الـ streak بتاعك ({{count}} يوم) — العب النهارده بس.",
+    "broken": "ابدأ streak جديد النهارده!"
+  },
   "common": {
     "back": "رجوع",
     "loading": "بتحمّل...",
@@ -179,6 +221,9 @@
       "scoreLine": "سجّلت {{score}} من {{total}}",
       "coins": "كوينز 🪙",
       "xp": "XP ⭐",
+      "streakFreezeUsed": "الـ Freeze حمى الـ streak بتاعك!",
+      "streakFreezeEarned": "كسبت Freeze جديد!",
+      "streakLost": "الـ streak ({{count}} يوم) خلص… ابدأ واحد جديد النهارده وهتكسره!",
       "claim": "استلم الجائزة"
     },
     "badgesGrid": {

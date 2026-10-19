@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { play } from "@/lib/sounds";
 import { useTranslation } from "react-i18next";
 import { Check, X, Coins } from "lucide-react";
 import { changeMakerRounds, fmtEGP } from "@/lib/finData";
@@ -24,6 +25,7 @@ export default function ChangeMaker({ onFinish }) {
     if (selected !== null) return;
     setSelected(idx);
     const correct = idx === current.answer;
+    play(correct ? "correct" : "wrong");
     const nextScore = correct ? score + 1 : score;
     if (correct) setScore(nextScore);
     setFeedback(correct ? "correct" : "wrong");

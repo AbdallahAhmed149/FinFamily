@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { play } from "@/lib/sounds";
 import { useTranslation } from "react-i18next";
 import { useContentTranslation } from "@/lib/useContentTranslation";
 import { Check, AlertTriangle } from "lucide-react";
@@ -13,6 +14,7 @@ export default function BudgetBuilder({ onFinish }) {
   const inCart = (name) => cart.includes(name);
   const toggle = (name) => {
     if (result) return;
+    play("tap");
     setCart((c) => (c.includes(name) ? c.filter((x) => x !== name) : [...c, name]));
   };
 
@@ -24,6 +26,7 @@ export default function BudgetBuilder({ onFinish }) {
 
   const submit = () => {
     const ok = !over && allNeeds;
+    play(ok ? "correct" : "wrong");
     setResult(ok ? "win" : "lose");
 
     // السكور بقى نقاط على السلوك الصح (مش "الفلوس المتبقية"، اللي كان أقصاها 57% حتى لو لعب مثالي):

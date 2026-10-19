@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronLeft, X } from "lucide-react";
+import SoundToggle from "@/components/fin/SoundToggle";
 
 export default function GameOverlay({ title, icon, onClose, children }) {
   return (
@@ -10,7 +11,8 @@ export default function GameOverlay({ title, icon, onClose, children }) {
         </button>
         <div className="text-2xl">{icon}</div>
         <h1 className="text-lg font-extrabold font-heading">{title}</h1>
-        <button onClick={onClose} className="ms-auto w-9 h-9 rounded-full bg-black/5 flex items-center justify-center">
+        <SoundToggle className="ms-auto" />
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-black/5 flex items-center justify-center">
           <X className="w-4 h-4" />
         </button>
       </div>

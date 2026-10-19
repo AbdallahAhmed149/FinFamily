@@ -715,7 +715,7 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
     ))
     db.flush()  # عشان محاولة اللعب دي تتحسب لو كانت هي آخر لعبة في تحدي "Perfect Day"
 
-    touch_streak(child)
+    streak_result = touch_streak(child)
 
     newly_unlocked = check_and_award_badges(db, child)
 
@@ -753,6 +753,10 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         newly_unlocked_badges=badge_out,
         perfect_day_bonus_xp=perfect_bonus_xp,
         perfect_day_bonus_coins=perfect_bonus_coins,
+        streak_freeze_used=streak_result.freezes_used,
+        streak_freeze_earned=streak_result.freeze_earned,
+        streak_lost=streak_result.lost_streak,
+        new_streak_freezes=child.streak_freezes or 0,
     )
 
 
