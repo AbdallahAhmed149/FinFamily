@@ -18,6 +18,7 @@ from services.insights import build_family_insights, build_family_activity
 from services.leveling import apply_xp
 from services.games import compute_reward, PERFECT_DAY_BONUS_XP, PERFECT_DAY_BONUS_COINS
 from services.streaks import touch_streak
+from core.timeutil import cairo_today_start_utc
 from services.badges import BADGE_DEFS, check_and_award_badges
 from schemas.insights import InsightOut, ActivityOut
 from schemas.audit import AuditLogOut
@@ -656,7 +657,27 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         raise HTTPException(status_code=404, detail="Unknown game_id")
     title, xp_awarded, coins_awarded = result
 
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    # سكور صفر = الطفل خرج من اللعبة قبل ما يلعب فعلًا (أو اتقفلت من غير ما يجاوب).
+    # قبل كده ده كان بيتسجل كـ completion بمكافأة "مستهلكة"، فلما الطفل يرجع يلعب بجد
+    # في نفس اليوم كان بياخد صفر XP ("already rewarded today"). دلوقتي مش بنسجّل حاجة،
+    # ومش بنحسبها streak ولا بادج — اللعب الحقيقي بس هو اللي بيتحسب.
+    if payload.score <= 0:
+        return GameCompleteResponse(
+            game_title=title,
+            xp_awarded=0,
+            coins_awarded=0,
+            already_rewarded_today=False,
+            leveled_up=False,
+            new_xp=child.xp or 0,
+            new_level=child.level or 1,
+            new_balance=_get_wallet_for(db, child).balance,
+            new_streak=child.streak or 0,
+            newly_unlocked_badges=[],
+            perfect_day_bonus_xp=0,
+            perfect_day_bonus_coins=0,
+        )
+
+    today_start = cairo_today_start_utc()  # بداية اليوم بتوقيت القاهرة (مش UTC)
     already_today = (
         db.query(GameCompletion)
         .filter(

@@ -167,6 +167,7 @@ def create_child(
         role=UserRole.child,
         full_name=payload.full_name,
         pin_hash=hash_pin(payload.pin),
+        birth_year=(datetime.utcnow().year - payload.age) if payload.age else None,
     )
     db.add(child)
     db.flush()  # عشان ناخد child.id قبل ما نعمل الـ Wallet بتاعته

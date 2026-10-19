@@ -29,7 +29,7 @@ export default function QuizPlayer({ title, onClose }) {
   if (phase === "result") {
     return (
       <div className="relative min-h-screen flex items-center justify-center">
-        <RewardScreen title={t("games.quizPlayer.quizComplete")} score={score} total={questions.length} coins={score * 15} xp={score * 20} onClose={onClose} />
+        <RewardScreen title={t("games.quizPlayer.quizComplete")} score={score} total={questions.length} note={t("games.quizPlayer.practiceNote")} onClose={onClose} />
       </div>
     );
   }
@@ -42,7 +42,7 @@ export default function QuizPlayer({ title, onClose }) {
         <div className="flex-1 h-2 rounded-full bg-black/5 overflow-hidden">
           <div className="h-full grad-emerald rounded-full transition-all" style={{ width: `${((i) / questions.length) * 100}%` }} />
         </div>
-        <span className="text-xs font-bold text-emerald-600">🪙 {score * 15}</span>
+        <span className="text-xs font-bold text-emerald-600">✓ {score}</span>
       </div>
 
       <div className="text-center mb-6">

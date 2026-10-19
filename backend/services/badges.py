@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from db.models import User, UserBadge, Mission, MissionKind, MissionStatus, GameCompletion, Wallet
 from services.games import GAME_CATALOG
+from core.timeutil import cairo_today_start_utc
 
 BADGE_DEFS = [
     {"id": "first_chore", "name": "First Steps", "icon": "🥇", "desc": "Completed your first approved chore"},
@@ -33,7 +34,7 @@ def _has_game_explorer(db: Session, child: User) -> bool:
 
 
 def _has_perfect_day(db: Session, child: User) -> bool:
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = cairo_today_start_utc()
     played_today = {
         row[0]
         for row in db.query(GameCompletion.game_id)

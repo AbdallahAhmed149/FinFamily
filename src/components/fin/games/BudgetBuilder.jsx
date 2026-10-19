@@ -25,7 +25,16 @@ export default function BudgetBuilder({ onFinish }) {
   const submit = () => {
     const ok = !over && allNeeds;
     setResult(ok ? "win" : "lose");
-    setTimeout(() => onFinish(ok ? remaining : 0, BUDGET_LIMIT), 1600);
+
+    // السكور بقى نقاط على السلوك الصح (مش "الفلوس المتبقية"، اللي كان أقصاها 57% حتى لو لعب مثالي):
+    //  - نقطة لكل حاجة ضرورية (need) اشتراها
+    //  - نقطة لو ماعداش الميزانية
+    //  - نقطة لو وفّر على الأقل ربع الميزانية (التوفير هو الدرس)
+    // لعب مثالي = كل النقاط = 3 نجوم. لو عدّى الميزانية بياخد 0 (مفيش مكافأة على الإفراط).
+    const needsGot = needs.filter((n) => cart.includes(n.name)).length;
+    const points = over ? 0 : allNeeds ? needsGot + 1 + (remaining >= BUDGET_LIMIT * 0.25 ? 1 : 0) : needsGot;
+    const maxPoints = needs.length + 2;
+    setTimeout(() => onFinish(points, maxPoints), 1600);
   };
 
   return (

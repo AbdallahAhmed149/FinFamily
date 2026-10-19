@@ -131,8 +131,9 @@ export const AuthProvider = ({ children }) => {
     return base44.get('/auth/family/children'); // { family_name, children: [{id, full_name}] }
   };
 
-  const createChild = async (fullName, pin) => {
-    return base44.post('/auth/children', { full_name: fullName, pin }); // بيرجع اليوزر الجديد
+  const createChild = async (fullName, pin, age) => {
+    // age اختياري (4–17) — بيتحوّل لسنة ميلاد في الباك اند ويتحكم في المحتوى المناسب للسن
+    return base44.post('/auth/children', { full_name: fullName, pin, ...(age ? { age: Number(age) } : {}) }); // بيرجع اليوزر الجديد
   };
 
   // ---------------------------------------------------------------------

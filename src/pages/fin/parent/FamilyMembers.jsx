@@ -22,7 +22,7 @@ export default function FamilyMembers() {
   const [copied, setCopied] = useState(false);
 
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", pin: "" });
+  const [form, setForm] = useState({ name: "", pin: "", age: "" });
   const [addError, setAddError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -88,8 +88,8 @@ export default function FamilyMembers() {
     }
     setSubmitting(true);
     try {
-      await createChild(form.name.trim(), form.pin);
-      setForm({ name: "", pin: "" });
+      await createChild(form.name.trim(), form.pin, form.age);
+      setForm({ name: "", pin: "", age: "" });
       setShowAdd(false);
       await loadFamily(); // نجيب القايمة المحدّثة من السيرفر بدل ما نضيفه محلي بس
     } catch (err) {
@@ -232,6 +232,21 @@ export default function FamilyMembers() {
                   inputMode="numeric"
                   className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold tracking-[0.3em] force-ltr text-center"
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">{t("parent.familyMembers.ageLabel")}</label>
+                <select
+                  value={form.age}
+                  onChange={(e) => setForm({ ...form, age: e.target.value })}
+                  className="w-full h-12 mt-1 px-4 rounded-2xl bg-black/5 outline-none font-semibold"
+                >
+                  <option value="">{t("parent.familyMembers.agePlaceholder")}</option>
+                  {Array.from({ length: 14 }, (_, i) => i + 4).map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-muted-foreground mt-1">{t("parent.familyMembers.ageHint")}</p>
               </div>
 
               {addError && <p className="text-xs text-red-600 font-semibold">{addError}</p>}

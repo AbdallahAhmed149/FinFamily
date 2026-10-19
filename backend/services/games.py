@@ -1,12 +1,14 @@
+# gm1 (Shopping Simulator) و gm6 (Expense Sorting) اتشالوا: كانوا بيشغّلوا نفس لعبة
+# BudgetBuilder / NeedsVsWants بالظبط (XP مضاعف على نفس المحتوى). الأرقام اتسابت زي ما هي
+# عشان gm2..gm11 مايتغيروش في الداتا بيز.
+#
 # نفس الألعاب والـ XP المعرّفين في src/lib/finData.js (games array) — لو ضفت لعبة
 # جديدة هناك، لازم تضيفها هنا كمان عشان يقدر ياخد مكافأة حقيقية.
 GAME_CATALOG = {
-    "gm1": {"title": "Shopping Simulator", "base_xp": 60},
     "gm2": {"title": "Budget Challenge", "base_xp": 70},
     "gm3": {"title": "Needs vs Wants", "base_xp": 50},
     "gm4": {"title": "Guess Price", "base_xp": 40},
     "gm5": {"title": "Coin Catcher", "base_xp": 55},
-    "gm6": {"title": "Expense Sorting", "base_xp": 45},
     "gm7": {"title": "Change Maker", "base_xp": 65},
     "gm8": {"title": "Smart Shopper", "base_xp": 50},
     "gm9": {"title": "Scam Detective", "base_xp": 50},

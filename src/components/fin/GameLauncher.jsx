@@ -15,8 +15,8 @@ import { completeGame } from "@/lib/finApi";
 import { useAuth } from "@/lib/AuthContext";
 
 const registry = {
-  gm1: BudgetBuilder, gm2: BudgetBuilder, gm3: NeedsVsWants, gm4: GuessPrice,
-  gm5: CoinCatcher, gm6: NeedsVsWants, gm7: ChangeMaker,
+  gm2: BudgetBuilder, gm3: NeedsVsWants, gm4: GuessPrice,
+  gm5: CoinCatcher, gm7: ChangeMaker,
   gm8: SmartShopper, gm9: ScamDetective, gm10: FutureInvestor, gm11: SavingHero,
 };
 
@@ -77,7 +77,7 @@ export default function GameLauncher({ game, onClose }) {
           onClose={complete}
         />
       ) : (
-        <G onFinish={handleFinish} />
+        <G onFinish={handleFinish} onExit={abort} />
       )}
     </GameOverlay>
   );

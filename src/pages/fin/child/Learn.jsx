@@ -7,33 +7,9 @@ import { lessons, games, child } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { useContentTranslation } from "@/lib/useContentTranslation";
 import QuizPlayer from "@/components/fin/QuizPlayer";
-import GameOverlay from "@/components/fin/GameOverlay";
-import RewardScreen from "@/components/fin/RewardScreen";
-import GuessPrice from "@/components/fin/games/GuessPrice";
-import NeedsVsWants from "@/components/fin/games/NeedsVsWants";
-import CoinCatcher from "@/components/fin/games/CoinCatcher";
-import BudgetBuilder from "@/components/fin/games/BudgetBuilder";
-import ChangeMaker from "@/components/fin/games/ChangeMaker";
-import SmartShopper from "@/components/fin/games/SmartShopper";
-import ScamDetective from "@/components/fin/games/ScamDetective";
-import FutureInvestor from "@/components/fin/games/FutureInvestor";
-import SavingHero from "@/components/fin/games/SavingHero";
+import GameLauncher from "@/components/fin/GameLauncher";
 
 const iconEmoji = { coins: "🪙", scale: "⚖️", "pie-chart": "📊", "piggy-bank": "🐷", smartphone: "📱", "credit-card": "💳", shield: "🛡️", "alert-triangle": "⚠️", landmark: "🏦", "trending-up": "📈" };
-
-const gameComponents = {
-  gm1: BudgetBuilder,
-  gm2: BudgetBuilder,
-  gm3: NeedsVsWants,
-  gm4: GuessPrice,
-  gm5: CoinCatcher,
-  gm6: NeedsVsWants,
-  gm7: ChangeMaker,
-  gm8: SmartShopper,
-  gm9: ScamDetective,
-  gm10: FutureInvestor,
-  gm11: SavingHero,
-};
 
 export default function Learn() {
   const navigate = useNavigate();
@@ -44,13 +20,11 @@ export default function Learn() {
   const [openLesson, setOpenLesson] = useState(null);
   const [quiz, setQuiz] = useState(null);
   const [activeGame, setActiveGame] = useState(null);
-  const [reward, setReward] = useState(null);
 
-  const handleGameFinish = (score, total) => {
-    setReward({ score, total, coins: Math.round(score * 6), xp: score * 12 });
-  };
-
-  const closeGame = () => { setActiveGame(null); setReward(null); };
+  // الألعاب بتتفتح من GameLauncher — هو اللي بيكلّم الباك اند ويعرض المكافأة الحقيقية.
+  // قبل كده التاب ده كان بيحسب coins/xp محليًا (score*6 / score*12) من غير ما يحفظ حاجة،
+  // فنفس اللعبة كانت بتدّي مكافأة حقيقية من الـ Home ووهمية من هنا.
+  const launchGame = (g) => setActiveGame({ id: g.id, title: tc(g.title), icon: g.icon, color: g.color, xp: parseInt(g.reward, 10) || 0 });
 
   return (
     <div className="px-4 pt-12">
@@ -120,11 +94,6 @@ export default function Learn() {
                     <div className="rounded-xl p-4 mb-3 text-sm leading-relaxed" style={{ background: `${l.color}12` }}>
                       {t("child.learn.storyText")}
                     </div>
-                    <div className="flex gap-2 mb-3">
-                      <Pill color={l.color}>+{l.xp} XP</Pill>
-                      <Pill color="#FFC857">🪙 +20</Pill>
-                      <Pill color="#8b5cf6">{t("child.learn.certificate")}</Pill>
-                    </div>
                     <button onClick={() => setQuiz(l)} disabled={locked} className="w-full h-11 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{ background: l.color }}>
                       <Play className="w-4 h-4 rtl:-scale-x-100" /> {t("child.learn.startQuiz")}
                     </button>
@@ -138,7 +107,7 @@ export default function Learn() {
         <div className="grid grid-cols-2 gap-3">
           {games.map((g, idx) => (
             <FadeIn key={g.id} delay={idx * 40}>
-              <button onClick={() => setActiveGame(g)} className="w-full glass rounded-2xl p-4 text-center shadow-premium active:scale-95 transition-all">
+              <button onClick={() => launchGame(g)} className="w-full glass rounded-2xl p-4 text-center shadow-premium active:scale-95 transition-all">
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-2" style={{ background: `${g.color}18` }}>{g.icon}</div>
                 <div className="font-bold text-sm">{tc(g.title)}</div>
                 <div className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1">
@@ -158,17 +127,8 @@ export default function Learn() {
         </div>
       )}
 
-      {/* Game overlay */}
-      {activeGame && (
-        <GameOverlay title={activeGame.title} icon={activeGame.icon} onClose={closeGame}>
-          {reward ? (
-            <RewardScreen title={t("child.learn.gameComplete")} score={reward.score} total={reward.total} coins={reward.coins} xp={reward.xp} onClose={closeGame} />
-          ) : (() => {
-            const G = gameComponents[activeGame.id] || GuessPrice;
-            return <G onFinish={handleGameFinish} />;
-          })()}
-        </GameOverlay>
-      )}
+      {/* Game (مكافأة حقيقية من الباك اند) */}
+      {activeGame && <GameLauncher game={activeGame} onClose={() => setActiveGame(null)} />}
     </div>
   );
 }

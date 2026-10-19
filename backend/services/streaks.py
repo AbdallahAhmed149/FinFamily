@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from db.models import User
+from core.timeutil import cairo_date, cairo_today
 
 
 def touch_streak(child: User) -> bool:
@@ -12,8 +13,9 @@ def touch_streak(child: User) -> bool:
 
     بترجع True لو النهاردة كان فعلاً "يوم جديد" اتحسب.
     """
-    today = datetime.utcnow().date()
-    last = child.last_active_date.date() if child.last_active_date else None
+    # "اليوم" بتوقيت القاهرة (مش UTC) — الداتا بيز بتخزّن UTC naive فبنحوّله.
+    today = cairo_today()
+    last = cairo_date(child.last_active_date) if child.last_active_date else None
 
     if last == today:
         return False

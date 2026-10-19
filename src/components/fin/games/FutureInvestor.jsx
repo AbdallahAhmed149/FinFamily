@@ -2,18 +2,22 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useContentTranslation } from "@/lib/useContentTranslation";
 import { TrendingUp, Shield, AlertTriangle, ArrowRight, Lock } from "lucide-react";
-import { futureInvestorChoices, child, fmtEGP } from "@/lib/finData";
+import { futureInvestorChoices, fmtEGP } from "@/lib/finData";
+import { useAuth } from "@/lib/AuthContext";
 
 const VIRTUAL = 1000;
 
-export default function FutureInvestor({ onFinish }) {
+export default function FutureInvestor({ onFinish, onExit }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const tc = useContentTranslation();
   const [picked, setPicked] = useState(null);
   const [revealed, setRevealed] = useState(false);
 
-  // Age gate: only 12+
-  if (child.age < 12) {
+  // Age gate: only 12+ — بالسن الحقيقي من سنة الميلاد اللي الأب حددها (كان بيقرا age=10 ثابتة
+  // من finData فاللعبة كانت مقفولة لكل الأطفال). لو الأب ماحددش السن (أطفال قدام) بنفتحها.
+  const age = user?.birth_year ? new Date().getFullYear() - user.birth_year : null;
+  if (age !== null && age < 12) {
     return (
       <div className="px-6 py-14 text-center max-w-md mx-auto">
         <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
@@ -21,7 +25,7 @@ export default function FutureInvestor({ onFinish }) {
         </div>
         <h2 className="text-xl font-extrabold font-heading">{t("games.futureInvestor.comingSoonTitle")}</h2>
         <p className="text-sm text-muted-foreground mt-2">{t("games.futureInvestor.comingSoonDesc")}</p>
-        <button onClick={() => onFinish(0, 1)} className="mt-6 h-11 px-6 rounded-xl grad-navy text-white font-bold text-sm">{t("games.futureInvestor.backToAdventure")}</button>
+        <button onClick={() => (onExit ? onExit() : onFinish(0, 1))} className="mt-6 h-11 px-6 rounded-xl grad-navy text-white font-bold text-sm">{t("games.futureInvestor.backToAdventure")}</button>
       </div>
     );
   }

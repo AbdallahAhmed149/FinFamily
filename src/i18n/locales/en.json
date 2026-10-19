@@ -191,6 +191,7 @@
       "question": "Question {{current}}/{{total}}",
       "tapCorrect": "Tap the correct answer",
       "quizComplete": "Quiz Complete!",
+      "practiceNote": "Great practice! Lesson rewards are coming soon — play the mini-games to earn real XP and coins.",
       "correct": "✅ Correct! ",
       "incorrect": "❌ Not quite. "
     },
@@ -671,6 +672,9 @@
       "fullName": "Full Name",
       "fullNamePlaceholder": "e.g. Salma Hassan",
       "pinLabel": "PIN (6 digits) — the child uses this to log in",
+      "ageLabel": "Child's age (optional)",
+      "agePlaceholder": "Select age",
+      "ageHint": "Used to pick age-appropriate games and content.",
       "creating": "Creating...",
       "createAccount": "Create Member Account",
       "createNote": "Spending limits, cards, and balances will be set up once wallets are wired in — for now this creates their login."

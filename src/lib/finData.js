@@ -92,12 +92,10 @@ export const lessons = [
 ];
 
 export const games = [
-  { id: "gm1", title: "Shopping Simulator", icon: "🛒", color: "#00B894", reward: "60 XP" },
   { id: "gm2", title: "Budget Challenge", icon: "📊", color: "#0F2D52", reward: "70 XP" },
   { id: "gm3", title: "Needs vs Wants", icon: "⚖️", color: "#FFC857", reward: "50 XP" },
   { id: "gm4", title: "Guess Price", icon: "❓", color: "#8b5cf6", reward: "40 XP" },
   { id: "gm5", title: "Coin Catcher", icon: "🪙", color: "#f97316", reward: "55 XP" },
-  { id: "gm6", title: "Expense Sorting", icon: "🗂️", color: "#3b82f6", reward: "45 XP" },
   { id: "gm7", title: "Change Maker", icon: "💰", color: "#f97316", reward: "65 XP" },
   { id: "gm8", title: "Smart Shopper", icon: "🛒", color: "#00B894", reward: "50 XP" },
   { id: "gm9", title: "Scam Detective", icon: "🕵️", color: "#ef4444", reward: "50 XP" },

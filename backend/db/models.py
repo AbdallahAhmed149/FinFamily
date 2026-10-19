@@ -109,6 +109,10 @@ class User(Base):
     streak = Column(Integer, default=0)
     last_active_date = Column(DateTime, nullable=True)  # آخر يوم اتحسب فيه نشاط للـ streak
 
+    # سنة ميلاد الطفل (اختياري) — بنخزّن السنة مش السن عشان السن مايبقاش قديم بعد سنة.
+    # بتتحدد من الأب وقت إضافة الطفل، وبتتحكم في المحتوى المناسب للسن (زي FutureInvestor 12+).
+    birth_year = Column(Integer, nullable=True)
+
     # قفل مؤقت ضد تخمين الـ PIN (الطفل بس) — منفصل عن rate limiting بالـ IP،
     # عشان يحمي حتى لو حد جرب من أجهزة/شبكات مختلفة على نفس الطفل بالظبط
     failed_pin_attempts = Column(Integer, default=0)

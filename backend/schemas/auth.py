@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
     xp: int = 0
     level: int = 1
     streak: int = 0
+    birth_year: Optional[int] = None
     mfa_enabled: bool = False
     created_date: datetime
 
@@ -114,6 +115,7 @@ class ResetPasswordRequest(BaseModel):
 class ChildCreate(BaseModel):
     full_name: str = Field(min_length=1)
     pin: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")  # 6 أرقام بالظبط — 4 كانت ضعيفة لتطبيق فيه فلوس
+    age: Optional[int] = Field(default=None, ge=4, le=17)  # اختياري — بيتحوّل لسنة ميلاد في الـ route
 
 
 class ChildSummary(BaseModel):

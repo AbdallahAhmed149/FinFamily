@@ -35,16 +35,21 @@ export default function RewardScreen({ title, score, total, coins, xp, note, onC
 
       {note && <p className="text-xs text-muted-foreground -mt-2 mb-4 max-w-xs">{note}</p>}
 
-      <div className="flex gap-3 mb-6">
-        <div className="grad-gold rounded-2xl px-5 py-3 text-white shadow-glow-gold">
-          <div className="text-2xl font-extrabold">+{coins}</div>
-          <div className="text-xs">{t("games.rewardScreen.coins")}</div>
+      {/* بنخفي صناديق المكافأة لو مفيش مكافأة حقيقية تتعرض (زي الكويز لحد ما الدروس تتربط بالباك اند) */}
+      {coins !== undefined || xp !== undefined ? (
+        <div className="flex gap-3 mb-6">
+          <div className="grad-gold rounded-2xl px-5 py-3 text-white shadow-glow-gold">
+            <div className="text-2xl font-extrabold">+{coins ?? 0}</div>
+            <div className="text-xs">{t("games.rewardScreen.coins")}</div>
+          </div>
+          <div className="grad-emerald rounded-2xl px-5 py-3 text-white shadow-glow-emerald">
+            <div className="text-2xl font-extrabold">+{xp ?? 0}</div>
+            <div className="text-xs">{t("games.rewardScreen.xp")}</div>
+          </div>
         </div>
-        <div className="grad-emerald rounded-2xl px-5 py-3 text-white shadow-glow-emerald">
-          <div className="text-2xl font-extrabold">+{xp}</div>
-          <div className="text-xs">{t("games.rewardScreen.xp")}</div>
-        </div>
-      </div>
+      ) : (
+        <div className="mb-4" />
+      )}
 
       <button onClick={onClose} className="w-full max-w-xs h-13 py-3.5 rounded-2xl text-white font-bold font-heading grad-navy shadow-premium active:scale-[0.98] transition-all">
         {t("games.rewardScreen.claim")}
