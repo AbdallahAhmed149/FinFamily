@@ -41,17 +41,17 @@ export default function GameLauncher({ game, onClose }) {
       const res = await completeGame(game.id, score, total);
       setReward({
         score, total,
-        coins: res.coins_awarded, xp: res.xp_awarded,
+        gems: res.gems_awarded, xp: res.xp_awarded,
         alreadyToday: res.already_rewarded_today, leveledUp: res.leveled_up,
         newBadges: res.newly_unlocked_badges || [],
-        perfectDayCoins: res.perfect_day_bonus_coins, perfectDayXp: res.perfect_day_bonus_xp,
+        perfectDayGems: res.perfect_day_bonus_gems, perfectDayXp: res.perfect_day_bonus_xp,
         streak: {
           freezeUsed: res.streak_freeze_used || 0,
           freezeEarned: !!res.streak_freeze_earned,
           lost: res.streak_lost || 0,
         },
       });
-      // الرصيد (coins) بيتحدث لوحده لأن Home/Profile بيجيبوا الـ wallet تاني كل ما تفتحهم،
+      // الجواهر 💎 بتتحدث في user (refreshUser) — والرصيد بيتحدث لوحده لأن Home/Profile بيجيبوا الـ wallet تاني كل ما تفتحهم،
       // لكن الـ xp/level/streak جايين من AuthContext.user اللي بيتحمّل مرة واحدة بس وقت
       // الدخول ومبيتحدثش لوحده — من غير الاستدعاء ده هيفضلوا قيمهم القديمة لحد ما الطفل
       // يعمل logout/login تاني، حتى لو الشاشة قدامه بتوري رقم XP جديد صح.
@@ -59,7 +59,7 @@ export default function GameLauncher({ game, onClose }) {
     } catch (err) {
       setError(err.message || t("games.gameLauncher.genericError"));
       // برضو نوري شاشة إنهاء (من غير مكافأة) عشان الطفل ميفضلش واقف
-      setReward({ score, total, coins: 0, xp: 0, alreadyToday: false, leveledUp: false, newBadges: [], perfectDayCoins: 0, perfectDayXp: 0, streak: null });
+      setReward({ score, total, gems: 0, xp: 0, alreadyToday: false, leveledUp: false, newBadges: [], perfectDayGems: 0, perfectDayXp: 0, streak: null });
     }
   };
 
@@ -68,7 +68,7 @@ export default function GameLauncher({ game, onClose }) {
 
   const noteLines = [];
   if (reward?.alreadyToday) noteLines.push(t("games.gameLauncher.alreadyToday"));
-  if (reward?.perfectDayCoins > 0) noteLines.push(t("games.gameLauncher.perfectDayBonus", { coins: reward.perfectDayCoins, xp: reward.perfectDayXp }));
+  if (reward?.perfectDayGems > 0) noteLines.push(t("games.gameLauncher.perfectDayBonus", { gems: reward.perfectDayGems, xp: reward.perfectDayXp }));
   if (!reward?.alreadyToday && error) noteLines.push(error);
 
   return (
@@ -78,7 +78,7 @@ export default function GameLauncher({ game, onClose }) {
           title={reward.newBadges?.length ? t("games.gameLauncher.badgeUnlocked") : reward.leveledUp ? t("games.gameLauncher.levelUp") : t("games.gameLauncher.missionComplete")}
           score={reward.score}
           total={reward.total}
-          coins={reward.coins + (reward.perfectDayCoins || 0)}
+          gems={reward.gems + (reward.perfectDayGems || 0)}
           xp={reward.xp + (reward.perfectDayXp || 0)}
           note={noteLines.length ? noteLines.join(" · ") : undefined}
           badges={reward.newBadges || []}

@@ -7,6 +7,8 @@ import { ChevronLeft, Gauge, Award, Bell, Shield, Moon, Globe, Accessibility,
 } from "lucide-react";
 import { GlassCard, ProgressBar, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { LOGO_IMAGE, LOFTY_IMAGE, skills, levels } from "@/lib/finData";
+import AvatarFrame from "@/components/fin/AvatarFrame";
+import TitleBadge from "@/components/fin/TitleBadge";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyMissions, getMyBadges } from "@/lib/finApi";
 import BadgesGrid from "@/components/fin/BadgesGrid";
@@ -72,18 +74,24 @@ export default function ChildProfile() {
       <FadeIn delay={60}>
         <div className="grad-navy rounded-3xl p-5 text-white shadow-premium text-center relative overflow-hidden">
           <div className="absolute -end-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
-          <AvatarUpload
-            src={user?.avatar_url || LOFTY_IMAGE}
-            alt={user?.full_name || "Kid"}
-            onUpload={updateAvatar}
-            size="w-20 h-20"
-            className="mx-auto mb-3 rounded-full border-2 border-white/50 shadow-inner bg-white/20"
-          />
+          <div className="flex justify-center mb-3">
+            <AvatarFrame frame={user?.equipped_frame}>
+              <AvatarUpload
+                src={user?.avatar_url || LOFTY_IMAGE}
+                alt={user?.full_name || "Kid"}
+                onUpload={updateAvatar}
+                size="w-20 h-20"
+                className="rounded-full border-2 border-white/50 shadow-inner bg-white/20"
+              />
+            </AvatarFrame>
+          </div>
           <h2 className="text-xl font-extrabold font-heading">{user?.full_name}</h2>
+          <TitleBadge title={user?.equipped_title} className="mt-1" />
           <div className="text-sm text-white/70">{levelTitle}</div>
           <div className="flex justify-center gap-2 mt-3">
             <Pill className="bg-white/15 text-white">{t("child.profile.level", { level: user?.level ?? 1 })}</Pill>
             <Pill className="bg-white/15 text-white">🪙 {wallet ? Math.round(wallet.balance) : "···"}</Pill>
+            <Pill className="bg-white/15 text-white">💎 {user?.gems ?? 0}</Pill>
             <Pill className="bg-white/15 text-white">{user?.xp ?? 0} XP</Pill>
           </div>
         </div>

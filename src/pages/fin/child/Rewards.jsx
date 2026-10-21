@@ -5,6 +5,7 @@ import { useContentTranslation } from "@/lib/useContentTranslation";
 import { ChevronLeft, Check, Clock } from "lucide-react";
 import { GlassCard, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { rewardsStore } from "@/lib/finData";
+import GemShop from "@/components/fin/GemShop";
 import { getMyWallet, getMyMissions, requestRedemption } from "@/lib/finApi";
 
 export default function Rewards() {
@@ -17,6 +18,7 @@ export default function Rewards() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [tab, setTab] = useState("real"); // real = مكافآت حقيقية بموافقة الأب | gems = متجر الجواهر
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,6 +73,19 @@ export default function Rewards() {
         </FadeIn>
       )}
 
+      <FadeIn delay={30} className="flex gap-2 mb-4">
+        {["real", "gems"].map((k) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={"flex-1 h-11 rounded-2xl font-semibold text-sm transition-all " + (tab === k ? "grad-navy text-white shadow-premium" : "glass text-muted-foreground")}
+          >
+            {t(`child.rewards.tabs.${k}`)}
+          </button>
+        ))}
+      </FadeIn>
+
+      {tab === "gems" ? <GemShop /> : (<>
       {/* coins balance */}
       <FadeIn delay={60}>
         <div className="grad-gold rounded-3xl p-5 text-center shadow-glow-gold text-white relative overflow-hidden">
@@ -121,6 +136,7 @@ export default function Rewards() {
           </div>
         </FadeIn>
       )}
+      </>)}
       <div className="h-4" />
     </div>
   );

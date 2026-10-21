@@ -63,6 +63,19 @@ export const completeGame = (gameId, score, total) =>
 export const getTodayQuests = () => base44.get("/quests/today");
 export const claimQuest = (key) => base44.post(`/quests/${key}/claim`, {});
 
+// ---------------- Gem Shop ----------------
+
+export const getShop = () => base44.get("/shop");
+export const buyShopItem = (id) => base44.post(`/shop/${id}/buy`, {});
+export const equipShopItem = (id) => base44.post(`/shop/${id}/equip`, {});
+export const unequipShopItem = (kind) => base44.post(`/shop/unequip/${kind}`, {});
+
+// ---------------- Lessons & Adventure Map ----------------
+
+export const getLessonsProgress = () => base44.get("/lessons/progress");
+export const completeLesson = (id, score, total) => base44.post(`/lessons/${id}/complete`, { score, total });
+export const getAdventure = () => base44.get("/adventure");
+
 // ---------------- Badges ----------------
 
 export const getMyBadges = () => base44.get("/badges/mine");

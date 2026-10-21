@@ -5,6 +5,7 @@ import { useContentTranslation } from "@/lib/useContentTranslation";
 import { ChevronLeft, CreditCard, Check, Palette, Zap, Loader2 } from "lucide-react";
 import { GlassCard, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
 import { cardThemes, blockableCategories, fmtEGP } from "@/lib/finData";
+import { PREMIUM_CARD_THEMES } from "@/lib/cosmetics";
 import { useAuth } from "@/lib/AuthContext";
 import { getMyWallet, getMyCardPurchases, makeCardPurchase, updateMyCardTheme } from "@/lib/finApi";
 
@@ -45,7 +46,9 @@ export default function MeezaCard() {
     load();
   }, []);
 
-  const theme = cardThemes.find((th) => th.id === wallet?.card_theme) || cardThemes[0];
+  // الثيمات المدفوعة (من متجر الجواهر) بتتعرض لو متفعّلة. منتقي الثيمات تحت بيعرض المجانية بس —
+  // المدفوعة بتتفعّل من متجر الجواهر، والسيرفر بيرفض أي ثيم مدفوع الطفل مش مالكه.
+  const theme = [...cardThemes, ...PREMIUM_CARD_THEMES].find((th) => th.id === wallet?.card_theme) || cardThemes[0];
   const frozen = wallet?.card_status === "frozen";
   const deactivated = wallet?.card_status === "deactivated";
   const statusKey = deactivated ? "deactivated" : frozen ? "frozen" : "active";

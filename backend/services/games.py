@@ -18,12 +18,12 @@ GAME_CATALOG = {
 
 # مكافأة إضافية لو الطفل خلّص كل الألعاب في نفس اليوم — مرة واحدة بس في اليوم
 PERFECT_DAY_BONUS_XP = 100
-PERFECT_DAY_BONUS_COINS = 50
+PERFECT_DAY_BONUS_GEMS = 50
 
 
 def compute_reward(game_id: str, score: float, total: float):
     """
-    بيرجع (title, xp_awarded, coins_awarded) بناءً على نسبة الأداء الحقيقية —
+    بيرجع (title, xp_awarded, gems_awarded) بناءً على نسبة الأداء الحقيقية —
     مش بناءً على أي رقم جاي من الفرونت. النسبة بتتحسب score/total (0 لحد 1)
     وده بيشتغل صح حتى مع الألعاب اللي "score" فيها معناه مختلف (زي BudgetBuilder
     اللي بيبعت المبلغ المتبقي بدل عدد الإجابات الصح) لأن النسبة برضو بتفضل 0-1.
@@ -34,5 +34,6 @@ def compute_reward(game_id: str, score: float, total: float):
 
     ratio = max(0.0, min(1.0, (score / total) if total else 0))
     xp_awarded = round(game["base_xp"] * ratio)
-    coins_awarded = round(xp_awarded * 0.5)
-    return game["title"], xp_awarded, coins_awarded
+    # الجواهر 💎 = نص الـ XP تقريبًا. (كانت "coins" بتتحط في رصيد المحفظة الحقيقي — دلوقتي عملة منفصلة.)
+    gems_awarded = round(xp_awarded * 0.5)
+    return game["title"], xp_awarded, gems_awarded

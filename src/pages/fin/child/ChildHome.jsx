@@ -10,6 +10,8 @@ import MissionComplete from "@/components/fin/MissionComplete";
 import DailyQuests from "@/components/fin/DailyQuests";
 import StreakBanner from "@/components/fin/StreakBanner";
 import SoundToggle from "@/components/fin/SoundToggle";
+import AvatarFrame from "@/components/fin/AvatarFrame";
+import TitleBadge from "@/components/fin/TitleBadge";
 import { child, todayMissions, playLearnCards, levels, fmtEGP, LOFTY_IMAGE } from "@/lib/finData";
 import { useAuth } from "@/lib/AuthContext";
 import { useContentTranslation } from "@/lib/useContentTranslation";
@@ -79,19 +81,22 @@ export default function ChildHome() {
         <div>
           <div className="text-sm text-muted-foreground">{t(`child.greeting.${greet}`)},</div>
           <h1 className="text-2xl font-extrabold font-heading">{user?.full_name || child.name} 👋</h1>
+          <TitleBadge title={user?.equipped_title} className="mt-1" />
         </div>
         <div className="flex items-center gap-3 shrink-0">
         <SoundToggle />
         <div className="relative shrink-0">
           <div className="absolute inset-0 rounded-full bg-emerald-400/30 blur-xl scale-110" />
-          <div className="relative w-16 h-16 rounded-full overflow-hidden shadow-glow-emerald border-4 border-white">
-            <Image
-              src={user?.avatar_url || LOFTY_IMAGE}
-              alt={user?.full_name || "Kid"}
-              className="w-full h-full object-cover"
-              fittingType="fill"
-            />
-          </div>
+          <AvatarFrame frame={user?.equipped_frame}>
+            <div className="relative w-16 h-16 rounded-full overflow-hidden shadow-glow-emerald border-4 border-white">
+              <Image
+                src={user?.avatar_url || LOFTY_IMAGE}
+                alt={user?.full_name || "Kid"}
+                className="w-full h-full object-cover"
+                fittingType="fill"
+              />
+            </div>
+          </AvatarFrame>
         </div>
         </div>
       </FadeIn>
@@ -135,11 +140,11 @@ export default function ChildHome() {
           <div className="text-[10px] text-muted-foreground">{t("child.home.dayStreakStat")}</div>
           {streakFreezes > 0 && <div className="text-[10px] font-bold text-sky-600 mt-0.5" data-testid="streak-freezes">❄️ ×{streakFreezes}</div>}
         </div>
-        <div className="glass rounded-2xl p-3 text-center shadow-premium">
-          <Trophy className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
-          <div className="text-lg font-extrabold font-heading">{walletLoading ? "…" : Math.round(coins)}</div>
-          <div className="text-[10px] text-muted-foreground">{t("child.home.coins")}</div>
-        </div>
+        <button onClick={() => navigate("/child/rewards")} data-testid="gems-tile" className="glass rounded-2xl p-3 text-center shadow-premium active:scale-95 transition-all">
+          <div className="text-xl leading-5 mb-1">💎</div>
+          <div className="text-lg font-extrabold font-heading">{user?.gems ?? 0}</div>
+          <div className="text-[10px] text-muted-foreground">{t("child.home.gemsStat")}</div>
+        </button>
       </FadeIn>
 
       {/* المهام اليومية الحقيقية (بدل "Today's Mission" الثابتة اللي كانت نفس الكارت كل يوم) */}

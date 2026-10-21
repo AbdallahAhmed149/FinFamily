@@ -1,4 +1,42 @@
 {
+  "shop": {
+    "loadFailed": "Couldn't load the shop",
+    "actionFailed": "That didn't work. Try again!",
+    "yourGems": "Your Gems",
+    "earnHint": "Earn gems from games and lessons, then spend them on cool looks!",
+    "sections": {
+      "frame": "Avatar Frames",
+      "title": "Titles",
+      "card_theme": "Card Themes"
+    },
+    "needMore": "{{count}} more 💎",
+    "inUse": "In use",
+    "remove": "Remove",
+    "use": "Use"
+  },
+  "lesson": {
+    "passTitle": "Lesson complete!",
+    "alreadyDone": "You already finished this lesson. Nice review! No extra reward this time.",
+    "failTitle": "Almost there!",
+    "failBody": "You need {{need}} out of {{total}} to pass. You got {{score}}. Read the story again and give it another go!",
+    "retry": "Try again",
+    "readAgain": "Read the story again",
+    "close": "Close",
+    "cardOf": "Card {{current}} of {{total}}",
+    "questionOf": "Question {{current}} of {{total}}",
+    "back": "Back",
+    "next": "Next",
+    "startQuiz": "Start the quiz",
+    "finish": "Finish",
+    "correct": "Great job! ✅",
+    "wrong": "Not quite, here's why:",
+    "saving": "Saving your result…",
+    "saveFailed": "Couldn't save your result. Check your connection and try again.",
+    "tryAgain": "Try again",
+    "loadFailed": "Couldn't load your lessons",
+    "lockedHint": "Finish \"{{title}}\" first",
+    "best": "Best: {{score}}/{{total}}"
+  },
   "quests": {
     "title": "Today's Quests",
     "claimedCount": "{{done}}/{{total}} claimed",
@@ -18,6 +56,7 @@
     "chore": {
       "title": "Finish a chore at home"
     },
+    "lesson": { "title": "Finish a lesson" },
     "ask_lotfy": {
       "title": "Ask Lotfy a money question"
     },
@@ -200,8 +239,8 @@
   "games": {
     "gameLauncher": {
       "genericError": "Couldn't record the game result",
-      "alreadyToday": "You already earned coins for this game today — nice practice run though! 💪",
-      "perfectDayBonus": "🌟 Perfect Day bonus: +{{coins}} coins, +{{xp}} XP — you played every game today!",
+      "alreadyToday": "You already earned gems for this game today — nice practice run though! 💪",
+      "perfectDayBonus": "🌟 Perfect Day bonus: +{{gems}} 💎, +{{xp}} XP — you played every game today!",
       "newBadge": "New badge: {{names}}",
       "newBadges": "New badges: {{names}}",
       "badgeUnlocked": "New Badge Unlocked! 🏅",
@@ -221,6 +260,7 @@
       "scoreLine": "You scored {{score}} out of {{total}}",
       "coins": "Coins 🪙",
       "xp": "XP ⭐",
+      "gems": "Gems 💎",
       "streakFreezeUsed": "Your Streak Freeze just saved your streak!",
       "streakFreezeEarned": "You earned a new Streak Freeze!",
       "streakLost": "Your {{count}}-day streak ended — start a new one today, you can beat it!",
@@ -360,6 +400,7 @@
       "topLevel": "You reached the top level! 👑",
       "totalXp": "Total XP",
       "dayStreakStat": "Day Streak",
+      "gemsStat": "Gems 💎",
       "coins": "Coins 🪙",
       "todaysMission": "Today's Mission",
       "startMission": "START MISSION",
@@ -450,6 +491,7 @@
       "loadFailed": "Couldn't load the store",
       "redeemFailed": "Something went wrong",
       "yourCoins": "Your Coins",
+      "tabs": { "real": "Real Rewards", "gems": "Gem Shop 💎" },
       "earnMore": "Earn more by completing chores",
       "redeemCoins": "Redeem Coins",
       "approvalNote": "Requests need your parent's approval before coins are taken.",
@@ -520,6 +562,11 @@
       "title": "Financial Adventure",
       "levelLine": "Level {{level}} · {{name}} · {{xp}} XP",
       "heroLine": "Your journey to becoming a Financial Hero 🦸",
+      "loadFailed": "Couldn't load the map",
+      "nextLesson": "Next: {{title}}",
+      "lessonLocked": "Finish earlier lessons first",
+      "lessonsDone": "Lessons done",
+      "playGame": "Play",
       "unlockHint": "Complete each world to unlock the next",
       "world": "WORLD {{num}}",
       "progress": "Progress",

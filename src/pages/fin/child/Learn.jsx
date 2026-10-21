@@ -1,30 +1,71 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, Lock, Check, Award, Play, Gamepad2, GraduationCap } from "lucide-react";
-import { GlassCard, ProgressBar, Pill, FadeIn, SectionTitle } from "@/components/fin/ui";
-import { lessons, games, child } from "@/lib/finData";
+import { FadeIn } from "@/components/fin/ui";
+import { games, child } from "@/lib/finData";
+import { LESSONS, lessonById, pick } from "@/content/lessons";
+import { getLessonsProgress } from "@/lib/finApi";
 import { useAuth } from "@/lib/AuthContext";
 import { useContentTranslation } from "@/lib/useContentTranslation";
-import QuizPlayer from "@/components/fin/QuizPlayer";
+import { play } from "@/lib/sounds";
+import LessonPlayer from "@/components/fin/LessonPlayer";
 import GameLauncher from "@/components/fin/GameLauncher";
 
 const iconEmoji = { coins: "🪙", scale: "⚖️", "pie-chart": "📊", "piggy-bank": "🐷", smartphone: "📱", "credit-card": "💳", shield: "🛡️", "alert-triangle": "⚠️", landmark: "🏦", "trending-up": "📈" };
 
 export default function Learn() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const [params, setParams] = useSearchParams();
+  const { t, i18n } = useTranslation();
   const tc = useContentTranslation();
-  const { user } = useAuth(); // XP/Level الحقيقيين بدل الموك
+  const lang = i18n.language;
+  const { user, refreshUser } = useAuth(); // XP/Level الحقيقيين
   const [tab, setTab] = useState("lessons");
+  const [progress, setProgress] = useState(null);   // [{id,status,best_score,total,...}] من السيرفر
+  const [loadFailed, setLoadFailed] = useState(false);
   const [openLesson, setOpenLesson] = useState(null);
-  const [quiz, setQuiz] = useState(null);
+  const [hint, setHint] = useState(null);           // رسالة "خلّص الدرس الفلاني الأول"
   const [activeGame, setActiveGame] = useState(null);
 
-  // الألعاب بتتفتح من GameLauncher — هو اللي بيكلّم الباك اند ويعرض المكافأة الحقيقية.
-  // قبل كده التاب ده كان بيحسب coins/xp محليًا (score*6 / score*12) من غير ما يحفظ حاجة،
-  // فنفس اللعبة كانت بتدّي مكافأة حقيقية من الـ Home ووهمية من هنا.
+  const load = useCallback(() => (
+    getLessonsProgress().then((p) => { setProgress(p); setLoadFailed(false); }).catch(() => setLoadFailed(true))
+  ), []);
+  useEffect(() => { load(); }, [load]);
+
+  const byId = Object.fromEntries((progress || []).map((p) => [p.id, p]));
+  const statusOf = (id) => byId[id]?.status || "locked";
+  const completedCount = (progress || []).filter((p) => p.status === "completed").length;
+
+  // رابط مباشر من الـ Adventure Map: /child/learn?lesson=l3
+  useEffect(() => {
+    const wanted = params.get("lesson");
+    if (!wanted || !progress) return;
+    if (lessonById(wanted) && statusOf(wanted) !== "locked") setOpenLesson(wanted);
+    setParams({}, { replace: true });
+  }, [params, progress]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const launchGame = (g) => setActiveGame({ id: g.id, title: tc(g.title), icon: g.icon, color: g.color, xp: parseInt(g.reward, 10) || 0 });
+
+  const tapLesson = (l, index) => {
+    if (statusOf(l.id) === "locked") {
+      play("locked");
+      const prev = LESSONS[index - 1];
+      setHint({ id: l.id, text: t("lesson.lockedHint", { title: prev ? pick(prev.title, lang) : "" }) });
+      return;
+    }
+    play("open");
+    setHint(null);
+    setOpenLesson(l.id);
+  };
+
+  const closeLesson = () => {
+    setOpenLesson(null);
+    load();                         // الدرس اللي بعده ممكن يكون اتفتح
+    refreshUser?.().catch?.(() => {});
+  };
+
+  const lesson = openLesson ? lessonById(openLesson) : null;
 
   return (
     <div className="px-4 pt-12">
@@ -43,7 +84,7 @@ export default function Learn() {
             <div className="font-bold">{t("child.learn.levelLine", { xp: user?.xp ?? child.xp, level: user?.level ?? child.level })}</div>
           </div>
           <div className="text-end">
-            <div className="text-2xl font-extrabold">3/10</div>
+            <div className="text-2xl font-extrabold" data-testid="lessons-counter">{completedCount}/{LESSONS.length}</div>
             <div className="text-xs text-white/60">{t("child.learn.lessonsCount")}</div>
           </div>
         </div>
@@ -65,40 +106,42 @@ export default function Learn() {
       </FadeIn>
 
       {tab === "lessons" ? (
-        <div className="space-y-3">
-          {lessons.map((l, idx) => {
-            const locked = l.status === "locked";
-            const done = l.status === "completed";
+        <div className="space-y-3" data-testid="lessons-list">
+          {loadFailed && !progress && (
+            <div role="alert" className="rounded-2xl bg-red-50 text-red-600 text-sm px-4 py-3 flex items-center justify-between gap-3">
+              <span>{t("lesson.loadFailed")}</span>
+              <button onClick={load} className="font-bold underline shrink-0">{t("lesson.tryAgain")}</button>
+            </div>
+          )}
+          {!progress && !loadFailed && [0, 1, 2].map((i) => <div key={i} className="glass rounded-2xl h-20 animate-pulse" aria-busy="true" />)}
+
+          {progress && LESSONS.map((l, idx) => {
+            const status = statusOf(l.id);
+            const locked = status === "locked";
+            const done = status === "completed";
+            const p = byId[l.id];
             return (
               <FadeIn key={l.id} delay={idx * 40}>
                 <button
-                  disabled={locked}
-                  onClick={() => setOpenLesson(openLesson === l.id ? null : l.id)}
+                  data-testid={`lesson-${l.id}`}
+                  data-status={status}
+                  onClick={() => tapLesson(l, idx)}
                   className={"w-full glass rounded-2xl p-4 flex items-center gap-3 shadow-premium transition-all " + (locked ? "opacity-50" : "active:scale-[0.99]")}
                 >
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ background: `${l.color}22` }}>
                     {iconEmoji[l.icon] || "📘"}
                   </div>
-                  <div className="flex-1 text-start">
-                    <div className="font-semibold text-sm">{tc(l.title)}</div>
-                    <div className="text-xs text-muted-foreground">{tc(l.desc)}</div>
-                    {(l.status === "in-progress" || done) && <div className="mt-1.5"><ProgressBar value={l.progress} color={l.color} /></div>}
+                  <div className="flex-1 text-start min-w-0">
+                    <div className="font-semibold text-sm">{pick(l.title, lang)}</div>
+                    <div className="text-xs text-muted-foreground">{pick(l.desc, lang)}</div>
+                    {done && <div className="mt-1 text-[11px] font-bold text-emerald-600">{t("lesson.best", { score: p.best_score, total: p.total })}</div>}
+                    {status === "available" && <div className="mt-1 text-[11px] font-bold text-amber-600">+{p.xp} XP · 💎 {p.gems}</div>}
                   </div>
                   <div className="shrink-0">
                     {locked ? <Lock className="w-5 h-5 text-muted-foreground" /> : done ? <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center"><Check className="w-4 h-4 text-white" /></div> : <Play className="w-5 h-5 text-emerald-600 rtl:-scale-x-100" />}
                   </div>
                 </button>
-                {openLesson === l.id && (
-                  <FadeIn className="glass rounded-2xl p-4 mt-1.5 animate-pop">
-                    <div className="text-sm font-semibold mb-2">{tc(l.title)} {t("child.learn.storySuffix")}</div>
-                    <div className="rounded-xl p-4 mb-3 text-sm leading-relaxed" style={{ background: `${l.color}12` }}>
-                      {t("child.learn.storyText")}
-                    </div>
-                    <button onClick={() => setQuiz(l)} disabled={locked} className="w-full h-11 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2" style={{ background: l.color }}>
-                      <Play className="w-4 h-4 rtl:-scale-x-100" /> {t("child.learn.startQuiz")}
-                    </button>
-                  </FadeIn>
-                )}
+                {hint?.id === l.id && <div role="status" className="mt-1.5 rounded-xl bg-amber-500/10 text-amber-700 text-xs font-semibold px-3 py-2 animate-pop">🔒 {hint.text}</div>}
               </FadeIn>
             );
           })}
@@ -120,12 +163,7 @@ export default function Learn() {
       )}
       <div className="h-4" />
 
-      {/* Quiz overlay */}
-      {quiz && (
-        <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
-          <QuizPlayer title={quiz.title} onClose={() => setQuiz(null)} />
-        </div>
-      )}
+      {lesson && <LessonPlayer lesson={lesson} onClose={closeLesson} />}
 
       {/* Game (مكافأة حقيقية من الباك اند) */}
       {activeGame && <GameLauncher game={activeGame} onClose={() => setActiveGame(null)} />}

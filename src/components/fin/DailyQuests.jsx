@@ -9,7 +9,7 @@ import { play } from "@/lib/sounds";
 import { burst, bigCelebration } from "@/lib/celebrate";
 
 // لو المهمة لسه ما اتعملتش، الضغط عليها بياخد الطفل للمكان اللي يعملها فيه
-const QUEST_ROUTE = { save_money: "/child/goals", chore: "/child/missions", ask_lotfy: "/child/coach" };
+const QUEST_ROUTE = { save_money: "/child/goals", chore: "/child/missions", ask_lotfy: "/child/coach", lesson: "/child/learn" };
 
 export default function DailyQuests({ refreshKey = 0 }) {
   const { t } = useTranslation();

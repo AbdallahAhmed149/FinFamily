@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Star, X } from "lucide-react";
 import { play } from "@/lib/sounds";
 import { burst, bigCelebration } from "@/lib/celebrate";
+import Lotfy from "@/components/fin/Lotfy";
 
 // عدّاد بيطلع من 0 للقيمة النهائية (بيحسّس الطفل إن المكافأة "بتتجمّع"). بيحترم تقليل الحركة.
 function useCountUp(target, duration = 900) {
@@ -26,12 +27,12 @@ function useCountUp(target, duration = 900) {
   return value;
 }
 
-export default function RewardScreen({ title, score, total, coins, xp, note, badges = [], streak, onClose }) {
+export default function RewardScreen({ title, score, total, gems, xp, note, badges = [], streak, mood, onClose }) {
   const { t } = useTranslation();
   const pct = total ? Math.round((score / total) * 100) : 100;
   const stars = pct >= 80 ? 3 : pct >= 50 ? 2 : 1;
-  const hasReward = coins !== undefined || xp !== undefined;
-  const shownCoins = useCountUp(coins);
+  const hasReward = gems !== undefined || xp !== undefined;
+  const shownGems = useCountUp(gems);
   const shownXp = useCountUp(xp);
 
   // أصوات + احتفال عند ظهور الشاشة (متسلسلة عشان مايبقوش فوق بعض)
@@ -40,7 +41,7 @@ export default function RewardScreen({ title, score, total, coins, xp, note, bad
     const at = (ms, fn) => timers.push(setTimeout(fn, ms));
     play(stars === 3 ? "win" : stars === 2 ? "finish" : "soft");
     if (stars === 3) burst(); // النتيجة الضعيفة بتتعامل بهدوء — من غير احتفال زيادة
-    if (hasReward && ((coins || 0) > 0 || (xp || 0) > 0)) at(500, () => play("coins"));
+    if (hasReward && ((gems || 0) > 0 || (xp || 0) > 0)) at(500, () => play("coins"));
     if (badges.length) at(1100, () => { play("badge"); bigCelebration(900); });
     if (streak?.freezeUsed || streak?.freezeEarned) at(badges.length ? 1900 : 1100, () => play("freeze"));
     return () => timers.forEach(clearTimeout);
@@ -66,11 +67,12 @@ export default function RewardScreen({ title, score, total, coins, xp, note, bad
             key={i}
             className="absolute text-2xl animate-float"
             style={{ left: `${10 + i * 8}%`, top: "10%", ["--tx"]: `${(i % 2 ? 1 : -1) * 30}px`, animationDelay: `${i * 0.08}s` }}
-          >🪙</span>
+          >💎</span>
         ))}
       </div>
 
-      <div className="text-5xl mb-2">{stars === 3 ? "🏆" : stars === 2 ? "🎉" : "💪"}</div>
+      {/* لطفي بيتفاعل مع النتيجة: فرحان لو كويسة، بيفكّر ويشجّع لو ضعيفة (مش حزين — ده تطبيق تشجيع) */}
+      <Lotfy mood={mood || (stars >= 2 ? "happy" : "think")} size={120} className="mb-1" />
       <h2 className="text-2xl font-extrabold font-heading">{title || t("games.rewardScreen.defaultTitle")}</h2>
       <p className="text-sm text-muted-foreground mt-1">{t("games.rewardScreen.scoreLine", { score, total })}</p>
 
@@ -104,9 +106,9 @@ export default function RewardScreen({ title, score, total, coins, xp, note, bad
       {/* بنخفي صناديق المكافأة لو مفيش مكافأة حقيقية تتعرض (زي الكويز لحد ما الدروس تتربط بالباك اند) */}
       {hasReward ? (
         <div className="flex gap-3 mb-6">
-          <div className="grad-gold rounded-2xl px-5 py-3 text-white shadow-glow-gold">
-            <div className="text-2xl font-extrabold">+{shownCoins}</div>
-            <div className="text-xs">{t("games.rewardScreen.coins")}</div>
+          <div className="rounded-2xl px-5 py-3 text-white shadow-premium" style={{ background: "linear-gradient(135deg,#0ea5e9,#7c3aed)" }}>
+            <div className="text-2xl font-extrabold">+{shownGems}</div>
+            <div className="text-xs">{t("games.rewardScreen.gems")}</div>
           </div>
           <div className="grad-emerald rounded-2xl px-5 py-3 text-white shadow-glow-emerald">
             <div className="text-2xl font-extrabold">+{shownXp}</div>

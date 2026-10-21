@@ -21,6 +21,9 @@ class UserResponse(BaseModel):
     birth_year: Optional[int] = None
     streak_freezes: int = 0
     streak_status: str = "none"  # none | active | at_risk | covered | broken
+    gems: int = 0
+    equipped_frame: Optional[str] = None
+    equipped_title: Optional[str] = None
     mfa_enabled: bool = False
     created_date: datetime
 

@@ -206,13 +206,17 @@ export const quizQuestions = [
   { q: "Which is a 'need'?", options: ["School supplies", "A video game", "Cinema ticket", "Ice cream"], answer: 0, explain: "School supplies are essential for learning." },
 ];
 
+// أسعار تقريبية للأطفال في مصر (أكتوبر 2026) — من قايمة الأسعار اللي الفريق جمعها. الخيارات الغلط بعيدة
+// عن السعر الصح بما يكفي إن الطفل يقدر يميّز بالتقدير مش بالتخمين.
 export const priceGuessItems = [
   { name: "School Notebook", emoji: "📓", price: 15, options: [5, 15, 45, 80] },
-  { name: "Ice Cream Cone", emoji: "🍦", price: 12, options: [12, 40, 60, 100] },
-  { name: "Football", emoji: "⚽", price: 90, options: [20, 50, 90, 200] },
-  { name: "Cinema Ticket", emoji: "🎬", price: 45, options: [10, 25, 45, 120] },
-  { name: "Bicycle", emoji: "🚲", price: 1200, options: [200, 600, 1200, 3000] },
-  { name: "Book", emoji: "📚", price: 35, options: [5, 15, 35, 90] },
+  { name: "Ice Cream Cone", emoji: "🍦", price: 15, options: [15, 40, 60, 100] },
+  { name: "Plastic Ball", emoji: "⚽", price: 40, options: [10, 40, 120, 300] },
+  { name: "Cinema Ticket", emoji: "🎬", price: 100, options: [20, 50, 100, 250] },
+  { name: "Bicycle", emoji: "🚲", price: 3500, options: [400, 1200, 3500, 9000] },
+  { name: "Book", emoji: "📚", price: 60, options: [10, 30, 60, 200] },
+  { name: "Koshary Plate", emoji: "🍲", price: 30, options: [8, 30, 90, 200] },
+  { name: "Chips", emoji: "🥔", price: 8, options: [2, 8, 25, 60] },
 ];
 
 export const needsWantsItems = [
@@ -227,11 +231,11 @@ export const needsWantsItems = [
 ];
 
 export const budgetItems = [
-  { name: "Bread", emoji: "🍞", price: 15, need: true },
-  { name: "Notebook", emoji: "📓", price: 20, need: true },
+  { name: "Sandwich", emoji: "🥪", price: 12, need: true },   // فول وطعمية
+  { name: "Notebook", emoji: "📓", price: 15, need: true },
   { name: "Water", emoji: "💧", price: 8, need: true },
-  { name: "Toy", emoji: "🧸", price: 45, need: false },
-  { name: "Candy", emoji: "🍬", price: 12, need: false },
+  { name: "Toy", emoji: "🧸", price: 60, need: false },
+  { name: "Candy", emoji: "🍬", price: 8, need: false },
   { name: "Game", emoji: "🎮", price: 60, need: false },
 ];
 export const BUDGET_LIMIT = 100;
@@ -366,14 +370,16 @@ export const levels = [
   { level: 8, name: "Financial Hero", minXp: 7000, color: "#FFC857" },
 ];
 
+// الاسم والأيقونة واللون والـ topics بس — الليفل والدروس والتقدم الحقيقي بييجوا من السيرفر (GET /api/adventure)
+// بنفس الـ ids (backend/services/worlds.py). كل الـ 10 دروس موزعة على العوالم (عالم 5/6/7 فيهم درسين).
 export const adventureWorlds = [
-  { id: "w1", name: "Money Explorer", icon: "🌍", color: "#FFC857", unlockLevel: 1, status: "unlocked", progress: 100, topics: ["What is money?", "Needs vs Wants", "Smart choices"], lesson: "l1", game: "gm3" },
-  { id: "w2", name: "Smart Shopper", icon: "🛒", color: "#00B894", unlockLevel: 2, status: "unlocked", progress: 60, topics: ["Comparing prices", "Value vs price", "Avoiding impulse spending"], lesson: "l2", game: "gm8" },
-  { id: "w3", name: "Saving Hero", icon: "🐷", color: "#3b82f6", unlockLevel: 3, status: "unlocked", progress: 35, topics: ["Saving", "Savings goals", "Delayed gratification"], lesson: "l4", game: "gm11" },
-  { id: "w4", name: "Budget Master", icon: "📊", color: "#7C3AED", unlockLevel: 4, status: "locked", progress: 0, topics: ["Budgeting", "Spending categories", "Planning"], lesson: "l3", game: "gm2" },
-  { id: "w5", name: "Digital Money Guardian", icon: "🛡️", color: "#0F2D52", unlockLevel: 5, status: "locked", progress: 0, topics: ["Digital payments", "Card safety", "PIN & security", "Online safety"], lesson: "l5", game: "gm5" },
-  { id: "w6", name: "Scam Detective", icon: "🕵️", color: "#ef4444", unlockLevel: 6, status: "locked", progress: 0, topics: ["Fake messages", "Phishing", "Fraud", "Suspicious offers"], lesson: "l8", game: "gm9" },
-  { id: "w7", name: "Future Builder", icon: "🚀", color: "#f97316", unlockLevel: 7, status: "locked", progress: 0, topics: ["Risk", "Return", "Diversification", "Long-term planning"], lesson: "l10", game: "gm10" },
+  { id: "w1", name: "Money Explorer", icon: "🌍", color: "#FFC857", unlockLevel: 1, topics: ["What is money?", "Needs vs Wants", "Smart choices"], game: "gm3" },
+  { id: "w2", name: "Smart Shopper", icon: "🛒", color: "#00B894", unlockLevel: 2, topics: ["Comparing prices", "Value vs price", "Avoiding impulse spending"], game: "gm8" },
+  { id: "w3", name: "Budget Master", icon: "📊", color: "#7C3AED", unlockLevel: 3, topics: ["Budgeting", "Spending categories", "Planning"], game: "gm2" },
+  { id: "w4", name: "Saving Hero", icon: "🐷", color: "#3b82f6", unlockLevel: 4, topics: ["Saving", "Savings goals", "Delayed gratification"], game: "gm11" },
+  { id: "w5", name: "Digital Money Guardian", icon: "🛡️", color: "#0F2D52", unlockLevel: 5, topics: ["Digital payments", "Card safety", "PIN & security", "Online safety"], game: "gm5" },
+  { id: "w6", name: "Scam Detective", icon: "🕵️", color: "#ef4444", unlockLevel: 6, topics: ["Fake messages", "Phishing", "Fraud", "Suspicious offers"], game: "gm9" },
+  { id: "w7", name: "Future Builder", icon: "🚀", color: "#f97316", unlockLevel: 7, topics: ["Risk", "Return", "Diversification", "Long-term planning"], game: "gm10" },
 ];
 
 export const adventureBadges = [
@@ -420,9 +426,9 @@ export const smartShopperScenarios = [
   {
     prompt: "Lotfy wants to buy a football ⚽. Which is the smartest choice?",
     options: [
-      { id: "a", label: "SuperBall", price: 90, rating: 4.6, quality: "High", note: "Great quality, fair price" },
+      { id: "a", label: "SuperBall", price: 180, rating: 4.6, quality: "High", note: "Great quality, fair price" },
       { id: "b", label: "CheapKick", price: 40, rating: 2.1, quality: "Low", note: "Cheapest but breaks fast" },
-      { id: "c", label: "ProGold", price: 250, rating: 4.8, quality: "Premium", note: "Best quality but very pricey" },
+      { id: "c", label: "ProGold", price: 400, rating: 4.8, quality: "Premium", note: "Best quality but very pricey" },
     ],
     answer: "a",
     explain: "Great choice! 🌟 You compared VALUE, not just price. The SuperBall has great quality at a fair price. The cheapest one breaks fast (false economy), and the premium one costs way more than needed.",

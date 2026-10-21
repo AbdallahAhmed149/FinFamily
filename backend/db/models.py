@@ -117,6 +117,12 @@ class User(Base):
     # متتالية (حد أقصى 2) وبيتستهلك تلقائيًا في services/streaks.py.
     streak_freezes = Column(Integer, nullable=False, default=0, server_default="0")
 
+    # "الجواهر" 💎: العملة الافتراضية اللي بتتكسب من الألعاب والدروس وبتتصرف في متجر الجواهر (تجميلي بس).
+    # منفصلة تمامًا عن رصيد المحفظة (EGP الحقيقي اللي الأب بيموّله) — الألعاب مابقتش بتطبع فلوس.
+    gems = Column(Integer, nullable=False, default=0, server_default="0")
+    equipped_frame = Column(String, nullable=True)   # id إطار الصورة المفعّل (من services/shop.py)
+    equipped_title = Column(String, nullable=True)   # id اللقب المفعّل
+
     # قفل مؤقت ضد تخمين الـ PIN (الطفل بس) — منفصل عن rate limiting بالـ IP،
     # عشان يحمي حتى لو حد جرب من أجهزة/شبكات مختلفة على نفس الطفل بالظبط
     failed_pin_attempts = Column(Integer, default=0)
@@ -427,3 +433,34 @@ class DailyQuestSet(Base):
     quest_date = Column(Date, nullable=False, index=True)  # اليوم بتوقيت القاهرة
     quests = Column(JSON, nullable=False)
     created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class UserItem(Base):
+    """عنصر تجميلي اشتراه الطفل بالجواهر (إطار، لقب، ثيم كارت). الـ UniqueConstraint بيمنع شراءه مرتين."""
+    __tablename__ = "user_items"
+    __table_args__ = (UniqueConstraint("child_id", "item_id", name="uq_child_item"),)
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    child_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    item_id = Column(String, nullable=False)
+    price_paid = Column(Integer, default=0)
+    created_date = Column(DateTime, default=datetime.utcnow)
+
+
+class LessonCompletion(Base):
+    """تقدم الطفل في درس. passed = وصل لنسبة النجاح (PASS_RATIO) مرة على الأقل؛ المكافأة بتتدّي مرة واحدة بس."""
+    __tablename__ = "lesson_completions"
+    __table_args__ = (UniqueConstraint("child_id", "lesson_id", name="uq_child_lesson"),)
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    child_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    lesson_id = Column(String, nullable=False)
+    best_score = Column(Integer, default=0)
+    total = Column(Integer, default=0)
+    attempts = Column(Integer, default=0)
+    passed = Column(Boolean, default=False)
+    first_passed_date = Column(DateTime, nullable=True)
+    xp_awarded = Column(Integer, default=0)
+    gems_awarded = Column(Integer, default=0)
+    created_date = Column(DateTime, default=datetime.utcnow)
+    updated_date = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -14,8 +14,9 @@ from sqlalchemy.orm import Session
 
 from db.models import (
     User, Wallet, SavingsGoal, GameCompletion, Transaction, TransactionType,
-    TransactionDirection, Mission, MissionKind, MissionStatus, ChatMessage,
+    TransactionDirection, Mission, MissionKind, MissionStatus, ChatMessage, LessonCompletion,
 )
+from services import lessons as lesson_svc
 from core.timeutil import cairo_today, cairo_today_start_utc
 
 CHEST_XP = 50
@@ -30,6 +31,7 @@ QUEST_DEFS: Dict[str, dict] = {
     "save_money": {"icon": "🐷", "target": 1, "xp": 40},
     "chore":      {"icon": "🧹", "target": 1, "xp": 40},
     "ask_lotfy":  {"icon": "💬", "target": 1, "xp": 25},
+    "lesson":     {"icon": "📖", "target": 1, "xp": 40},
 }
 
 
@@ -49,12 +51,16 @@ def generate_quests(db: Session, child: User, day: date) -> List[dict]:
         Mission.status == MissionStatus.pending,
     ).first() is not None
 
+    # "خلّص درس" بس لو فيه درس متاح فعلًا لسه ماتعدّاش (مفيش مهمة مستحيلة)
+    comp = {r.lesson_id: r for r in db.query(LessonCompletion).filter(LessonCompletion.child_id == child.id).all()}
+    has_lesson = any(lesson_svc.status_for(i, comp) == "available" for i in range(len(lesson_svc.LESSON_ORDER)))
+
     slot1 = rng.choice(["games_2", "games_3"])
 
     real_life = [k for k, ok in (("save_money", can_save), ("chore", has_chore)) if ok]
     slot2 = rng.choice(real_life) if real_life else "high_score"
 
-    pool3 = [k for k in ("ask_lotfy", "high_score") if k != slot2]
+    pool3 = [k for k in ("ask_lotfy", "high_score", "lesson") if k != slot2 and (k != "lesson" or has_lesson)]
     slot3 = rng.choice(pool3)
 
     return [{"key": k, "target": QUEST_DEFS[k]["target"], "xp": QUEST_DEFS[k]["xp"]} for k in (slot1, slot2, slot3)]
@@ -91,6 +97,13 @@ def quest_progress(db: Session, child: User, key: str) -> int:
             Mission.assigned_to_id == child.id, Mission.kind == MissionKind.chore,
             Mission.status.in_([MissionStatus.submitted, MissionStatus.approved]),
             Mission.updated_date >= start,
+        ).count()
+
+    if key == "lesson":
+        # درس اتعدّى لأول مرة النهارده (إعادة درس قديم مش بتحسب)
+        return db.query(LessonCompletion).filter(
+            LessonCompletion.child_id == child.id, LessonCompletion.passed == True,  # noqa: E712
+            LessonCompletion.first_passed_date >= start,
         ).count()
 
     if key == "ask_lotfy":

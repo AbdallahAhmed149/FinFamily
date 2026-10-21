@@ -15,7 +15,7 @@ class GameCompleteRequest(BaseModel):
 class GameCompleteResponse(BaseModel):
     game_title: str
     xp_awarded: int
-    coins_awarded: float
+    gems_awarded: int       # جواهر 💎 (مش فلوس المحفظة)
     already_rewarded_today: bool
     leveled_up: bool
     new_xp: int
@@ -23,7 +23,8 @@ class GameCompleteResponse(BaseModel):
     new_balance: float
     new_streak: int
     newly_unlocked_badges: List[BadgeOut] = []
-    perfect_day_bonus_coins: float = 0
+    perfect_day_bonus_gems: int = 0
+    new_gems: int = 0
     perfect_day_bonus_xp: int = 0
     # Streak Freeze
     streak_freeze_used: int = 0         # كام يوم اتحمى بـ Freeze في النشاط ده

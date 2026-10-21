@@ -1,4 +1,42 @@
 {
+  "shop": {
+    "loadFailed": "مش قادرين نحمّل المتجر",
+    "actionFailed": "العملية ماتمتش. جرّب تاني!",
+    "yourGems": "جواهرك",
+    "earnHint": "اكسب جواهر من الألعاب والدروس واصرفها على شكل أحلى!",
+    "sections": {
+      "frame": "إطارات الصورة",
+      "title": "الألقاب",
+      "card_theme": "ثيمات الكارت"
+    },
+    "needMore": "ناقص {{count}} 💎",
+    "inUse": "مستخدم",
+    "remove": "شيل",
+    "use": "استخدم"
+  },
+  "lesson": {
+    "passTitle": "خلّصت الدرس!",
+    "alreadyDone": "إنت خلّصت الدرس ده قبل كده. مراجعة حلوة! مفيش مكافأة تانية المرة دي.",
+    "failTitle": "قربت أوي!",
+    "failBody": "محتاج {{need}} من {{total}} عشان تعدّي. جبت {{score}}. اقرا القصة تاني وجرّب مرة كمان!",
+    "retry": "جرّب تاني",
+    "readAgain": "اقرا القصة تاني",
+    "close": "إغلاق",
+    "cardOf": "كارت {{current}} من {{total}}",
+    "questionOf": "سؤال {{current}} من {{total}}",
+    "back": "رجوع",
+    "next": "التالي",
+    "startQuiz": "ابدأ الكويز",
+    "finish": "إنهاء",
+    "correct": "برافو! ✅",
+    "wrong": "مش بالظبط، والسبب:",
+    "saving": "بنحفظ نتيجتك…",
+    "saveFailed": "مقدرناش نحفظ نتيجتك. اتأكد من النت وجرّب تاني.",
+    "tryAgain": "جرّب تاني",
+    "loadFailed": "مش قادرين نحمّل الدروس",
+    "lockedHint": "خلّص \"{{title}}\" الأول",
+    "best": "أحسن نتيجة: {{score}}/{{total}}"
+  },
   "quests": {
     "title": "مهام النهارده",
     "claimedCount": "{{done}}/{{total}} اتستلموا",
@@ -18,6 +56,7 @@
     "chore": {
       "title": "خلّص مهمة من مهام البيت"
     },
+    "lesson": { "title": "خلّص درس" },
     "ask_lotfy": {
       "title": "اسأل لطفي سؤال عن الفلوس"
     },
@@ -200,8 +239,8 @@
   "games": {
     "gameLauncher": {
       "genericError": "تعذر تسجيل نتيجة اللعبة",
-      "alreadyToday": "أخذت كوينز للعبة دي النهاردة بالفعل — بس تمرين حلو برضو! 💪",
-      "perfectDayBonus": "🌟 مكافأة اليوم المثالي: +{{coins}} كوين، +{{xp}} XP — لعبت كل الألعاب النهاردة!",
+      "alreadyToday": "أخذت جواهر للعبة دي النهاردة بالفعل — بس تمرين حلو برضو! 💪",
+      "perfectDayBonus": "🌟 مكافأة اليوم المثالي: +{{gems}} 💎، +{{xp}} XP — لعبت كل الألعاب النهاردة!",
       "newBadge": "شارة جديدة: {{names}}",
       "newBadges": "شارات جديدة: {{names}}",
       "badgeUnlocked": "شارة جديدة اتفتحت! 🏅",
@@ -221,6 +260,7 @@
       "scoreLine": "سجّلت {{score}} من {{total}}",
       "coins": "كوينز 🪙",
       "xp": "XP ⭐",
+      "gems": "جواهر 💎",
       "streakFreezeUsed": "الـ Freeze حمى الـ streak بتاعك!",
       "streakFreezeEarned": "كسبت Freeze جديد!",
       "streakLost": "الـ streak ({{count}} يوم) خلص… ابدأ واحد جديد النهارده وهتكسره!",
@@ -368,6 +408,7 @@
       "topLevel": "وصلت لأعلى لفل! 👑",
       "totalXp": "إجمالي XP",
       "dayStreakStat": "أيام متتالية",
+      "gemsStat": "جواهر 💎",
       "coins": "كوينز 🪙",
       "todaysMission": "مهمة النهاردة",
       "startMission": "ابدأ المهمة",
@@ -458,6 +499,7 @@
       "loadFailed": "تعذر تحميل بيانات المتجر",
       "redeemFailed": "حصل خطأ",
       "yourCoins": "كوينزك",
+      "tabs": { "real": "مكافآت حقيقية", "gems": "متجر الجواهر 💎" },
       "earnMore": "اكسب أكتر بإنك تخلّص مهام",
       "redeemCoins": "استبدل الكوينز",
       "approvalNote": "الطلبات محتاجة موافقة أبوك الأول قبل ما الكوينز تتخصم.",
@@ -528,6 +570,11 @@
       "title": "مغامرة الفلوس",
       "levelLine": "لفل {{level}} · {{name}} · {{xp}} XP",
       "heroLine": "رحلتك عشان تبقى بطل مالي 🦸",
+      "loadFailed": "مش قادرين نحمّل الخريطة",
+      "nextLesson": "الجاي: {{title}}",
+      "lessonLocked": "خلّص الدروس اللي قبلها الأول",
+      "lessonsDone": "الدروس خلصت",
+      "playGame": "العب",
       "unlockHint": "خلّص كل عالم عشان تفتح اللي بعده",
       "world": "العالم {{num}}",
       "progress": "التقدم",

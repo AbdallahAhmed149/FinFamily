@@ -9,15 +9,16 @@ from db.models import (
     User, UserRole, Wallet, SavingsGoal, Mission, MissionKind, MissionStatus,
     Transaction, TransactionType, TransactionDirection,
     CardStatus, CardPurchase, PurchaseStatus, _generate_card_number,
-    GameCompletion, AuditLog, UserBadge,
+    GameCompletion, AuditLog, UserBadge, UserItem,
 )
 from core.deps import get_current_user, require_parent, require_child
 from core.audit import log_action
 from services.scoring import compute_financial_score, _debit_spend_since
 from services.insights import build_family_insights, build_family_activity
 from services.leveling import apply_xp
-from services.games import compute_reward, PERFECT_DAY_BONUS_XP, PERFECT_DAY_BONUS_COINS
+from services.games import compute_reward, PERFECT_DAY_BONUS_XP, PERFECT_DAY_BONUS_GEMS
 from services.streaks import touch_streak
+from services.shop import FREE_CARD_THEMES, SHOP_ITEMS
 from core.timeutil import cairo_today_start_utc
 from services.badges import BADGE_DEFS, check_and_award_badges
 from schemas.insights import InsightOut, ActivityOut
@@ -201,7 +202,12 @@ def update_my_card_theme(
     child: User = Depends(require_child),
     db: Session = Depends(get_db),
 ):
-    # الطفل هو اللي بيختار شكل الكارت بتاعه (تخصيص بس، مالهاش علاقة بالأمان)
+    # الطفل بيختار شكل الكارت بتاعه — بس مسموح بس بالثيمات المجانية أو اللي اشتراها من متجر الجواهر.
+    # (قبل كده الـ endpoint ده كان بيقبل أي قيمة، فكان ممكن يفعّل ثيم مدفوع من غير ما يشتريه.)
+    if payload.theme not in FREE_CARD_THEMES:
+        owned = db.query(UserItem).filter(UserItem.child_id == child.id, UserItem.item_id == payload.theme).first()
+        if payload.theme not in SHOP_ITEMS or SHOP_ITEMS[payload.theme]["kind"] != "card_theme" or not owned:
+            raise HTTPException(status_code=403, detail="Buy this theme in the Gem Shop first")
     wallet = _get_wallet_for(db, child)
     wallet.card_theme = payload.theme
     db.commit()
@@ -655,7 +661,7 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
     result = compute_reward(payload.game_id, payload.score, payload.total)
     if not result:
         raise HTTPException(status_code=404, detail="Unknown game_id")
-    title, xp_awarded, coins_awarded = result
+    title, xp_awarded, gems_awarded = result
 
     # سكور صفر = الطفل خرج من اللعبة قبل ما يلعب فعلًا (أو اتقفلت من غير ما يجاوب).
     # قبل كده ده كان بيتسجل كـ completion بمكافأة "مستهلكة"، فلما الطفل يرجع يلعب بجد
@@ -665,7 +671,7 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         return GameCompleteResponse(
             game_title=title,
             xp_awarded=0,
-            coins_awarded=0,
+            gems_awarded=0,
             already_rewarded_today=False,
             leveled_up=False,
             new_xp=child.xp or 0,
@@ -674,7 +680,8 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
             new_streak=child.streak or 0,
             newly_unlocked_badges=[],
             perfect_day_bonus_xp=0,
-            perfect_day_bonus_coins=0,
+            perfect_day_bonus_gems=0,
+            new_gems=child.gems or 0,
         )
 
     today_start = cairo_today_start_utc()  # بداية اليوم بتوقيت القاهرة (مش UTC)
@@ -694,15 +701,12 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
     wallet = _get_wallet_for(db, child)
 
     if already_today:
-        xp_awarded, coins_awarded = 0, 0
+        xp_awarded, gems_awarded = 0, 0
     else:
-        wallet.balance += coins_awarded
+        # الألعاب بتدّي XP + جواهر 💎 (عملة افتراضية). مابقتش بتزوّد رصيد المحفظة: ده كان بيطبع
+        # فلوس حقيقية (EGP) بقيمة بتفوق البدل الأسبوعي كله من لعب كام لعبة في اليوم.
+        child.gems = (child.gems or 0) + gems_awarded
         leveled_up = apply_xp(child, xp_awarded)
-        _log_transaction(
-            db, wallet, child.family_id,
-            TransactionType.game_reward, TransactionDirection.credit,
-            coins_awarded, f"{title} — mini-game reward",
-        )
 
     db.add(GameCompletion(
         child_id=child.id,
@@ -710,7 +714,7 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         score=payload.score,
         total=payload.total,
         xp_awarded=xp_awarded,
-        coins_awarded=coins_awarded,
+        coins_awarded=gems_awarded,  # اسم العمود قديم (coins) لكن القيمة جواهر — عشان مانحتاجش migration
         was_rewarded=not already_today,
     ))
     db.flush()  # عشان محاولة اللعب دي تتحسب لو كانت هي آخر لعبة في تحدي "Perfect Day"
@@ -719,17 +723,12 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
 
     newly_unlocked = check_and_award_badges(db, child)
 
-    perfect_bonus_xp, perfect_bonus_coins = 0, 0
+    perfect_bonus_xp, perfect_bonus_gems = 0, 0
     if any(b["id"] == "perfect_day" for b in newly_unlocked):
-        perfect_bonus_xp, perfect_bonus_coins = PERFECT_DAY_BONUS_XP, PERFECT_DAY_BONUS_COINS
-        wallet.balance += perfect_bonus_coins
+        perfect_bonus_xp, perfect_bonus_gems = PERFECT_DAY_BONUS_XP, PERFECT_DAY_BONUS_GEMS
+        child.gems = (child.gems or 0) + perfect_bonus_gems
         if apply_xp(child, perfect_bonus_xp):
             leveled_up = True
-        _log_transaction(
-            db, wallet, child.family_id,
-            TransactionType.game_reward, TransactionDirection.credit,
-            perfect_bonus_coins, "Perfect Day bonus — all mini-games completed today! 🌟",
-        )
 
     db.commit()
     db.refresh(child)
@@ -743,7 +742,7 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
     return GameCompleteResponse(
         game_title=title,
         xp_awarded=xp_awarded,
-        coins_awarded=coins_awarded,
+        gems_awarded=gems_awarded,
         already_rewarded_today=already_today,
         leveled_up=leveled_up,
         new_xp=child.xp,
@@ -752,7 +751,8 @@ def complete_game(payload: GameCompleteRequest, child: User = Depends(require_ch
         new_streak=child.streak,
         newly_unlocked_badges=badge_out,
         perfect_day_bonus_xp=perfect_bonus_xp,
-        perfect_day_bonus_coins=perfect_bonus_coins,
+        perfect_day_bonus_gems=perfect_bonus_gems,
+        new_gems=child.gems or 0,
         streak_freeze_used=streak_result.freezes_used,
         streak_freeze_earned=streak_result.freeze_earned,
         streak_lost=streak_result.lost_streak,
