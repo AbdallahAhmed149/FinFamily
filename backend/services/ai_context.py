@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -5,8 +6,27 @@ from sqlalchemy.orm import Session
 
 from db.models import (
     User, UserRole, Wallet, Mission, MissionStatus, MissionKind,
-    Transaction, TransactionDirection, TransactionType,
+    Transaction, TransactionDirection, TransactionType, LessonCompletion,
 )
+from services.lessons import LESSON_ORDER
+from services.badges import BADGE_BY_ID
+from core.timeutil import cairo_today
+
+_UNSAFE_CHARS_RE = re.compile(r"[\x00-\x1f\x7f<>{}`]")
+
+
+def clean_text(value, max_len: int = 60) -> str:
+    """أي نص جاي من يوزر (اسم، اسم هدف...) بيتحقن في الـ system prompt، فبنشيل منه الرموز اللي
+    ممكن تقفل الـ tags أو تعمل سطور تعليمات مزيفة، ونقصّه لطول معقول (حماية بسيطة من prompt injection)."""
+    text = _UNSAFE_CHARS_RE.sub(" ", str(value or ""))
+    return re.sub(r"\s+", " ", text).strip()[:max_len]
+
+
+def _age_of(child: User) -> Optional[int]:
+    if not child.birth_year:
+        return None
+    age = cairo_today().year - child.birth_year
+    return age if 3 <= age <= 20 else None
 
 
 def _wallet_of(db: Session, user_id: str) -> Optional[Wallet]:
@@ -16,16 +36,22 @@ def _wallet_of(db: Session, user_id: str) -> Optional[Wallet]:
 def build_child_context(db: Session, child: User) -> str:
     """بيرجع نص بسيط فيه بيانات الطفل الحقيقية عشان يتحط في الـ system prompt بتاع FinBuddy."""
     wallet = _wallet_of(db, child.id)
+    now = datetime.utcnow()
 
-    lines = [
-        f"- Name: {child.full_name}",
+    lines = [f"- Name: {clean_text(child.full_name)}"]
+    age = _age_of(child)
+    if age:
+        lines.append(f"- Age: about {age} years old")
+    lines += [
         f"- Level {child.level}, {child.xp} XP, {child.streak}-day streak",
         f"- Wallet balance: {wallet.balance if wallet else 0:.0f} EGP",
     ]
+    if wallet:
+        lines.append(f"- Spent in the last 7 days: {_spend_since(db, wallet.id, now - timedelta(days=7)):.0f} EGP")
 
     goals = wallet.savings_goals if wallet else []
     if goals:
-        goals_str = "; ".join(f"{g.name} ({g.current:.0f}/{g.target:.0f} EGP)" for g in goals)
+        goals_str = "; ".join(f"{clean_text(g.name)} ({g.current:.0f}/{g.target:.0f} EGP)" for g in goals[:5])
         lines.append(f"- Savings goals: {goals_str}")
     else:
         lines.append("- Savings goals: none set yet")
@@ -33,6 +59,12 @@ def build_child_context(db: Session, child: User) -> str:
     pending = db.query(Mission).filter(Mission.assigned_to_id == child.id, Mission.status == MissionStatus.pending).count()
     submitted = db.query(Mission).filter(Mission.assigned_to_id == child.id, Mission.status == MissionStatus.submitted).count()
     lines.append(f"- Chores: {pending} to do, {submitted} waiting for a parent's approval")
+
+    passed = db.query(LessonCompletion).filter(LessonCompletion.child_id == child.id, LessonCompletion.passed.is_(True)).count()
+    lines.append(f"- Lessons passed: {passed} of {len(LESSON_ORDER)}")
+
+    badge_names = [BADGE_BY_ID[b.badge_id]["name"] for b in child.badges if b.badge_id in BADGE_BY_ID]
+    lines.append(f"- Badges earned: {', '.join(badge_names) if badge_names else 'none yet'}")
 
     return "\n".join(lines)
 
@@ -98,7 +130,7 @@ def build_family_context(db: Session, parent: User) -> str:
     now = datetime.utcnow()
     since = now - timedelta(days=30)
 
-    lines = [f"- Parent: {parent.full_name}", f"- Children ({len(children)}):"]
+    lines = [f"- Parent: {clean_text(parent.full_name)}", f"- Children ({len(children)}):"]
 
     total_spending = 0.0
     total_savings = 0.0
@@ -106,25 +138,13 @@ def build_family_context(db: Session, parent: User) -> str:
 
     for c in children:
         wallet = _wallet_of(db, c.id)
-        spend_total = 0.0
-        if wallet:
-            debits = (
-                db.query(Transaction)
-                .filter(
-                    Transaction.wallet_id == wallet.id,
-                    Transaction.direction == TransactionDirection.debit,
-                    Transaction.type.in_([TransactionType.redemption, TransactionType.card_purchase]),  # صرف فعلي بس، مش تحويل لادخار
-                    Transaction.created_date >= since,
-                )
-                .all()
-            )
-            spend_total = sum(t.amount for t in debits)
+        spend_total = _spend_since(db, wallet.id, since) if wallet else 0.0
 
         total_spending += spend_total
         total_savings += wallet.savings_balance if wallet else 0.0
 
         if wallet:
-            risk_flags.extend(_spending_risk_flags(db, c.full_name, wallet, now))
+            risk_flags.extend(_spending_risk_flags(db, clean_text(c.full_name), wallet, now))
 
         limits = []
         if wallet:
@@ -137,7 +157,7 @@ def build_family_context(db: Session, parent: User) -> str:
         limits_str = ", ".join(limits) if limits else "none set"
 
         lines.append(
-            f"  - {c.full_name}: Level {c.level}, {c.xp} XP, {c.streak}-day streak, "
+            f"  - {clean_text(c.full_name)}: Level {c.level}, {c.xp} XP, {c.streak}-day streak, "
             f"balance {wallet.balance if wallet else 0:.0f} EGP, savings {wallet.savings_balance if wallet else 0:.0f} EGP, "
             f"spent (last 30 days) {spend_total:.0f} EGP, limits: {limits_str}, "
             f"card {wallet.card_status.value if wallet else 'n/a'}"

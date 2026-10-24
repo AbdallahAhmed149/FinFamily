@@ -58,13 +58,15 @@ export default function Coach() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const greeting = () => ({ role: "assistant", text: t("child.coach.greeting", { name: user?.full_name || t("child.coach.greetingFallbackName") }) });
+  const greeting = () => ({ role: "assistant", text: t("child.coach.greeting", { name: (user?.full_name || "").trim().split(/\s+/)[0] || t("child.coach.greetingFallbackName") }) });
   const [messages, setMessages] = useState([greeting()]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [suggestions, setSuggestions] = useState(() => buildSuggestions(t));
   const endRef = useRef(null);
+  // لو الطفل بعت رسالة قبل ما الـ history يوصل، منرجعش نمسح رسايله بالـ history القديم
+  const userActedRef = useRef(false);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
@@ -86,7 +88,7 @@ export default function Coach() {
     let cancelled = false;
     getCoachHistory()
       .then((res) => {
-        if (cancelled) return;
+        if (cancelled || userActedRef.current) return;
         if (res?.messages?.length) {
           setMessages(res.messages.map((m) => ({ role: m.role, text: m.content })));
         }
@@ -99,17 +101,20 @@ export default function Coach() {
   const send = async (text) => {
     const msg = text || input;
     if (!msg.trim() || loading) return;
+    userActedRef.current = true;
     setMessages((m) => [...m, { role: "user", text: msg }]);
     setInput("");
     setLoading(true);
     try {
-      // نبعت الـ request للـ Endpoint بتاعنا ونحدد mode: "child"، وكمان اللغة الحالية
-      // عشان لو الباك اند اتظبط يرد بيها (مطلوب تعديل منفصل في aiCoach نفسه).
-      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "child", lang: i18n.language });
+      // الباك اند بيحدد الـ mode من دور اليوزر، واللغة الحالية بتتبعت عشان الرد يبقى بلغة التطبيق
+      // لو رسالة الطفل نفسها مش واضحة اللغة.
+      const res = await base44.post("/functions/aiCoach", { message: msg.trim(), lang: i18n.language });
       setMessages((m) => [...m, { role: "assistant", text: res?.reply || t("child.coach.thinkingFallback") }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages((m) => [...m, { role: "assistant", text: t("child.coach.errorFallback") }]);
+      // 429 = الطفل بعت رسايل كتير بسرعة: رسالة ألطف من "المخ offline"
+      const key = error?.status === 429 ? "child.coach.rateLimited" : "child.coach.errorFallback";
+      setMessages((m) => [...m, { role: "assistant", text: t(key) }]);
     }
     setLoading(false);
   };
@@ -121,6 +126,7 @@ export default function Coach() {
     } catch {
       // حتى لو فشل النداء، نفضّل نصفّر الشاشة عند الأقل بدل ما نسيبه واقف
     }
+    userActedRef.current = true;
     setMessages([greeting()]);
   };
 
@@ -152,6 +158,7 @@ export default function Coach() {
           <div key={i} className={"flex gap-2 " + (m.role === "user" ? "justify-end" : "justify-start")}>
             {m.role === "assistant" && <Lotfy size={32} />}
             <div
+              dir="auto"
               className={"max-w-[78%] rounded-2xl px-4 py-2.5 animate-slide-up " + (m.role === "user" ? "grad-navy text-white rounded-br-sm text-sm leading-relaxed" : "glass rounded-bl-sm")}
             >
               {m.role === "user" ? m.text : <Bubble text={m.text} />}
@@ -186,6 +193,7 @@ export default function Coach() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
+          maxLength={1000}
           placeholder={t("child.coach.placeholder")}
           className="flex-1 bg-transparent px-3 py-2 text-sm outline-none"
         />

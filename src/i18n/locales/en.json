@@ -554,6 +554,7 @@
       "greetingFallbackName": "there",
       "thinkingFallback": "Hmm, let me think about that!",
       "errorFallback": "Oops, my brain is offline for a second. Try again!",
+      "rateLimited": "Whoa, slow down a little! 😅 Wait a minute and try again.",
       "online": "● Online · AI Money Buddy",
       "newChat": "Start a new chat",
       "placeholder": "Ask FinBuddy anything..."
@@ -836,6 +837,7 @@
       "greetingFallbackName": "there",
       "thinkingFallback": "Let me check the family data and get back to you.",
       "errorFallback": "I couldn't reach the AI service right now. Please try again in a moment.",
+      "rateLimited": "You're sending messages too fast. Please wait a moment and try again.",
       "title": "AI Family Coach",
       "pro": "Pro",
       "newChat": "Start a new chat",

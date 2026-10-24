@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, Send, Sparkles, RotateCcw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { GlassCard, FadeIn, Pill } from "@/components/fin/ui";
-import { fmtEGP } from "@/lib/finData";
+import { FadeIn, Pill } from "@/components/fin/ui";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { getChildWallet, getCoachHistory, resetCoachHistory } from "@/lib/finApi";
@@ -52,7 +51,7 @@ function buildParentSuggestions(t, children, wallets) {
 // lines instead of running together as one wall of text.
 function Bubble({ text }) {
   return (
-    <div className="prose-chat text-sm [&_p]:my-1 first:[&_p]:mt-0 last:[&_p]:mb-0 [&_ol]:my-1 [&_ul]:my-1 [&_li]:my-1 [&_strong]:font-bold">
+    <div dir="auto" className="prose-chat text-sm [&_p]:my-1 first:[&_p]:mt-0 last:[&_p]:mb-0 [&_ol]:my-1 [&_ul]:my-1 [&_li]:my-1 [&_strong]:font-bold">
       <ReactMarkdown>{text}</ReactMarkdown>
     </div>
   );
@@ -69,6 +68,8 @@ export default function ParentCoach() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
+  // لو الأب بعت رسالة قبل ما الـ history يوصل، منمسحش رسايله بالـ history القديم
+  const userActedRef = useRef(false);
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
@@ -77,7 +78,7 @@ export default function ParentCoach() {
     let cancelled = false;
     getCoachHistory()
       .then((res) => {
-        if (cancelled) return;
+        if (cancelled || userActedRef.current) return;
         if (res?.messages?.length) {
           setMessages(res.messages.map((m) => ({ role: m.role === "assistant" ? "ai" : "user", text: m.content, icon: "🤖" })));
         }
@@ -106,18 +107,20 @@ export default function ParentCoach() {
   const send = async (text) => {
     const msg = text || input;
     if (!msg.trim() || loading) return;
+    userActedRef.current = true;
     setMessages((m) => [...m, { role: "user", text: msg }]);
     setInput("");
     setLoading(true);
     try {
-      // التعديل هنا: استخدام دالة post اللي عملناها، وتوجيهها للـ Route بتاعنا + إرسال اللغة الحالية
-      const res = await base44.post("/functions/aiCoach", { message: msg, mode: "parent", lang: i18n.language });
+      // الباك اند بيحدد الـ mode من دور اليوزر، واللغة الحالية بتتبعت عشان الرد يبقى بلغة التطبيق
+      const res = await base44.post("/functions/aiCoach", { message: msg.trim(), lang: i18n.language });
 
       // التعديل هنا: الـ Backend بتاعنا بيرجع { reply: "..." } مباشرة
       setMessages((m) => [...m, { role: "ai", text: res?.reply || t("parent.coach.thinkingFallback"), icon: "🤖" }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages((m) => [...m, { role: "ai", text: t("parent.coach.errorFallback"), icon: "🤖" }]);
+      const key = error?.status === 429 ? "parent.coach.rateLimited" : "parent.coach.errorFallback";
+      setMessages((m) => [...m, { role: "ai", text: t(key), icon: "🤖" }]);
     }
     setLoading(false);
   };
@@ -129,6 +132,7 @@ export default function ParentCoach() {
     } catch {
       // حتى لو فشل النداء، نفضّل نصفّر الشاشة عند الأقل بدل ما نسيبه واقف
     }
+    userActedRef.current = true;
     setMessages([greeting()]);
   };
 
@@ -194,7 +198,7 @@ export default function ParentCoach() {
 
       {/* input */}
       <div className="glass rounded-2xl p-2 flex items-center gap-2 shadow-premium">
-        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("parent.coach.placeholder")} className="flex-1 bg-transparent outline-none px-3 text-sm font-medium" />
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} maxLength={1000} placeholder={t("parent.coach.placeholder")} className="flex-1 bg-transparent outline-none px-3 text-sm font-medium" />
         <button onClick={() => send()} disabled={loading} className="w-10 h-10 rounded-xl grad-emerald text-white flex items-center justify-center active:scale-95 transition-all disabled:opacity-50">
           <Send className="w-4 h-4 rtl:-scale-x-100" />
         </button>

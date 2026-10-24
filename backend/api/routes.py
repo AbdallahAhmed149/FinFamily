@@ -1,17 +1,20 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db.models import User, ChatMessage
 from core.deps import get_current_user
-from core.limiter import limiter
+from core.limiter import limiter, user_or_ip_key
 from services.ai_coach import (
     ChatMessage as ChatMessageIn,
     HistoryTurn,
+    HISTORY_WINDOW,
     get_ai_response,
-    is_flagged_content,
+    check_child_message,
+    check_child_reply,
     AICoachError,
-    CHILD_SAFE_REDIRECT,
 )
 from services.ai_context import build_child_context, build_family_context
 from schemas.coach import ChatMessageOut, CoachHistoryResponse
@@ -55,29 +58,37 @@ def reset_coach_history(
     return {"ok": True}
 
 
+logger = logging.getLogger("finfamily.aicoach")
+
+
 @functions_router.post("/aiCoach")
-@limiter.limit("20/minute")  # حماية من استهلاك تكلفة OpenAI لو حصل spam/loop من الفرونت أو استخدام مقصود سيء
+# حماية تكلفة OpenAI: حد في الدقيقة وحد يومي لكل يوزر (مش لكل IP — الـ IP ممكن يبقى مشترك)
+@limiter.limit("20/minute;300/day", key_func=user_or_ip_key)
 def invoke_ai_coach(
     request: Request,
     chat: ChatMessageIn,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if len(chat.message) > 1000:
+    message = (chat.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is empty")
+    if len(message) > 1000:
         raise HTTPException(status_code=400, detail="Message too long")
+    chat.message = message
 
     # الـ mode بيتحدد من دور اليوزر نفسه في التوكن، مش من حاجة الفرونت بيبعتها
     # (كده طفل مايقدرش يبعت mode=parent ويستني رد Coach Nour).
     chat.mode = "parent" if user.role == "parent" else "child"
 
-    # حاجز أمان: بس لرسايل الطفل، بنفحص المحتوى قبل ما يوصل لـ FinBuddy خالص.
-    # لو اتصنف كمحتوى غير مناسب، بنرجع رد ثابت آمن وميتبعتش حاجة للموديل
-    # الرئيسي (يوفر تكلفة، وبيقفل الباب قدام أي محاولة jailbreak).
-    if chat.mode == "child" and is_flagged_content(chat.message):
-        db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="user", content=chat.message))
-        db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="assistant", content=CHILD_SAFE_REDIRECT))
-        db.commit()
-        return {"reply": CHILD_SAFE_REDIRECT}
+    # حاجز أمان لرسايل الطفل: بنفحص المحتوى قبل ما يوصل لـ FinBuddy خالص. لو اتعلّم بنرجع رد
+    # آمن بلغة الطفل، وبنسجّل الحدث في اللوج (من غير نص الرسالة). الرسالة دي *مش* بتتخزن في
+    # الـ history خالص — لو اتخزنت كانت هتتبعت للموديل الرئيسي مع الرسالة اللي بعدها.
+    if chat.mode == "child":
+        safe = check_child_message(message, chat.lang)
+        if safe:
+            logger.warning("[aiCoach] flagged child message user=%s", user.id)
+            return {"reply": safe}
 
     # البيانات الحقيقية بتتجاب من الداتابيز هنا، مش هاردكودد جوه الـ prompt خالص
     if chat.mode == "parent":
@@ -85,33 +96,37 @@ def invoke_ai_coach(
     else:
         context = build_child_context(db, user)
 
-    # آخر جزء من المحادثة الحقيقية بتاعة اليوزر ده — ده اللي بيخلي الموديل
-    # "فاكر" وميرجعش يسلّم من الأول في كل رسالة. بنجيب آخر 20 رسالة بس (desc)
-    # وبنرجعهم بالترتيب الطبيعي، عشان مانحمّلش رسايل قديمة أوي من غير داعي.
+    # آخر جزء من المحادثة الحقيقية بتاعة اليوزر ده — ده اللي بيخلي الموديل "فاكر".
+    # بنفس رقم الـ HISTORY_WINDOW اللي الـ service بيستخدمه (كانت 20 هنا و12 هناك).
     history_rows = (
         db.query(ChatMessage)
         .filter(ChatMessage.user_id == user.id, ChatMessage.mode == chat.mode)
         .order_by(ChatMessage.created_date.desc())
-        .limit(20)
+        .limit(HISTORY_WINDOW)
         .all()
     )
     history = [HistoryTurn(role=r.role, content=r.content) for r in reversed(history_rows)]
 
     try:
-        reply = get_ai_response(chat, context, history=history, child_name=user.full_name)
+        reply = get_ai_response(chat, context, history=history)
     except AICoachError as e:
-        # قبل كده كان بيرجع رسالة الخطأ التقنية نفسها كـ رد "assistant" حقيقي
-        # وتتخزن في الـ history. دلوقتي: بنسجلها في اللوج للمتابعة، ومنخزنش
-        # حاجة في المحادثة خالص (نفس اليوزر message كمان)، عشان لو اليوزر
-        # عاد جرب تاني تكون المحادثة سليمة من غير فجوة أو رسالة غريبة فيها.
-        print(f"[aiCoach] OpenAI call failed for user {user.id} (mode={chat.mode}): {e}")
+        # بنسجّلها في اللوج، ومنخزنش حاجة في المحادثة خالص (ولا رسالة اليوزر)،
+        # عشان لو اليوزر جرب تاني تكون المحادثة سليمة من غير فجوة.
+        logger.error("[aiCoach] OpenAI call failed user=%s mode=%s: %s", user.id, chat.mode, e)
         raise HTTPException(
             status_code=503,
             detail="The AI coach is temporarily unavailable. Please try again in a moment.",
         )
 
+    # حاجز تاني على رد الـ AI نفسه قبل ما يوصل لطفل (ومايتخزنش لو اتعلّم)
+    if chat.mode == "child":
+        safe_reply = check_child_reply(reply, message, chat.lang)
+        if safe_reply:
+            logger.warning("[aiCoach] flagged AI reply user=%s", user.id)
+            return {"reply": safe_reply}
+
     # نخزّن السؤال والرد الاتنين مع بعض عشان المرة الجاية تكون جزء من نفس المحادثة
-    db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="user", content=chat.message))
+    db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="user", content=message))
     db.add(ChatMessage(user_id=user.id, mode=chat.mode, role="assistant", content=reply))
     db.commit()
 

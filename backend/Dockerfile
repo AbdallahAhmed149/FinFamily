@@ -21,4 +21,5 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# --proxy-headers: عشان الـ rate limit والـ IP الحقيقي يتقروا من X-Forwarded-For اللي nginx بيبعته
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]
